@@ -1,0 +1,14 @@
+# Godot
+.godot/
+/android/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+.idea/
+
+# Map builder download cache
+data/maps/.tilecache/
+__pycache__/

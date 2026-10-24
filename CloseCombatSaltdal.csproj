@@ -1,0 +1,12 @@
+<Project Sdk="Godot.NET.Sdk/4.6.1">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>Saltdal</RootNamespace>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The tests have their own project -->
+    <Compile Remove="tests/**" />
+  </ItemGroup>
+</Project>

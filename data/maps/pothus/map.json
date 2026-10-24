@@ -1,0 +1,10 @@
+{
+  "name": "pothus",
+  "width": 384,
+  "height": 384,
+  "cellSize": 4,
+  "centerLat": 66.95,
+  "centerLon": 15.302,
+  "source": "AWS Terrain Tiles (terrarium), zoom 14",
+  "note": "Terrain types are derived from height and slope only; hand edits come later."
+}
