@@ -6,5 +6,15 @@
   "centerLat": 66.95,
   "centerLon": 15.302,
   "source": "AWS Terrain Tiles (terrarium), zoom 14",
+  "bridges": [
+    {
+      "row": 153,
+      "col": 162
+    },
+    {
+      "row": 306,
+      "col": 164
+    }
+  ],
   "note": "Terrain types are derived from height and slope only; hand edits come later."
 }

@@ -14,6 +14,7 @@ public sealed class Pathfinder
     public const float MaxSlopeDegrees = 40f;
     const float UphillPenalty = 6f;   // extra cost per unit of rise over run
     const float DownhillPenalty = 1.5f;
+    const float OpenGroundPenalty = 2.5f;
 
     static readonly (int Dx, int Dy, float Dist)[] Neighbours =
     {
@@ -31,7 +32,7 @@ public sealed class Pathfinder
     }
 
     /// <summary>Cost of stepping from one cell to a neighbour, or infinity if blocked.</summary>
-    public float StepCost(int x0, int y0, int x1, int y1, float dist)
+    public float StepCost(int x0, int y0, int x1, int y1, float dist, bool preferCover = false)
     {
         if (!_map.IsPassable(x1, y1))
             return float.PositiveInfinity;
@@ -43,21 +44,33 @@ public sealed class Pathfinder
         if (MathF.Abs(grade) > _maxGrade)
             return float.PositiveInfinity;
         float slope = grade > 0 ? 1 + grade * UphillPenalty : 1 - grade * DownhillPenalty;
-        float terrain = (TerrainInfo.MoveCost(_map.TerrainAt(x0, y0)) + TerrainInfo.MoveCost(_map.TerrainAt(x1, y1))) / 2;
+        var to = _map.TerrainAt(x1, y1);
+        float terrain = (TerrainInfo.MoveCost(_map.TerrainAt(x0, y0)) + TerrainInfo.MoveCost(to)) / 2;
+        // A careful route keeps to the trees and rocks, out of sight
+        if (preferCover && to is not (TerrainType.Forest or TerrainType.Rock))
+            terrain *= OpenGroundPenalty;
         return run * terrain * slope;
     }
 
     /// <summary>
-    /// Find a path between two world points. Returns waypoints (excluding the start),
-    /// or null if the goal cannot be reached. If the goal cell is blocked, the nearest
-    /// open cell is used instead.
+    /// Find a path between two world points. With preferCover the route trades
+    /// distance for staying in forest and among rocks. Returns waypoints (excluding the start),
+    /// or null if the goal cannot be reached. If the start or goal cell is blocked,
+    /// the nearest open cell is used instead.
     /// </summary>
-    public List<Vector2>? FindPath(Vector2 from, Vector2 to)
+    public List<Vector2>? FindPath(Vector2 from, Vector2 to, bool preferCover = false)
     {
         var start = _map.WorldToCell(from);
         var goal = _map.WorldToCell(to);
         if (!_map.InBounds(start.X, start.Y))
             return null;
+        if (!_map.IsPassable(start.X, start.Y))
+        {
+            // Starting from a blocked cell, such as a team centre that falls in the river
+            var near = NearestPassable(start.X, start.Y);
+            if (near == null) return null;
+            start = near.Value;
+        }
         goal = (Math.Clamp(goal.X, 0, _map.Width - 1), Math.Clamp(goal.Y, 0, _map.Height - 1));
         if (!_map.IsPassable(goal.X, goal.Y))
         {
@@ -100,7 +113,7 @@ public sealed class Pathfinder
                 if (!_map.InBounds(nx, ny)) continue;
                 int ni = ny * w + nx;
                 if (closed[ni]) continue;
-                float cost = StepCost(cx, cy, nx, ny, dist);
+                float cost = StepCost(cx, cy, nx, ny, dist, preferCover);
                 if (float.IsInfinity(cost)) continue;
                 float ng = g[cur] + cost;
                 if (ng < g[ni])
