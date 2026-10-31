@@ -52,8 +52,12 @@ public sealed class DefendAI : ICommander
         {
             if (team.Morale >= MoraleState.Cowering) continue;
             if (_busyUntil.TryGetValue(team, out var until) && sim.Time < until) continue;
-            if (team.IsMoving) continue;
             if (!_posts.TryGetValue(team, out var post)) continue;
+            if (team.IsMoving)
+            {
+                CallOffIfStalled(sim, team, post, enemies);
+                continue;
+            }
 
             var nearest = enemies.OrderBy(e => Vector2.DistanceSquared(e.Position, team.Center)).FirstOrDefault();
             float toPost = Vector2.Distance(team.Center, post.Spot);
@@ -108,12 +112,14 @@ public sealed class DefendAI : ICommander
     {
         foreach (var flag in sim.Flags.Where(f => f.Owner != Side))
         {
-            int enemyOnFlag = enemies.Count(e => Vector2.Distance(e.Position, flag.Position) < flag.Radius + 40f);
+            // Count everyone seen around the flag, not just on it: a counter-attack
+            // into a wood full of the enemy only feeds him men
+            int enemyOnFlag = enemies.Count(e => Vector2.Distance(e.Position, flag.Position) < flag.Radius + 120f);
             var free = teams.Where(t => CanSpare(sim, t, threat))
                 .OrderBy(t => Vector2.DistanceSquared(t.Center, flag.Position))
                 .Take(2).ToList();
             int strength = free.Sum(t => t.EffectiveCount);
-            if (free.Count == 0 || strength < 4 || enemyOnFlag * 1.5f > strength) continue;
+            if (free.Count == 0 || strength < 4 || enemyOnFlag * 2f > strength) continue;
             foreach (var team in free)
             {
                 _posts[team] = new Post(flag, SpotAt(flag, team));
@@ -137,6 +143,24 @@ public sealed class DefendAI : ICommander
         held[pressed] += helper.EffectiveCount;
         sim.Stop(helper);
         sim.Log(Side, $"{helper.Name} moves up to reinforce {pressed.Name}.");
+    }
+
+    /// <summary>
+    /// A counter-attack that has gone to ground under fire is called off: the
+    /// team holds where it is and fights from there, instead of getting up
+    /// again and again into the same fire.
+    /// </summary>
+    void CallOffIfStalled(Simulation sim, Team team, Post post, List<Soldier> enemies)
+    {
+        if (post.Flag.Owner == Side) return;
+        bool underFire = team.Active.Any(s => sim.Time - s.LastUnderFire < 3f);
+        int pinned = team.Active.Count(s => s.Morale >= MoraleState.Pinned);
+        if (!underFire || pinned * 3 < team.EffectiveCount) return;
+        var nearest = enemies.OrderBy(e => Vector2.DistanceSquared(e.Position, team.Center)).FirstOrDefault();
+        sim.Stop(team);
+        sim.OrderDefend(team, nearest?.Position ?? post.Flag.Position);
+        _busyUntil[team] = sim.Time + 90f;
+        sim.Log(Side, $"{team.Name}: the counter-attack on {post.Flag.Name} is pinned down; holding here.");
     }
 
     /// <summary>A steady rifle team whose own flag can do without it.</summary>

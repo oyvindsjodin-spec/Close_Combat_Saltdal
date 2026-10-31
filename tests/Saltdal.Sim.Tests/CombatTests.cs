@@ -56,16 +56,23 @@ public class CombatTests
     [Fact]
     public void FireCausesStressAndCasualties()
     {
-        var sim = new Simulation(Field(), seed: 7);
-        var shooters = sim.SpawnTeam("Brens", Side.Allied, new Vector2(120, 40), new[] { "a", "b", "c", "d" }, Weapon.Bren);
-        var targets = sim.SpawnTeam("Targets", Side.German, new Vector2(120, 140), new[] { "e", "f", "g", "h", "i", "j" });
-        sim.OrderDefend(shooters, targets.Center);
-        sim.OrderDefend(targets, shooters.Center);
-        foreach (var s in targets.Soldiers) s.Ammo = 0; // they cannot shoot back
-        for (int i = 0; i < 600; i++) sim.Tick();
-        Assert.Contains(sim.RecentShots, s => s.Side == Side.Allied);
-        Assert.True(targets.Soldiers.Count(s => !s.CanAct) >= 2, "an unanswered MG at 100 m should hurt");
-        Assert.All(shooters.Soldiers, s => Assert.Equal(Health.Healthy, s.Health));
+        // Over several fights, so one lucky or unlucky one does not decide it
+        int down = 0;
+        for (ulong seed = 1; seed <= 8; seed++)
+        {
+            var sim = new Simulation(Field(), seed);
+            var shooters = sim.SpawnTeam("Brens", Side.Allied, new Vector2(120, 40), new[] { "a", "b", "c", "d" }, Weapon.Bren);
+            var targets = sim.SpawnTeam("Targets", Side.German, new Vector2(120, 140), new[] { "e", "f", "g", "h", "i", "j" });
+            sim.OrderDefend(shooters, targets.Center);
+            sim.OrderDefend(targets, shooters.Center);
+            foreach (var s in targets.Soldiers) s.Ammo = 0; // they cannot shoot back
+            for (int i = 0; i < 600; i++) sim.Tick();
+            Assert.Contains(sim.RecentShots, s => s.Side == Side.Allied);
+            Assert.All(shooters.Soldiers, s => Assert.Equal(Health.Healthy, s.Health));
+            down += targets.Soldiers.Count(s => !s.CanAct);
+        }
+        // An unanswered MG at 100 m should put two of six men out of the fight in a minute, on average
+        Assert.True(down >= 12, $"an unanswered MG at 100 m should hurt ({down} down in 8 fights)");
     }
 
     [Theory]
@@ -121,5 +128,66 @@ public class CombatTests
         var first = Run();
         Assert.Equal(first, Run());
         Assert.True(first.AlliedLosses.Killed + first.GermanLosses.Killed > 0);
+    }
+
+    [Fact]
+    public void AdvancingMenArePinnedBeforeTheyReachRiflemen()
+    {
+        int pinnedEarly = 0, reached = 0;
+        for (ulong seed = 1; seed <= 5; seed++)
+        {
+            var sim = new Simulation(Field(), seed);
+            var guns = sim.SpawnTeam("Riflemen", Side.Allied, new Vector2(120, 30), new[] { "a", "b", "c", "x" });
+            var attackers = sim.SpawnTeam("Section", Side.German, new Vector2(120, 220), new[] { "d", "e", "f", "g", "h", "i" });
+            foreach (var s in attackers.Soldiers) s.Ammo = 0; // only walking
+            sim.OrderDefend(guns, attackers.Center);
+            sim.OrderMove(attackers, guns.Center + new Vector2(0, 10), MoveMode.Move);
+            bool early = false;
+            for (int i = 0; i < 1200; i++)
+            {
+                sim.Tick();
+                if (attackers.Soldiers.Any(s => s.Morale >= MoraleState.Pinned && Vector2.Distance(s.Position, guns.Center) > 100))
+                    early = true;
+            }
+            if (early) pinnedEarly++;
+            if (attackers.Soldiers.Any(s => s.CanAct && Vector2.Distance(s.Position, guns.Center) < 30)) reached++;
+        }
+        Assert.True(pinnedEarly >= 4, $"pinned while still over 100 m away in {pinnedEarly} of 5 runs");
+        Assert.True(reached <= 1, $"walked onto the guns in {reached} of 5 runs");
+    }
+
+    [Fact]
+    public void FireFrightensAManOnTheMoveMoreThanAManInATrench()
+    {
+        var map = Field();
+        map.Terrain[10 * map.Width + 40] = TerrainType.Trench;
+        var sim = new Simulation(map);
+        var walker = sim.SpawnTeam("w", Side.German, new Vector2(20, 20), new[] { "a" }).Soldiers[0];
+        var digger = sim.SpawnTeam("d", Side.Allied, map.CellCenter(40, 10), new[] { "b" }).Soldiers[0];
+        walker.Posture = Posture.Standing;
+        walker.PreviousPosition = walker.Position - new Vector2(0.14f, 0);
+        digger.Posture = Posture.Prone;
+        Assert.True(sim.Exposure(walker) > 4 * sim.Exposure(digger));
+    }
+
+    [Fact]
+    public void MenUnderFireMostlySurviveTheFirstMinutes()
+    {
+        int down = 0, dead = 0;
+        for (ulong seed = 1; seed <= 5; seed++)
+        {
+            var sim = new Simulation(Field(), seed);
+            var shooters = sim.SpawnTeam("Section", Side.Allied, new Vector2(120, 30), new[] { "a", "b", "c", "d", "e", "f" });
+            var targets = sim.SpawnTeam("Targets", Side.German, new Vector2(120, 180), new[] { "g", "h", "i", "j", "k", "l" });
+            sim.OrderDefend(shooters, targets.Center);
+            sim.OrderDefend(targets, shooters.Center);
+            foreach (var s in targets.Soldiers) s.Ammo = 0;
+            for (int i = 0; i < 1200; i++) sim.Tick(); // two minutes of six rifles at 150 m
+            down += targets.Soldiers.Count(s => !s.CanAct);
+            dead += targets.Soldiers.Count(s => s.Health == Health.Dead);
+        }
+        Assert.True(down >= 1, "rifle fire should still hurt");
+        Assert.True(down <= 10, $"{down} of 30 men down after two minutes");
+        Assert.True(dead <= down / 2 + 1, $"{dead} of {down} down are dead");
     }
 }

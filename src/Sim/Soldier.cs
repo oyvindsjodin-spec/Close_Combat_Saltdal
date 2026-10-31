@@ -84,6 +84,8 @@ public sealed class Soldier
     public bool IsMoving => Path.Count > 0;
     /// <summary>The way to face on reaching the end of the path (radians), or null to keep facing the way he walked.</summary>
     internal float? FacingOnArrival;
+    /// <summary>Actually stepping this tick; a frightened man lying still with his route waiting is not.</summary>
+    public bool IsOnTheMove => Position != PreviousPosition;
 
     internal float FireCooldown;
     internal int BurstLeft;

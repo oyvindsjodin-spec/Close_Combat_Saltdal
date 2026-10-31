@@ -99,9 +99,14 @@ public sealed partial class Simulation
             return;
         }
 
-        if (s.Target != null && s.Target.CanAct && s.Target.IsVisibleToEnemy(Time) && CanHit(s.Target))
+        // Men who have gone to ground are already dealt with for now; switch
+        // to whoever is still up and coming on, so the fire spreads along the line
+        var inReach = candidates.Take(8).Where(CanHit).ToList();
+        var threat = inReach.FirstOrDefault(e => e.Morale == MoraleState.Ready);
+        if (s.Target != null && s.Target.CanAct && s.Target.IsVisibleToEnemy(Time) && CanHit(s.Target)
+            && (s.Target.Morale == MoraleState.Ready || threat == null))
             return;
-        s.Target = candidates.Take(5).FirstOrDefault(CanHit);
+        s.Target = threat ?? inReach.FirstOrDefault();
     }
 
     /// <summary>
@@ -198,23 +203,57 @@ public sealed partial class Simulation
             float dd = Vector2.Distance(e.Position, impact);
             if (dd > r) continue;
             float k = 1 - dd / r;
-            if (e.Posture == Posture.Prone) k *= 0.6f;
-            AddStress(e, s.Weapon.Suppression * k);
+            AddStress(e, s.Weapon.Suppression * k * Exposure(e));
             e.LastUnderFire = Time;
         }
         if (s.Target != null)
         {
-            AddStress(s.Target, 1f);
+            // Knowing you are the one being shot at is worse than the noise
+            AddStress(s.Target, TargetedStress * Exposure(s.Target));
             s.Target.LastUnderFire = Time;
         }
         if (hit)
             ApplyHit(s.Target!);
     }
 
+    /// <summary>
+    /// Weapon accuracy is what a man manages on a range. In battle he fires
+    /// fast at someone half hidden who is shooting back, so only this share of
+    /// it is left.
+    /// </summary>
+    public const float CombatAccuracy = 0.25f;
+
+    /// <summary>Stress a man gets from each round fired at him in particular.</summary>
+    public const float TargetedStress = 3f;
+
+    /// <summary>
+    /// How much fire frightens a man where he is. A man on his feet and on the
+    /// move feels it most and hits the dirt soonest; a man lying in a trench or
+    /// behind a wall feels it least.
+    /// </summary>
+    public float Exposure(Soldier s)
+    {
+        float k = s.Posture switch
+        {
+            Posture.Prone => 0.6f,
+            Posture.Crouched => 0.85f,
+            _ => 1f,
+        };
+        if (s.IsOnTheMove && !s.Fleeing) k *= 1.6f;
+        k *= Map.TerrainAt(s.Position) switch
+        {
+            TerrainType.Trench => 0.6f,
+            TerrainType.Building => 0.7f,
+            TerrainType.Rock => 0.8f,
+            _ => 1f,
+        };
+        return k;
+    }
+
     /// <summary>Chance that one round from a shooter hits a target at a distance.</summary>
     public float HitChance(Soldier shooter, Soldier target, float distance)
     {
-        float p = shooter.Weapon.Accuracy * MathF.Pow(100f / MathF.Max(distance, 20f), 1.6f);
+        float p = shooter.Weapon.Accuracy * CombatAccuracy * MathF.Pow(100f / MathF.Max(distance, 40f), 1.6f);
         p *= target.Posture switch
         {
             Posture.Prone => 0.35f,
@@ -233,13 +272,14 @@ public sealed partial class Simulation
             TerrainType.BurningHouse => 0.8f,
             _ => 1f,
         };
-        if (target.IsMoving) p *= 0.7f;
+        if (target.IsOnTheMove) p *= 0.7f;
         if (shooter.IsMoving) p *= shooter.Team.Mode == MoveMode.Sneak ? 0.6f : 0.4f;
         if (shooter.Posture == Posture.Prone) p *= 1.15f;
         if (shooter.Health == Health.Wounded) p *= 0.7f;
         p *= 1 - MathF.Min(shooter.Stress, 75f) / 110f;
         p *= 0.75f + 0.5f * shooter.Experience;
-        return Math.Clamp(p, 0f, 0.9f);
+        // Even close in, a man ducking and weaving is no sure thing
+        return Math.Clamp(p, 0f, 0.6f);
     }
 
     void ApplyHit(Soldier t)
@@ -247,9 +287,10 @@ public sealed partial class Simulation
         float roll = Rng.NextFloat();
         var before = t.Health;
         if (t.Health == Health.Wounded)
-            t.Health = roll < 0.5f ? Health.Dead : Health.Incapacitated;
+            t.Health = roll < 0.4f ? Health.Dead : Health.Incapacitated;
         else
-            t.Health = roll < 0.35f ? Health.Dead : roll < 0.65f ? Health.Incapacitated : Health.Wounded;
+            // Most men hit are hurt, not killed, and many can carry on
+            t.Health = roll < 0.2f ? Health.Dead : roll < 0.45f ? Health.Incapacitated : Health.Wounded;
 
         if (t.Health == Health.Wounded)
         {
