@@ -11,8 +11,8 @@ public readonly record struct Blast(Vector2 At, Explosive Explosive, float Time)
 /// <summary>A shell or bomb in the air, due to land at a point.</summary>
 readonly record struct IncomingRound(Vector2 At, Explosive Explosive, float LandsAt, Side FiredBy);
 
-/// <summary>An aircraft crossing the map on a bombing run, for drawing.</summary>
-public readonly record struct Aircraft(Vector2 From, Vector2 To, float Start, float Duration, Side Side)
+/// <summary>An aircraft crossing the map on a bombing run, for drawing. Dives is true for a dive bomber, for the sound of its siren.</summary>
+public readonly record struct Aircraft(Vector2 From, Vector2 To, float Start, float Duration, Side Side, bool Dives = false)
 {
     public Vector2 PositionAt(float time) => Vector2.Lerp(From, To, Math.Clamp((time - Start) / Duration, 0f, 1f));
     public bool IsFlying(float time) => time >= Start && time <= Start + Duration;
@@ -26,6 +26,9 @@ public sealed partial class Simulation
     readonly List<IncomingRound> _incoming = new();
     /// <summary>Where and when shells and bombs now in the air will land, for the sound of them coming.</summary>
     public IEnumerable<(Vector2 At, float LandsAt)> Incoming => _incoming.Select(r => (r.At, r.LandsAt));
+    /// <summary>The same, with what is coming: a mortar bomb whooshes, a shell whistles, a bomb screams.</summary>
+    public IEnumerable<(Vector2 At, Explosive Explosive, float LandsAt, Side FiredBy)> IncomingRounds =>
+        _incoming.Select(r => (r.At, r.Explosive, r.LandsAt, r.FiredBy));
     readonly List<Blast> _blasts = new();
     readonly List<Aircraft> _aircraft = new();
     readonly List<BattleMessage> _messages = new();
@@ -125,7 +128,8 @@ public sealed partial class Simulation
             var from = new Vector2(target.X - 300, fromY);
             var to = target + (target - from) * 0.8f;
             float run = 6f;
-            _aircraft.Add(new Aircraft(from, to, Time + asset.Delay - run / 1.8f, run, asset.Side));
+            // A lone aircraft with one heavy bomb is a dive bomber (the Stuka)
+            _aircraft.Add(new Aircraft(from, to, Time + asset.Delay - run / 1.8f, run, asset.Side, Dives: asset.Rounds == 1));
             Log(Other(asset.Side), "Aircraft overhead!");
         }
         for (int i = 0; i < asset.Rounds; i++)

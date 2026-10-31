@@ -13,3 +13,6 @@ obj/
 data/maps/.tilecache/
 __pycache__/
 build/
+
+# Voice models downloaded by tools/make_voices.py
+tools/.voice-models/
