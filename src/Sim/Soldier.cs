@@ -82,6 +82,8 @@ public sealed class Soldier
     internal readonly Queue<Vector2> Path = new();
     public IEnumerable<Vector2> Waypoints => Path;
     public bool IsMoving => Path.Count > 0;
+    /// <summary>Actually stepping this tick; a frightened man lying still with his route waiting is not.</summary>
+    public bool IsOnTheMove => Position != PreviousPosition;
 
     internal float FireCooldown;
     internal int BurstLeft;

@@ -7,6 +7,8 @@ namespace Saltdal.Sim;
 public sealed partial class Simulation
 {
     public const float MaxStress = 130f;
+    /// <summary>Stress a pinned man must calm below before he gets up again.</summary>
+    public const float PinnedUntil = 12f;
 
     void UpdateMorale()
     {
@@ -15,7 +17,7 @@ public sealed partial class Simulation
             if (!s.CanAct) continue;
 
             bool underFire = Time - s.LastUnderFire < 3f;
-            float recovery = underFire ? 1.0f : 4f; // stress points per second
+            float recovery = underFire ? 0.6f : 4f; // stress points per second
             if (LeaderNearby(s)) recovery *= 1.6f;
             recovery *= 0.7f + 0.6f * s.Experience;
             s.Stress = MathF.Max(0, s.Stress - recovery * TickSeconds);
@@ -43,6 +45,9 @@ public sealed partial class Simulation
         if (stress >= 75) return MoraleState.Panicked;
         if (stress >= 50) return MoraleState.Cowering;
         if (stress >= 25) return MoraleState.Pinned;
+        // A man who has gone to ground stays down until he has calmed a good
+        // deal, rather than popping up again the moment the firing slackens
+        if (current >= MoraleState.Pinned && current != MoraleState.Surrendered && stress >= PinnedUntil) return MoraleState.Pinned;
         return MoraleState.Ready;
     }
 
