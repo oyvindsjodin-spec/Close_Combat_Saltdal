@@ -50,7 +50,14 @@ public sealed partial class Simulation
             }
         }
         if (s.Path.Count == 0)
+        {
             s.Fleeing = s.EscapingFire = false;
+            if (s.FacingOnArrival is { } f)
+            {
+                s.Facing = f;
+                s.FacingOnArrival = null;
+            }
+        }
     }
 
     void UpdatePosture(Soldier s)
@@ -58,7 +65,9 @@ public sealed partial class Simulation
         if (s.Morale >= MoraleState.Pinned)
             s.Posture = Posture.Prone;
         else if (s.IsMoving)
-            s.Posture = s.Team.Mode == MoveMode.Sneak ? Posture.Crouched : Posture.Standing;
+            // Creeping, or shifting into a firing line, men keep low
+            s.Posture = s.Team.Mode == MoveMode.Sneak || s.Team.Order is TeamOrder.Defend or TeamOrder.DigIn
+                ? Posture.Crouched : Posture.Standing;
         else if (s.Team.Order == TeamOrder.DigIn)
             s.Posture = Posture.Crouched;
         else if (s.Team.Order is TeamOrder.Defend or TeamOrder.Fire && Map.TerrainAt(s.Position) == TerrainType.Building)

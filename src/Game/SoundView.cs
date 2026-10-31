@@ -60,7 +60,7 @@ public partial class SoundView : Node2D
 
     AudioStreamPlayer2D MakePlayer()
     {
-        var p = new AudioStreamPlayer2D { MaxDistance = 2600, Attenuation = 1.6f };
+        var p = new AudioStreamPlayer2D { MaxDistance = 4000, Attenuation = 1.4f };
         AddChild(p);
         return p;
     }
@@ -95,10 +95,14 @@ public partial class SoundView : Node2D
             p.Play();
         }
 
-        float since = _seenUntil;
+        // Everything stamped from the start of the first tick run since last frame,
+        // up to (not including) the time now. A tick stamps what happens in it with
+        // the time it began, so the last frame's end time belongs to this frame.
+        float since = _seenUntil, now = Sim.Time;
+        bool New(float t) => t >= since && t < now;
         foreach (var shot in Sim.RecentShots)
         {
-            if (shot.Time <= since) continue;
+            if (!New(shot.Time)) continue;
             var weapon = _byId.TryGetValue(shot.ShooterId, out var s) ? s.Weapon : null;
             string kind = weapon == null ? "rifle"
                 : weapon.Burst >= 5 && weapon.Range >= 500 ? "mg"
@@ -106,21 +110,21 @@ public partial class SoundView : Node2D
             Play(kind, shot.From, kind == "rifle" ? -6 : -8);
         }
         foreach (var s in _byId.Values)
-            if (s.Weapon.IsIndirect && s.LastShotTime > since && s.LastShotTime <= Sim.Time)
+            if (s.Weapon.IsIndirect && New(s.LastShotTime))
                 Play("mortar", s.Position, -4, 0.04f);
         foreach (var b in Sim.RecentBlasts)
         {
-            if (b.Time <= since) continue;
+            if (!New(b.Time)) continue;
             float r = b.Explosive.KillRadius;
             Play(r <= 4.5f ? "blast_small" : r <= 6f ? "blast_shell" : "blast_bomb", b.At, r <= 4.5f ? -3 : 0, 0.1f);
         }
         // The whistle of a shell coming in, just over a second before it lands
         foreach (var (at, landsAt) in Sim.Incoming)
-            if (landsAt - WhistleSeconds > since && landsAt - WhistleSeconds <= Sim.Time)
+            if (New(landsAt - WhistleSeconds))
                 Play("incoming", at, -10, 0.05f);
         DigSounds();
         Loops();
-        _seenUntil = Sim.Time;
+        _seenUntil = now;
     }
 
     /// <summary>A spade now and then from each team digging in.</summary>

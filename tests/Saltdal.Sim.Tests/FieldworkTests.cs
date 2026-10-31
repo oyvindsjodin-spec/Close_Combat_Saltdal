@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Numerics;
 using Saltdal.Sim;
@@ -96,6 +97,40 @@ public class FieldworkTests
         Assert.Equal(3, sim.Trenches.Count);
         Assert.All(team.Soldiers, s => Assert.True(sim.HasTrench(s.Position)));
         Assert.True(sim.HitChance(enemy.Soldiers[0], target, 140) < open * 0.5f);
+    }
+
+    [Fact]
+    public void DiggingInMakesALineOfFoxholesFacingTheEnemy()
+    {
+        var sim = new Simulation(Village());
+        var team = sim.SpawnTeam("Section", Side.Allied, new Vector2(100, 60), new[] { "a", "b", "c", "d", "e", "f" });
+        sim.PrepUntil = 300;
+        // The enemy is expected from the south
+        sim.OrderDigIn(team, new Vector2(100, 200));
+        for (int i = 0; i < 1200; i++) sim.Tick();
+        Assert.Equal(6, sim.Trenches.Count);
+        // The leader a little behind the middle, the rest in a line across, west to east
+        var line = team.Soldiers.Skip(1).Select(s => s.Position).OrderBy(p => p.X).ToList();
+        Assert.True(line.Max(p => p.Y) - line.Min(p => p.Y) < 3f, "the holes make a line across the way they face");
+        for (int i = 1; i < line.Count; i++)
+            Assert.InRange(line[i].X - line[i - 1].X, 4f, 6f);
+        Assert.True(team.Soldiers[0].Position.Y < line.Average(p => p.Y) - 3f, "the leader is behind the line");
+        // Everyone faces south
+        Assert.All(team.Soldiers, s => Assert.InRange(s.Facing, MathF.PI / 2 - 0.2f, MathF.PI / 2 + 0.2f));
+    }
+
+    [Fact]
+    public void DefendingMenLineUpFacingTheEnemy()
+    {
+        var sim = new Simulation(Village());
+        var team = sim.SpawnTeam("Section", Side.Allied, new Vector2(100, 60), new[] { "a", "b", "c", "d" });
+        // Enemy expected from the east: the line runs north to south
+        sim.OrderDefend(team, new Vector2(220, 60));
+        for (int i = 0; i < 200; i++) sim.Tick();
+        var line = team.Soldiers.Skip(1).Select(s => s.Position).ToList();
+        Assert.True(line.Max(p => p.X) - line.Min(p => p.X) < 3f);
+        Assert.True(line.Max(p => p.Y) - line.Min(p => p.Y) > 8f);
+        Assert.All(team.Soldiers, s => Assert.InRange(s.Facing, -0.2f, 0.2f));
     }
 
     [Fact]
