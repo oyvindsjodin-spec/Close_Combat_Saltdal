@@ -48,6 +48,7 @@ public partial class Main : Node2D
     PopupMenu _orderMenu = null!;
     int _baseOrderItems;
     GroundworksView _groundworks = null!;
+    CratersView _craters = null!;
     FireView _fire = null!;
     AimView _aim = null!;
     SoundView _sound = null!;
@@ -93,6 +94,10 @@ public partial class Main : Node2D
 
         _mapView = new MapView();
         AddChild(_mapView);
+
+        // Shell holes stay on the ground for the rest of the battle
+        _craters = new CratersView();
+        AddChild(_craters);
 
         // Trenches, ruins and house floors lie under the men; flames and smoke rise over them
         _groundworks = new GroundworksView();
@@ -172,6 +177,16 @@ public partial class Main : Node2D
                 _camera.Position = View.ToScreen(house.Center);
             }
         }
+        if (args.Contains("--shell") && _simOrNull != null)
+        {
+            // Developer check: a few shells land in open ground 60 m in front of the player's men, to see the craters
+            var team = _sim.Teams.First(t => t.Side == PlayerSide);
+            var at = team.Center + new Vec(0, PlayerSide == Side.Allied ? 60 : -60);
+            Explosive[] kinds = { Explosive.Mortar2Inch, Explosive.Mortar81, Explosive.MountainGun75, Explosive.Gun25Pounder, Explosive.Bomb250Kg };
+            for (int i = 0; i < kinds.Length; i++)
+                _sim.Explode(at + new Vec(-40 + 20 * i, (i % 2) * 12), kinds[i], Simulation.Other(PlayerSide));
+            _camera.Position = View.ToScreen(at);
+        }
         if (args.Contains("--dig") && _simOrNull != null)
             foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide))
                 _battle.DigIn(t, t.Center + new Vec(0, PlayerSide == Side.Allied ? 200 : -200));
@@ -246,6 +261,7 @@ public partial class Main : Node2D
         _units.Sim = _sim;
         _units.PlayerSide = side;
         _groundworks.Sim = _fire.Sim = _aim.Sim = _sim;
+        _craters.Sim = _sim;
         _sound.Sim = _sim;
         _voices.Sim = _sim;
         _voices.Battle = _battle;
