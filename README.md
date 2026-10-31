@@ -46,7 +46,7 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 | Defend | Lies down facing the point and fires at anything in range |
 | Hide | Lies low and holds fire unless the enemy gets very close |
 | Stop | Halts where it is |
-| Call 25-pounders / mountain guns / Stuka | HQ teams only (Platoon HQ, Zugtrupp): the guns shell the point about 50 seconds later. The HQ must be able to see the spot, and there are only two missions |
+| Call 25-pounders, mountain guns or Stuka | HQ teams only (Platoon HQ, Zugtrupp): the strike lands about a minute later. The HQ must be able to see the spot, and each has only one or two missions |
 
 Mortar teams fire on their own, now and then, at groups of three or more
 enemies they can see, but always keep the last 6 bombs back. Give a mortar team
