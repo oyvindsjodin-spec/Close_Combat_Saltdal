@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Saltdal.Sim;
@@ -21,7 +22,11 @@ public partial class Main : Node2D
 
     MapData _map = null!;
     MapView _mapView = null!;
-    Scenario _scenario = Scenarios.Find("pothus");
+    GameData _data = null!;
+    Scenario _scenario = null!;
+    /// <summary>The forces the player chose for this battle and side, kept for "fight again".</summary>
+    List<string>? _picks;
+    ForceScreen _forceScreen = null!;
     string? _loadedMap;
     Simulation? _simOrNull;
     Simulation _sim => _simOrNull!;
@@ -45,6 +50,23 @@ public partial class Main : Node2D
 
     public override void _Ready()
     {
+        try
+        {
+            _data = DataLoader.Load();
+        }
+        catch (GameDataException e)
+        {
+            // A mistake in a data file: say what and where instead of crashing
+            var ui = new CanvasLayer();
+            AddChild(ui);
+            var msg = new Label { Text = "Could not read the game data.\n\n" + e.Message, Position = new Vector2(40, 40) };
+            msg.AddThemeFontSizeOverride("font_size", 18);
+            ui.AddChild(msg);
+            GD.PushError(e.Message);
+            return;
+        }
+        _scenario = _data.Find("pothus");
+
         _mapView = new MapView();
         AddChild(_mapView);
 
@@ -65,9 +87,10 @@ public partial class Main : Node2D
         if (args.Contains("--fast")) _speed = 4;
         foreach (var a in args)
             if (a.StartsWith("--battle="))
-                _scenario = Scenarios.Find(a["--battle=".Length..]);
+                _scenario = _data.Find(a["--battle=".Length..]);
         if (args.Contains("--german")) StartBattle(Side.German);
         else if (args.Contains("--british")) StartBattle(Side.Allied);
+        else if (args.Contains("--forces")) ChooseForces(Side.Allied);
         else ShowMenu();
         foreach (var a in args)
             if (a.StartsWith("--zoom=") && _simOrNull != null)
@@ -81,6 +104,7 @@ public partial class Main : Node2D
     {
         _endScreen.Visible = false;
         _panel.Visible = false;
+        _forceScreen.Visible = false;
         _menu.Visible = true;
     }
 
@@ -96,8 +120,19 @@ public partial class Main : Node2D
 
     void ChooseBattle(Scenario scenario)
     {
+        if (_scenario != scenario) _picks = null;
         _scenario = scenario;
         LoadMap(scenario.Map);
+    }
+
+    /// <summary>After picking a side: choose what to bring. The last choice for this battle and side is kept.</summary>
+    void ChooseForces(Side side)
+    {
+        if (side != PlayerSide) _picks = null;
+        PlayerSide = side;
+        _menu.Visible = false;
+        _panel.Visible = false;
+        _forceScreen.Show(_scenario, side, _picks);
     }
 
     void StartBattle(Side side)
@@ -105,9 +140,10 @@ public partial class Main : Node2D
         LoadMap(_scenario.Map);
         PlayerSide = side;
         _menu.Visible = false;
+        _forceScreen.Visible = false;
         _panel.Visible = true;
         _paused = false;
-        _simOrNull = _scenario.Build(_map, _seed++, side);
+        _simOrNull = _scenario.Build(_map, _seed++, side, _picks);
         _units.Sim = _sim;
         _units.PlayerSide = side;
         _selected = null;
@@ -185,10 +221,19 @@ public partial class Main : Node2D
         margin.AddChild(_endText);
         _endScreen.AddChild(margin);
 
-        _menu = new BattleMenu();
-        _menu.SideChosen += StartBattle;
+        _menu = new BattleMenu { Battles = _data.Battles };
+        _menu.SideChosen += ChooseForces;
         _menu.BattleChosen += ChooseBattle;
         center.AddChild(_menu);
+
+        _forceScreen = new ForceScreen { Visible = false };
+        _forceScreen.Confirmed += picks =>
+        {
+            _picks = picks;
+            StartBattle(PlayerSide);
+        };
+        _forceScreen.Back += ShowMenu;
+        center.AddChild(_forceScreen);
     }
 
     public override void _Process(double delta)
@@ -222,7 +267,7 @@ public partial class Main : Node2D
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (_simOrNull == null || _menu.Visible) return;
+        if (_simOrNull == null || _menu.Visible || _forceScreen.Visible) return;
         if (e is InputEventMouseButton { Pressed: true } mb && !_sim.IsOver)
         {
             var world = View.ToWorld(GetGlobalMousePosition());

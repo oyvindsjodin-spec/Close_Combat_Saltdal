@@ -1,0 +1,178 @@
+{
+  "_help": "One battle. at is a place on the map as fractions of its width and height: [0, 0] is the north-west corner, [1, 1] the south-east. Teams with default true (the default) are the historical force; the rest can be chosen instead before the battle. budget is the points a side may spend; leave it out to use the cost of the historical force. men gives the soldiers' names; fewer names than the team has places makes a smaller team.",
+  "id": "pothus",
+  "order": 2,
+  "title": "Pothus, 25 May 1940",
+  "map": "pothus",
+  "minutes": 60,
+  "briefing": "Two days later and 25 km further north. At Pothus, where a side valley joins Saltdalselva, the Irish Guards and a Norwegian mortar team hold the line. The road bridge is already blown; the British hold the west bank, the ridge between the valleys and Pothus farm. Hold the flags for an hour; the bridge and the ridge count double.",
+  "alliedRole": "Defend. Three Irish Guards sections, platoon HQ and the Norwegian 81 mm mortar. The HQ can call a troop of 25-pounders twice, if the signal gets through.",
+  "germanRole": "Attack. Six squads with MG 34s, the Zugtrupp and a mortar. The Zugtrupp can call the mountain guns twice and one Stuka. The river can be waded at two gravel bars.",
+  "flags": [
+    {
+      "name": "Pothus bridge",
+      "at": [0.44, 0.17],
+      "value": 2
+    },
+    {
+      "name": "Røkland",
+      "at": [0.24, 0.13]
+    },
+    {
+      "name": "The ridge",
+      "at": [0.45, 0.31],
+      "value": 2
+    },
+    {
+      "name": "Pothus farm",
+      "at": [0.67, 0.28]
+    }
+  ],
+  "allied": {
+    "face": [0, 200],
+    "units": [
+      {
+        "type": "rifle_section",
+        "name": "1 Section",
+        "at": [0.45, 0.33],
+        "men": ["Cpl Byrne", "LCpl Walsh", "Gdsm Doyle", "Gdsm Ryan", "Gdsm Kelly", "Gdsm Nolan", "Gdsm Quinn"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "2 Section",
+        "at": [0.42, 0.19],
+        "men": ["Cpl Moran", "LCpl Flynn", "Gdsm Hayes", "Gdsm Lynch", "Gdsm Daly", "Gdsm Power", "Gdsm Casey"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "3 Section",
+        "at": [0.66, 0.3],
+        "men": ["Cpl Duffy", "LCpl Keane", "Gdsm Brady", "Gdsm Murray", "Gdsm Foley", "Gdsm Healy", "Gdsm Byrne"]
+      },
+      {
+        "type": "platoon_hq",
+        "name": "Platoon HQ",
+        "at": [0.36, 0.17],
+        "required": true,
+        "men": ["Lt O'Neill", "Sgt Gallagher", "Gdsm Tierney", "Gdsm Rooney"]
+      },
+      {
+        "type": "norwegian_mortar",
+        "name": "Norw. mortars",
+        "at": [0.27, 0.24],
+        "men": ["Sersjant Hansen", "Korporal Olsen", "Soldat Johansen", "Soldat Pedersen"]
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 1 Ind. Coy",
+        "at": [0.28, 0.16],
+        "default": false,
+        "men": ["Sgt Evans", "Pte Hughes", "Pte Price", "Pte Rees", "Pte Owen", "Pte Pritchard"]
+      },
+      {
+        "type": "mortar_3in",
+        "name": "3-inch mortar",
+        "at": [0.3, 0.1],
+        "default": false,
+        "men": ["Sgt Kavanagh", "Gdsm Shea", "Gdsm Dunne"]
+      }
+    ],
+    "support": [
+      {
+        "type": "25pdr",
+        "name": "25-pounder troop",
+        "missions": 2
+      },
+      {
+        "type": "25pdr",
+        "name": "25-pounders, extra mission",
+        "missions": 1,
+        "default": false
+      }
+    ]
+  },
+  "german": {
+    "units": [
+      {
+        "type": "gruppe",
+        "name": "1. Gruppe",
+        "at": [0.47, 0.8],
+        "men": ["Uffz. Huber", "Gefr. Mayr", "Jg. Gruber", "Jg. Hofer", "Jg. Wimmer", "Jg. Brandl", "Jg. Lechner", "Jg. Stadler", "Jg. Moser"]
+      },
+      {
+        "type": "gruppe",
+        "name": "2. Gruppe",
+        "at": [0.5, 0.74],
+        "men": ["Uffz. Pichler", "Gefr. Aigner", "Jg. Reiter", "Jg. Fuchs", "Jg. Bauer", "Jg. Egger", "Jg. Haas", "Jg. Kofler", "Jg. Leitner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "3. Gruppe",
+        "at": [0.62, 0.76],
+        "men": ["Uffz. Weber", "Gefr. Steiner", "Jg. Berger", "Jg. Wagner", "Jg. Schwarz", "Jg. Winkler", "Jg. Maier", "Jg. Lang", "Jg. Koller"]
+      },
+      {
+        "type": "gruppe",
+        "name": "4. Gruppe",
+        "at": [0.55, 0.83],
+        "men": ["Uffz. Hofmann", "Gefr. Brunner", "Jg. Pfeifer", "Jg. Rainer", "Jg. Strobl", "Jg. Unger", "Jg. Wolf", "Jg. Zach", "Jg. Ortner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "5. Gruppe",
+        "at": [0.68, 0.8],
+        "men": ["Uffz. Graf", "Gefr. Lindner", "Jg. Hackl", "Jg. Kern", "Jg. Pirker", "Jg. Rauch", "Jg. Sommer", "Jg. Thaler", "Jg. Vogl"]
+      },
+      {
+        "type": "gruppe",
+        "name": "6. Gruppe",
+        "at": [0.74, 0.84],
+        "men": ["Uffz. Kaiser", "Gefr. Moritz", "Jg. Danner", "Jg. Eberl", "Jg. Frank", "Jg. Gasser", "Jg. Holzer", "Jg. Jäger", "Jg. Kirchner"]
+      },
+      {
+        "type": "zugtrupp",
+        "name": "Zugtrupp",
+        "at": [0.55, 0.86],
+        "required": true,
+        "men": ["Lt. Kranz", "Ofw. Riedl", "Gefr. Ebner"]
+      },
+      {
+        "type": "granatwerfer",
+        "name": "Granatwerfer",
+        "at": [0.6, 0.88],
+        "men": ["Uffz. Eder", "Gefr. Fink", "Jg. Huemer"]
+      },
+      {
+        "type": "gruppe",
+        "name": "7. Gruppe",
+        "at": [0.4, 0.86],
+        "men": ["Uffz. Seidl", "Gefr. Riegler", "Jg. Auer", "Jg. Binder", "Jg. Dorfer", "Jg. Ennser", "Jg. Gschwandtner", "Jg. Hager", "Jg. Illmer"],
+        "default": false
+      }
+    ],
+    "support": [
+      {
+        "type": "mountain_guns",
+        "name": "Mountain guns",
+        "missions": 2
+      },
+      {
+        "type": "stuka",
+        "name": "Ju 87 Stuka",
+        "missions": 1
+      },
+      {
+        "type": "mountain_guns",
+        "name": "Mountain guns, extra mission",
+        "missions": 1,
+        "default": false
+      },
+      {
+        "type": "stuka",
+        "name": "Second Stuka sortie",
+        "missions": 1,
+        "default": false
+      }
+    ]
+  }
+}

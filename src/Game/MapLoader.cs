@@ -17,3 +17,19 @@ public static class MapLoader
         return MapData.FromBytes(width, height, cell, heights, terrain);
     }
 }
+
+/// <summary>Reads the game data files (weapons, units, battles) through Godot, so it works in an exported game too.</summary>
+public static class DataLoader
+{
+    public static GameData Load(string folder = "res://data")
+    {
+        var battles = new System.Collections.Generic.List<(string, string)>();
+        foreach (var file in DirAccess.GetFilesAt($"{folder}/battles"))
+            if (file.EndsWith(".json"))
+                battles.Add((file, FileAccess.GetFileAsString($"{folder}/battles/{file}")));
+        return GameData.Load(
+            FileAccess.GetFileAsString($"{folder}/weapons.json"),
+            FileAccess.GetFileAsString($"{folder}/units.json"),
+            battles);
+    }
+}

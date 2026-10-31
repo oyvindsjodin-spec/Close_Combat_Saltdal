@@ -30,6 +30,9 @@ public sealed class Team
     /// <summary>A headquarters team: its leaders steady nearby men of other teams too, and it can call off-map support.</summary>
     public bool IsHeadquarters { get; set; }
 
+    /// <summary>Whose army the team belongs to (british, norwegian, german); picks the uniform.</summary>
+    public string Nation { get; set; } = "";
+
     /// <summary>Until this time the team is still passing the last order around and does not move.</summary>
     public float OrderDelayUntil { get; internal set; }
 

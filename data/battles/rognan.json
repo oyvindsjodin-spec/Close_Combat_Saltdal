@@ -1,0 +1,161 @@
+{
+  "_help": "One battle. at is a place on the map as fractions of its width and height: [0, 0] is the north-west corner, [1, 1] the south-east. Teams with default true (the default) are the historical force; the rest can be chosen instead before the battle. budget is the points a side may spend; leave it out to use the cost of the historical force. men gives the soldiers' names; fewer names than the team has places makes a smaller team.",
+  "id": "rognan",
+  "order": 3,
+  "title": "Rognan, 26 May 1940",
+  "map": "rognan",
+  "minutes": 30,
+  "briefing": "The road ends at Rognan, at the head of Saltdalsfjorden. While ferries and puffers carry the brigade across the fjord, a rearguard holds the village and the quay. Hold the quay for 30 minutes and the last boats get away; the quay counts double.",
+  "alliedRole": "Defend. Two Irish Guards sections, HQ, and two Independent Company sections in the houses. One last 25-pounder mission.",
+  "germanRole": "Attack. Five squads, the Zugtrupp and a mortar, with the mountain guns and a Stuka. Take the quay before the boats leave.",
+  "flags": [
+    {
+      "name": "The quay",
+      "at": [0.56, 0.15],
+      "value": 2
+    },
+    {
+      "name": "Rognan village",
+      "at": [0.5, 0.36]
+    },
+    {
+      "name": "Nygård",
+      "at": [0.31, 0.5]
+    }
+  ],
+  "allied": {
+    "face": [-100, 200],
+    "units": [
+      {
+        "type": "rifle_section",
+        "name": "1 Section",
+        "at": [0.3, 0.47],
+        "men": ["Cpl Byrne", "LCpl Walsh", "Gdsm Doyle", "Gdsm Ryan", "Gdsm Kelly", "Gdsm Nolan"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "2 Section",
+        "at": [0.47, 0.42],
+        "men": ["Cpl Moran", "LCpl Flynn", "Gdsm Hayes", "Gdsm Lynch", "Gdsm Daly", "Gdsm Power"]
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 3 Ind. Coy (1)",
+        "at": [0.53, 0.38],
+        "men": ["Sgt Fraser", "Pte Munro", "Pte Ross", "Pte Gunn", "Pte Mackay", "Pte Sutherland"]
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 3 Ind. Coy (2)",
+        "at": [0.44, 0.33],
+        "men": ["Cpl Grant", "Pte Bain", "Pte Mackenzie", "Pte Urquhart", "Pte Matheson", "Pte Dunbar"]
+      },
+      {
+        "type": "platoon_hq",
+        "name": "Rearguard HQ",
+        "at": [0.53, 0.22],
+        "required": true,
+        "men": ["Capt Reynolds", "Sgt Gallagher", "Gdsm Tierney", "Gdsm Rooney"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "3 Section",
+        "at": [0.4, 0.4],
+        "default": false,
+        "men": ["Cpl Duffy", "LCpl Keane", "Gdsm Brady", "Gdsm Murray", "Gdsm Foley", "Gdsm Healy"]
+      },
+      {
+        "type": "mortar_3in",
+        "name": "3-inch mortar",
+        "at": [0.58, 0.25],
+        "default": false,
+        "men": ["Sgt Kavanagh", "Gdsm Shea", "Gdsm Dunne"]
+      }
+    ],
+    "support": [
+      {
+        "type": "25pdr",
+        "name": "25-pounder troop",
+        "missions": 1
+      }
+    ]
+  },
+  "german": {
+    "units": [
+      {
+        "type": "gruppe",
+        "name": "1. Gruppe",
+        "at": [0.12, 0.95],
+        "men": ["Uffz. Huber", "Gefr. Mayr", "Jg. Gruber", "Jg. Hofer", "Jg. Wimmer", "Jg. Brandl", "Jg. Lechner", "Jg. Stadler", "Jg. Moser"]
+      },
+      {
+        "type": "gruppe",
+        "name": "2. Gruppe",
+        "at": [0.22, 0.96],
+        "men": ["Uffz. Pichler", "Gefr. Aigner", "Jg. Reiter", "Jg. Fuchs", "Jg. Bauer", "Jg. Egger", "Jg. Haas", "Jg. Kofler", "Jg. Leitner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "3. Gruppe",
+        "at": [0.32, 0.97],
+        "men": ["Uffz. Weber", "Gefr. Steiner", "Jg. Berger", "Jg. Wagner", "Jg. Schwarz", "Jg. Winkler", "Jg. Maier", "Jg. Lang", "Jg. Koller"]
+      },
+      {
+        "type": "gruppe",
+        "name": "4. Gruppe",
+        "at": [0.17, 0.99],
+        "men": ["Uffz. Hofmann", "Gefr. Brunner", "Jg. Pfeifer", "Jg. Rainer", "Jg. Strobl", "Jg. Unger", "Jg. Wolf", "Jg. Zach", "Jg. Ortner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "5. Gruppe",
+        "at": [0.4, 0.98],
+        "men": ["Uffz. Graf", "Gefr. Lindner", "Jg. Hackl", "Jg. Kern", "Jg. Pirker", "Jg. Rauch", "Jg. Sommer", "Jg. Thaler", "Jg. Vogl"]
+      },
+      {
+        "type": "zugtrupp",
+        "name": "Zugtrupp",
+        "at": [0.25, 0.99],
+        "required": true,
+        "men": ["Lt. Kranz", "Ofw. Riedl", "Gefr. Ebner"]
+      },
+      {
+        "type": "granatwerfer",
+        "name": "Granatwerfer",
+        "at": [0.3, 0.99],
+        "men": ["Uffz. Eder", "Gefr. Fink", "Jg. Huemer"]
+      },
+      {
+        "type": "gruppe",
+        "name": "6. Gruppe",
+        "at": [0.06, 0.97],
+        "men": ["Uffz. Kaiser", "Gefr. Moritz", "Jg. Danner", "Jg. Eberl", "Jg. Frank", "Jg. Gasser", "Jg. Holzer", "Jg. Jäger", "Jg. Kirchner"],
+        "default": false
+      }
+    ],
+    "support": [
+      {
+        "type": "mountain_guns",
+        "name": "Mountain guns",
+        "missions": 2
+      },
+      {
+        "type": "stuka",
+        "name": "Ju 87 Stuka",
+        "missions": 1
+      },
+      {
+        "type": "mountain_guns",
+        "name": "Mountain guns, extra mission",
+        "missions": 1,
+        "default": false
+      },
+      {
+        "type": "stuka",
+        "name": "Second Stuka sortie",
+        "missions": 1,
+        "default": false
+      }
+    ]
+  }
+}
