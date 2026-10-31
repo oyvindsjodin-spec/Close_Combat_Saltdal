@@ -114,6 +114,8 @@ public sealed partial class Simulation
     /// groups of men, or on the point given with a Fire order.
     /// </summary>
     const float MortarAutoPause = 15f;
+    /// <summary>How close together men must be for a crew to think them worth a bomb.</summary>
+    const float MortarGroupRadius = 15f;
 
     void ChooseMortarTarget(Soldier s)
     {
@@ -130,17 +132,17 @@ public sealed partial class Simulation
             if (InRange(s.Team.OrderPoint)) s.AreaTarget = s.Team.OrderPoint;
             return;
         }
-        // Left to themselves, crews save bombs: only groups of three or more,
+        // Left to themselves, crews save bombs: only men in twos or more,
         // a pause between bombs to watch where they land, and one barrage
         // kept back for when they are told where to fire
         if (Time - s.LastFired < MortarAutoPause || s.Ammo <= MortarBarrage) return;
         var seen = VisibleEnemies(s.Side).Where(e => e.CanAct).ToList();
         Soldier? best = null;
-        int bestCount = 2;
+        int bestCount = 1;
         foreach (var e in seen)
         {
             if (!InRange(e.Position)) continue;
-            int count = seen.Count(o => Vector2.DistanceSquared(o.Position, e.Position) < 12 * 12);
+            int count = seen.Count(o => Vector2.DistanceSquared(o.Position, e.Position) < MortarGroupRadius * MortarGroupRadius);
             if (count > bestCount)
             {
                 bestCount = count;

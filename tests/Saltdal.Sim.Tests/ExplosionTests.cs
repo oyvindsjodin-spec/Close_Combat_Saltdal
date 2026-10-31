@@ -89,4 +89,32 @@ public class ExplosionTests
         sim.OrderFire(mortar, new Vector2(150, 80)); // 60 m away: too close
         Assert.Contains(sim.Messages, m => m.Text.Contains("too close"));
     }
+
+    [Fact]
+    public void MortarShellsAPairOfMenOnItsOwn()
+    {
+        var sim = new Simulation(Field(), seed: 4);
+        var mortar = sim.SpawnTeam("Mortar", Side.Allied, new Vector2(150, 20), new[] { "a" }, Weapon.Mortar81Norwegian);
+        var targets = sim.SpawnTeam("Targets", Side.German, new Vector2(150, 260), new[] { "b", "c" });
+        foreach (var s in targets.Soldiers) { s.Ammo = 0; s.Posture = Posture.Standing; }
+        sim.OrderDefend(mortar, targets.Center);
+        for (int i = 0; i < 900; i++) sim.Tick();
+        Assert.True(mortar.Soldiers[0].Ammo < Weapon.Mortar81Norwegian.Ammo, "the mortar should have fired at the pair");
+    }
+
+    [Fact]
+    public void TheTutorialMortarTeamFiresWhenTold()
+    {
+        var sc = ScenarioTests.Data.Find("tutorial");
+        var sim = sc.Build(ScenarioTests.LoadMap(sc.Map), 1, Side.Allied);
+        while (sim.InPrep) sim.Tick();
+        var team = sim.Teams.First(t => t.Side == Side.Allied && !t.IsHeadquarters && t.Soldiers.Any(s => s.Weapon.IsIndirect));
+        Assert.True(team.Soldiers.Count > 1, "a mortar team has a crew, not just the man with the tube");
+        var mortar = team.Soldiers.First(s => s.Weapon.IsIndirect);
+        int before = mortar.Ammo;
+        var enemy = sim.Teams.First(t => t.Side == Side.German).Center;
+        sim.OrderFire(team, mortar.Position + Vector2.Normalize(enemy - mortar.Position) * 400);
+        for (int i = 0; i < 1200; i++) sim.Tick();
+        Assert.True(mortar.Ammo <= before - Simulation.MortarBarrage, $"fired {before - mortar.Ammo} bombs");
+    }
 }
