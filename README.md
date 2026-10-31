@@ -4,14 +4,20 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 2b. One battle at Pothus on 25 May 1940, playable from
-either side. As the British you command a platoon of the Irish Guards and a
-Norwegian mortar team holding three flags against five German squads. As the
-Germans you attack with those squads, a mortar and the platoon HQ, against a
-computer that holds its flags, reinforces and counter-attacks. Soldiers see,
+**Status:** Phase 2c. Three battles from the fighting in Saltdal, each
+playable from either side:
+
+| Battle | Map | What happens |
+| --- | --- | --- |
+| Viskiskoia, 23 May 1940 | Open birch upland, 1.5 km square | Scots Guards and an Independent Company hold the road bridge |
+| Pothus, 25 May 1940 | Where a side valley joins Saltdalselva, 2 km square | Irish Guards and Norwegian mortars hold the west bank, the ridge and Pothus farm; the road bridge is blown |
+| Rognan, 26 May 1940 | Village and quay at the head of the fjord, 2 km square | A rearguard holds the quay while the last boats leave |
+
+The computer attacks or defends, whichever side you do not pick. Soldiers see,
 shoot, take cover, get pinned, panic and run; whoever holds more flag value when
 time runs out wins. Mortars, 25-pounder guns, German mountain guns and a Stuka
-dive bomber add shellfire, and leaders keep their men steady.
+add shellfire, and leaders keep their men steady. Houses give good cover and
+block sight; fords let men wade the river slowly and in the open.
 
 ## Running the game
 
@@ -79,12 +85,15 @@ while one of your men can see them; a faint circle marks where one was last seen
 
 ## Maps
 
-`tools/build_map.py` downloads open elevation tiles for a square area and
-guesses terrain types (forest, rock, snow, river, road) from height and slope.
-The Pothus map was built with:
+Each map has a recipe in `tools/maps/<name>.json`: its centre and size, and the
+parts the height model cannot give, written by hand (the road's route, blown
+bridges, fords, side streams, farms with their fields and houses, a town).
+`tools/build_map.py` downloads open elevation tiles for the area, guesses
+forest, rock, snow and the river from height and slope, adds the recipe's parts
+and writes the map to `data/maps/<name>/`:
 
-    python3 tools/build_map.py pothus --lat 66.950 --lon 15.302 --bridges 0.40,0.80
+    python3 tools/build_map.py tools/maps/pothus.json tools/maps/viskiskoia.json tools/maps/rognan.json
 
-The location is a best guess at the Pothus battlefield and should be checked
-against a map. Forest, fields, farms and the real road and bridges will be
-painted by hand later.
+Locations: Pothus farm 66.983 N 15.333 E (the map is centred on 66.979 N
+15.325 E), Viskiskoia 66.75 N 15.483 E, Rognan 67.098 N 15.39 E. The roads,
+farms and houses are laid out from period photos and maps, not surveyed.

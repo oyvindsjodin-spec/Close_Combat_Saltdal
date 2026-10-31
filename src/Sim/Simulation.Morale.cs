@@ -138,7 +138,7 @@ public sealed partial class Simulation
                 int x = cx + dx, y = cy + dy;
                 if (!Map.IsPassable(x, y)) continue;
                 var t = Map.TerrainAt(x, y);
-                if (t != TerrainType.Forest && t != TerrainType.Rock) continue;
+                if (!TerrainInfo.IsCover(t)) continue;
                 float d = dx * dx + dy * dy;
                 if (d < bestD)
                 {

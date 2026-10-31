@@ -25,6 +25,7 @@ public sealed record Weapon(
     public static readonly Weapon LeeEnfield = new("Rifle No. 1 Mk III", 600, 1, 0f, 3.0f, 0.35f, 6f, 3f, 100);
     public static readonly Weapon Bren = new("Bren gun", 800, 5, 0.12f, 2.5f, 0.30f, 5f, 6f, 600);
     public static readonly Weapon Mortar2Inch = new("2-inch mortar", 460, 1, 0f, 6f, 0f, 0f, 0f, 12, Explosive.Mortar2Inch, 90f);
+    public static readonly Weapon Mortar3Inch = new("3-inch mortar", 1500, 1, 0f, 6f, 0f, 0f, 0f, 20, Explosive.Mortar81, 120f);
 
     // Norwegian
     public static readonly Weapon Krag = new("Krag-Jørgensen", 600, 1, 0f, 3.2f, 0.35f, 6f, 3f, 80);

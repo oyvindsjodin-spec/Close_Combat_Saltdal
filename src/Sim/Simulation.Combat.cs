@@ -225,6 +225,8 @@ public sealed partial class Simulation
         {
             TerrainType.Forest => 0.5f,
             TerrainType.Rock => 0.45f,
+            TerrainType.Building => 0.3f,
+            TerrainType.Ford => 1.2f,
             _ => 1f,
         };
         if (target.IsMoving) p *= 0.7f;

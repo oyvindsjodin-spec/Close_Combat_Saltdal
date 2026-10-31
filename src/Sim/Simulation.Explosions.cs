@@ -89,6 +89,7 @@ public sealed partial class Simulation
             {
                 TerrainType.Rock => 0.5f,
                 TerrainType.Forest => 0.85f,
+                TerrainType.Building => 0.6f,
                 _ => 1f,
             };
             if (Rng.Chance(p))

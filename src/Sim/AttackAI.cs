@@ -36,8 +36,7 @@ public sealed class AttackAI : ICommander
         // The whole force goes for one flag at a time: the open one nearest its centre
         var ours = sim.Soldiers.Where(s => s.Side == Side && s.IsEffective).ToList();
         var mass = ours.Count == 0 ? Vector2.Zero : ours.Aggregate(Vector2.Zero, (a, s) => a + s.Position) / ours.Count;
-        var focus = sim.Flags.Where(f => f.Owner != Side)
-            .OrderBy(f => Vector2.DistanceSquared(f.Position, mass)).FirstOrDefault();
+        var focus = ChooseFocus(sim, mass);
         foreach (var team in sim.Teams.Where(t => t.Side == Side && !t.IsDestroyed))
         {
             if (team.Morale >= MoraleState.Cowering)
@@ -112,6 +111,48 @@ public sealed class AttackAI : ICommander
             float bound = contact && Vector2.Distance(goal, center) > length * 1.5f ? length : float.PositiveInfinity;
             sim.OrderMove(team, goal, mode, preferCover: contact, maxDistance: bound);
         }
+    }
+
+    VictoryFlag? _focus;
+    float _focusChosenAt = float.NegativeInfinity;
+
+    /// <summary>
+    /// The open flag that is quickest to reach on foot from the middle of the
+    /// force, so a river or a cliff in the way counts against it. Re-chosen
+    /// every minute, or at once when the current one is taken.
+    /// </summary>
+    VictoryFlag? ChooseFocus(Simulation sim, Vector2 mass)
+    {
+        bool stillOpen = _focus != null && _focus.Owner != Side;
+        if (stillOpen && sim.Time - _focusChosenAt < 60f) return _focus;
+        _focusChosenAt = sim.Time;
+        _focus = null;
+        float best = float.MaxValue;
+        foreach (var f in sim.Flags.Where(f => f.Owner != Side))
+        {
+            var path = sim.Pathfinder.FindPath(mass, f.Position);
+            float length = path == null ? float.MaxValue / 2 : PathLength(mass, path);
+            // A big prize is worth a longer walk
+            length /= 1f + 0.25f * (f.Value - 1);
+            if (length < best)
+            {
+                best = length;
+                _focus = f;
+            }
+        }
+        return _focus;
+    }
+
+    static float PathLength(Vector2 from, List<Vector2> path)
+    {
+        float total = 0;
+        var prev = from;
+        foreach (var p in path)
+        {
+            total += Vector2.Distance(prev, p);
+            prev = p;
+        }
+        return total;
     }
 
     /// <summary>

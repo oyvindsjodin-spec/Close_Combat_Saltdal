@@ -1,13 +1,19 @@
 using System;
+using System.Collections.Generic;
 using Godot;
+using Saltdal.Sim;
 using Side = Saltdal.Sim.Side;
 
 namespace Saltdal.Game;
 
-/// <summary>The screen before a battle: a short briefing and a choice of side.</summary>
+/// <summary>The screen before a battle: pick one of the battles, read the briefing, choose a side.</summary>
 public partial class BattleMenu : PanelContainer
 {
     public event Action<Side>? SideChosen;
+    public event Action<Scenario>? BattleChosen;
+
+    readonly List<Button> _battleButtons = new();
+    Label _title = null!, _briefing = null!, _alliedText = null!, _germanText = null!;
 
     public override void _Ready()
     {
@@ -17,30 +23,55 @@ public partial class BattleMenu : PanelContainer
             ContentMarginLeft = 28, ContentMarginRight = 28, ContentMarginTop = 22, ContentMarginBottom = 22,
             CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4, CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
         });
-        var box = new VBoxContainer { CustomMinimumSize = new Vector2(620, 0) };
+        var box = new VBoxContainer { CustomMinimumSize = new Vector2(660, 0) };
         box.AddThemeConstantOverride("separation", 14);
         AddChild(box);
 
-        var title = new Label { Text = "Pothus, 25 May 1940", HorizontalAlignment = HorizontalAlignment.Center };
-        title.AddThemeFontSizeOverride("font_size", 28);
-        box.AddChild(title);
+        var heading = new Label { Text = "Saltdal, May 1940", HorizontalAlignment = HorizontalAlignment.Center };
+        heading.AddThemeFontSizeOverride("font_size", 16);
+        heading.Modulate = new Color(1, 1, 1, 0.7f);
+        box.AddChild(heading);
 
-        box.AddChild(Text(
-            "The Germans of 2. Gebirgs-Division are pushing north up Saltdal towards Rognan. " +
-            "At Pothus a platoon of the Irish Guards and a Norwegian mortar team hold the bridge " +
-            "over the Saltdalselva and the farm beside it. Whoever holds more of the three flags " +
-            "after 45 minutes wins; the bridge counts double.", 15));
+        // One button per battle, in the order they were fought
+        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        row.AddThemeConstantOverride("separation", 8);
+        box.AddChild(row);
+        foreach (var sc in Scenarios.All)
+        {
+            var b = new Button { Text = sc.Title, ToggleMode = true, CustomMinimumSize = new Vector2(200, 34) };
+            b.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.18f, 0.19f, 0.17f)));
+            b.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.26f, 0.27f, 0.24f)));
+            b.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.36f, 0.37f, 0.30f)));
+            b.Pressed += () => Select(sc);
+            row.AddChild(b);
+            _battleButtons.Add(b);
+        }
+
+        _title = new Label { HorizontalAlignment = HorizontalAlignment.Center };
+        _title.AddThemeFontSizeOverride("font_size", 28);
+        box.AddChild(_title);
+        _briefing = Text("", 15);
+        box.AddChild(_briefing);
 
         box.AddChild(new HSeparator());
-        box.AddChild(Choice(Side.Allied, "Command the Irish Guards",
-            "Defend. Three rifle sections, platoon HQ and the Norwegian 81 mm mortar. " +
-            "The HQ can call a troop of 25-pounders twice, if the signal gets through."));
-        box.AddChild(Choice(Side.German, "Command the Gebirgsjäger",
-            "Attack. Five squads with MG 34s, the platoon HQ (Zugtrupp) and a mortar. " +
-            "The Zugtrupp can call the mountain guns twice and one Stuka."));
+        box.AddChild(Choice(Side.Allied, "Command the British", out _alliedText));
+        box.AddChild(Choice(Side.German, "Command the Gebirgsjäger", out _germanText));
+
+        Select(Scenarios.Find("pothus"));
     }
 
-    Control Choice(Side side, string title, string text)
+    void Select(Scenario sc)
+    {
+        for (int i = 0; i < _battleButtons.Count; i++)
+            _battleButtons[i].SetPressedNoSignal(Scenarios.All[i] == sc);
+        _title.Text = sc.Title;
+        _briefing.Text = sc.Briefing;
+        _alliedText.Text = sc.AlliedRole;
+        _germanText.Text = sc.GermanRole;
+        BattleChosen?.Invoke(sc);
+    }
+
+    Control Choice(Side side, string title, out Label text)
     {
         var row = new VBoxContainer();
         var button = new Button { Text = title, CustomMinimumSize = new Vector2(0, 40) };
@@ -51,7 +82,8 @@ public partial class BattleMenu : PanelContainer
         button.AddThemeStyleboxOverride("pressed", ButtonStyle(color.Darkened(0.2f)));
         button.Pressed += () => SideChosen?.Invoke(side);
         row.AddChild(button);
-        row.AddChild(Text(text, 14));
+        text = Text("", 14);
+        row.AddChild(text);
         return row;
     }
 
@@ -69,7 +101,7 @@ public partial class BattleMenu : PanelContainer
         {
             Text = text,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(620, 0),
+            CustomMinimumSize = new Vector2(660, 0),
         };
         label.AddThemeFontSizeOverride("font_size", size);
         return label;
