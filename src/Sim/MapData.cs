@@ -71,4 +71,23 @@ public sealed class MapData
     }
 
     public bool IsPassable(int x, int y) => InBounds(x, y) && TerrainInfo.IsPassable(TerrainAt(x, y));
+
+    /// <summary>
+    /// The passable, non-rock cell nearest to a point given as fractions of the
+    /// map's width and height (0,0 is the north-west corner).
+    /// </summary>
+    public Vector2 NearestOpenGround(float fx, float fy)
+    {
+        int cx = (int)(fx * Width), cy = (int)(fy * Height);
+        for (int r = 0; r < 100; r++)
+            for (int dy = -r; dy <= r; dy++)
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r) continue;
+                    int x = cx + dx, y = cy + dy;
+                    if (IsPassable(x, y) && TerrainAt(x, y) != TerrainType.Rock)
+                        return CellCenter(x, y);
+                }
+        return CellCenter(Math.Clamp(cx, 0, Width - 1), Math.Clamp(cy, 0, Height - 1));
+    }
 }

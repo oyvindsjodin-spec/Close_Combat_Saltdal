@@ -13,7 +13,7 @@ The terrain types are a first guess from the height model only. Forest,
 fields and farms will be hand-painted later from historical maps.
 
 Usage:
-    python3 tools/build_map.py pothus --lat 66.950 --lon 15.302 --size 1536 --cell 4
+    python3 tools/build_map.py pothus --lat 66.950 --lon 15.302 --bridges 0.40,0.80
 """
 import argparse, heapq, io, json, math, os, urllib.request
 
@@ -151,6 +151,24 @@ def build(args):
     for r, c in road:
         t[r, c] = BRIDGE if river_mask[r, c] else ROAD
 
+    # Extra bridges across the river, each with a track joining the main road
+    road_mask = (t == ROAD) | (t == BRIDGE)
+    bridges = []
+    for frac in args.bridges:
+        row = int(frac * (rows - 1))
+        water = np.flatnonzero(river_mask[row])
+        if len(water) == 0:
+            continue
+        lo, hi = water.min() - 1, water.max() + 1
+        on_road = np.flatnonzero(road_mask[row])
+        target = on_road[np.argmin(np.abs(on_road - (lo + hi) / 2))] if len(on_road) else hi
+        a, b = sorted((lo, int(target)))
+        for r in (row, row + 1):
+            for c in range(max(a, 0), min(max(b, hi), cols - 1) + 1):
+                if t[r, c] != ROAD:
+                    t[r, c] = BRIDGE if river_mask[r, c] else ROAD
+        bridges.append({"row": row, "col": int((lo + hi) // 2)})
+
     meta = {
         "name": args.name,
         "width": cols,
@@ -159,6 +177,7 @@ def build(args):
         "centerLat": args.lat,
         "centerLon": args.lon,
         "source": "AWS Terrain Tiles (terrarium), zoom %d" % ZOOM,
+        "bridges": bridges,
         "note": "Terrain types are derived from height and slope only; hand edits come later.",
     }
     with open(os.path.join(out, "map.json"), "w") as f:
@@ -188,5 +207,7 @@ if __name__ == "__main__":
     p.add_argument("--treeline", type=float, default=450)
     p.add_argument("--snowline", type=float, default=550)
     p.add_argument("--river-width", type=int, default=5, help="in cells")
+    p.add_argument("--bridges", type=lambda v: [float(x) for x in v.split(",") if x], default=[],
+                   help="comma-separated rows, as fractions of the map height from the north edge, to bridge the river at")
     p.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "data", "maps"))
     build(p.parse_args())

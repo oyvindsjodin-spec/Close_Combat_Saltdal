@@ -1,145 +1,130 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Saltdal.Sim;
 
+/// <summary>One round fired, kept briefly so it can be drawn as a tracer.</summary>
+public readonly record struct Shot(Vector2 From, Vector2 To, bool Hit, float Time, Side Side, int ShooterId);
+
+/// <summary>Something that gives orders on its own each few seconds, such as the AI.</summary>
+public interface ICommander
+{
+    void Update(Simulation sim);
+}
+
 /// <summary>
 /// The whole battle state, advanced in fixed ticks. Nothing here knows about
-/// Godot or drawing, so the same orders always give the same result.
+/// Godot or drawing, so the same seed and orders always give the same result.
+/// The work of a tick is split across the Simulation.*.cs files.
 /// </summary>
-public sealed class Simulation
+public sealed partial class Simulation
 {
     public const float TickSeconds = 0.1f;
+    /// <summary>How long a spotted soldier stays shown after he drops out of sight.</summary>
+    public const float SightMemorySeconds = 1.0f;
 
     public MapData Map { get; }
     public Pathfinder Pathfinder { get; }
+    public Rng Rng { get; }
     public float Time { get; private set; }
     public long TickCount { get; private set; }
 
     readonly List<Team> _teams = new();
     public IReadOnlyList<Team> Teams => _teams;
+    public IEnumerable<Soldier> Soldiers => _teams.SelectMany(t => t.Soldiers);
+
+    public List<VictoryFlag> Flags { get; } = new();
+    public List<ICommander> Commanders { get; } = new();
+
+    readonly List<Shot> _shots = new();
+    public IReadOnlyList<Shot> RecentShots => _shots;
+
+    /// <summary>Game seconds until the battle ends on its own.</summary>
+    public float TimeLimit { get; set; } = 30 * 60;
+    public BattleResult? Result { get; private set; }
+    public bool IsOver => Result != null;
 
     int _nextSoldierId = 1;
 
-    public Simulation(MapData map)
+    public Simulation(MapData map, ulong seed = 1)
     {
         Map = map;
         Pathfinder = new Pathfinder(map);
+        Rng = new Rng(seed);
     }
 
-    /// <summary>Create a team with soldiers spread around a point.</summary>
-    public Team SpawnTeam(string name, Side side, Vector2 at, string[] soldierNames)
+    public Team AddTeam(string name, Side side)
     {
         var team = new Team(_teams.Count + 1, name, side);
-        for (int i = 0; i < soldierNames.Length; i++)
-        {
-            var pos = at + FormationOffset(i, soldierNames.Length);
-            team.Add(new Soldier(_nextSoldierId++, soldierNames[i], pos));
-        }
         _teams.Add(team);
         return team;
     }
 
-    /// <summary>Order a team to move. Returns false if no route exists.</summary>
-    public bool OrderMove(Team team, Vector2 target, MoveMode mode)
+    public Soldier AddSoldier(Team team, string name, Vector2 at, Weapon weapon, bool leader = false, float experience = 0.5f)
     {
-        var route = Pathfinder.FindPath(team.Center, target);
-        if (route == null)
-            return false;
-        team.Mode = mode;
-        int n = team.Soldiers.Count;
-        for (int i = 0; i < n; i++)
-        {
-            var s = team.Soldiers[i];
-            s.Path.Clear();
-            // Each man takes his own short route to the team's path, then follows it
-            // and spreads out around the goal.
-            var offset = FormationOffset(i, n);
-            for (int w = 0; w < route.Count; w++)
-            {
-                bool last = w == route.Count - 1;
-                var p = route[w] + (last ? offset : offset * 0.3f);
-                var (cx, cy) = Map.WorldToCell(p);
-                s.Path.Enqueue(Map.IsPassable(cx, cy) ? p : route[w]);
-            }
-        }
-        return true;
+        var s = new Soldier(_nextSoldierId++, name, at, weapon, leader, experience);
+        team.Add(s);
+        return s;
     }
 
-    public void Stop(Team team)
+    /// <summary>Create a team of riflemen spread around a point. Handy for tests.</summary>
+    public Team SpawnTeam(string name, Side side, Vector2 at, string[] soldierNames, Weapon? weapon = null)
     {
-        foreach (var s in team.Soldiers)
-            s.Path.Clear();
+        var team = AddTeam(name, side);
+        weapon ??= side == Side.Allied ? Weapon.LeeEnfield : Weapon.Kar98k;
+        for (int i = 0; i < soldierNames.Length; i++)
+            AddSoldier(team, soldierNames[i], at + FormationOffset(i, soldierNames.Length), weapon, i == 0);
+        return team;
     }
 
     public void Tick()
     {
+        if (IsOver) return;
+        if (TickCount % 5 == 0)
+            UpdateVision();
+        if (TickCount % 20 == 0)
+            foreach (var c in Commanders)
+                c.Update(this);
+        UpdateMorale();
         foreach (var team in _teams)
             foreach (var s in team.Soldiers)
-                MoveSoldier(s, team.Mode);
+                MoveSoldier(s);
+        UpdateCombat();
+        UpdateFlags();
+        _shots.RemoveAll(s => Time - s.Time > 0.6f);
         Time += TickSeconds;
         TickCount++;
+        CheckForEnd();
     }
 
-    void MoveSoldier(Soldier s, MoveMode mode)
+    public void CallCeasefire() => EndBattle("Ceasefire called");
+
+    void CheckForEnd()
     {
-        s.PreviousPosition = s.Position;
-        float budget = TickSeconds;
-        while (budget > 0 && s.Path.Count > 0)
-        {
-            var target = s.Path.Peek();
-            var delta = target - s.Position;
-            float dist = delta.Length();
-            if (dist < 0.05f)
-            {
-                s.Path.Dequeue();
-                continue;
-            }
-            var dir = delta / dist;
-            s.Facing = MathF.Atan2(dir.Y, dir.X);
-            float speed = Speed(s.Position, dir, mode);
-            float step = speed * budget;
-            if (step >= dist)
-            {
-                s.Position = target;
-                s.Path.Dequeue();
-                budget -= dist / speed;
-            }
-            else
-            {
-                s.Position += dir * step;
-                budget = 0;
-            }
-        }
+        if (Time >= TimeLimit)
+            EndBattle("Time ran out");
+        else if (IsBroken(Side.Allied))
+            EndBattle("The British force is broken");
+        else if (IsBroken(Side.German))
+            EndBattle("The German force is broken");
     }
 
-    /// <summary>Walking speed in metres per second at a point, heading in a direction.</summary>
-    public float Speed(Vector2 at, Vector2 dir, MoveMode mode)
+    /// <summary>A side that has teams, none of them still fighting.</summary>
+    bool IsBroken(Side side)
     {
-        float baseSpeed = mode switch
-        {
-            MoveMode.Sneak => 0.6f,
-            MoveMode.MoveFast => 3.0f,
-            _ => 1.4f,
-        };
-        float terrain = TerrainInfo.MoveCost(Map.TerrainAt(at));
-        if (float.IsInfinity(terrain))
-            terrain = 3f; // wading out of a cell he should not be in
-        float ahead = Map.HeightAt(at + dir * 2f) - Map.HeightAt(at);
-        float grade = ahead / 2f;
-        float slope = grade > 0 ? 1 + grade * 6f : 1 - grade * 1.5f;
-        return baseSpeed / (terrain * slope);
+        var teams = _teams.Where(t => t.Side == side).ToList();
+        return teams.Count > 0 && teams.All(t => t.IsDestroyed);
     }
 
-    public static Vector2 FormationOffset(int index, int count)
+    void EndBattle(string reason)
     {
-        // A loose two-row line, about 4 m between men
-        const float spacing = 4f;
-        int perRow = (count + 1) / 2;
-        int row = index / perRow, col = index % perRow;
-        float x = (col - (perRow - 1) / 2f) * spacing;
-        float y = row * spacing - (count > perRow ? spacing / 2 : 0);
-        return new Vector2(x, y);
+        if (IsOver) return;
+        Result = BattleResult.From(this, reason);
     }
+
+    /// <summary>Enemy soldiers this side can currently see.</summary>
+    public IEnumerable<Soldier> VisibleEnemies(Side side) =>
+        Soldiers.Where(s => s.Side != side && s.IsAlive && s.IsVisibleToEnemy(Time));
 }
