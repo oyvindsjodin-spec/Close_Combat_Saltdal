@@ -17,7 +17,7 @@
     },
     {
       "name": "Rognan village",
-      "at": [0.5, 0.36]
+      "at": [0.53, 0.25]
     },
     {
       "name": "Nygård",
@@ -37,7 +37,7 @@
       {
         "type": "rifle_section",
         "name": "SWB A Coy (2)",
-        "at": [0.46, 0.42],
+        "at": [0.497, 0.276],
         "experience": 0.6,
         "men": ["Cpl Hughes", "LCpl Edwards", "Pte Morgan", "Pte Griffiths", "Pte Owen", "Pte Price", "Pte Jenkins"]
       },
@@ -66,14 +66,14 @@
       {
         "type": "rifle_section",
         "name": "No. 4 Coy (2)",
-        "at": [0.53, 0.37],
+        "at": [0.579, 0.247],
         "men": ["Cpl Whelan", "LCpl Corrigan", "Gdsm Dolan", "Gdsm Farrell", "Gdsm Geraghty", "Gdsm Hanlon", "Gdsm Lacey"],
         "experience": 0.5
       },
       {
         "type": "independent_section",
         "name": "No. 4 Ind. Coy (1)",
-        "at": [0.44, 0.32],
+        "at": [0.472, 0.22],
         "experience": 0.5,
         "men": ["Sgt Walker", "Pte Booth", "Pte Kershaw", "Pte Holt", "Pte Ashworth", "Pte Pickup"]
       },
