@@ -68,6 +68,8 @@ four historical battles in order, as the British or as the Germans:
 | Game speed | 1, 2 or 3 for normal, double and four times speed |
 | Ask for a ceasefire | C twice. The enemy agrees once half the time has gone, or at once if you are behind on flags |
 | After the battle | R fight again (single battle), N next battle (operation), M back to the menu |
+| Save the battle | F5. **Continue the saved battle** at the top of the menu picks it up again, paused. There is one save; F5 again replaces it |
+| Sound on or off | F3 |
 | Show all soldiers (for testing) | F2 |
 
 | Order | What the team does |
@@ -126,6 +128,21 @@ A man in a trench is about four times harder to hit lying down, and shell
 splinters mostly fly over him. The British computer side digs in by itself
 before the attack. You see your own trenches always, and enemy ones once your
 men have spotted them.
+
+## Sound and saving
+
+The sounds are made by the game itself (`tools/make_sounds.py` builds them
+from noise and tones), so nothing is recorded or borrowed. You hear the fighting
+from where it happens: far-off firing is quieter and comes from one side.
+Rifles crack, machine guns rattle, mortar bombs leave the tube with a hollow
+thump, and a shell whistles in for a second before it lands. Aircraft drone
+overhead, burning houses crackle and spades bite into the earth.
+
+A saved battle holds how the battle began and every order you gave. Loading it
+plays the battle through again from the start, very quickly, so it comes out
+exactly the same; a long battle takes a few seconds. A battle saved during the
+operation carries on the operation when it ends. Once the battle is over the
+save is removed.
 
 ## Changing the numbers
 
