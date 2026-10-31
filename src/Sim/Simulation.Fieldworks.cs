@@ -300,6 +300,14 @@ public sealed partial class Simulation
         TakeUpLine(team, facing, mustDig: true);
     }
 
+    /// <summary>Dig in here, in the shape and facing the player dragged out.</summary>
+    public void OrderDigIn(Team team, Deployment deploy)
+    {
+        SetStationaryOrder(team, TeamOrder.DigIn, FacingPoint(team, deploy));
+        team.Deployment = deploy;
+        TakeUpLine(team, team.OrderPoint, mustDig: true);
+    }
+
     public static bool CanDig(TerrainType t) => t is TerrainType.Grass or TerrainType.Field or TerrainType.Forest or TerrainType.Snow;
 
     /// <summary>The trench at a cell, if one has been dug there.</summary>
@@ -334,7 +342,8 @@ public sealed partial class Simulation
             }
             if (!anyDigging)
             {
-                OrderDefend(team, team.OrderPoint);
+                if (team.Deployment is { } dep) OrderDefend(team, dep);
+                else OrderDefend(team, team.OrderPoint);
                 Log(team.Side, team.Active.Any(s => HasTrench(s.Position))
                     ? $"{team.Name} has dug in."
                     : $"{team.Name} cannot dig here: the ground is too hard or built on.");

@@ -78,6 +78,7 @@ four historical battles in order, as the British or as the Germans:
 | Select a team | Left-click one of its soldiers, click its card in the bar at the bottom, or press Tab |
 | Jump to a place | Click or drag on the mini-map, bottom right |
 | Give an order | Right-click on the map, then pick an order |
+| Turn a team, or choose its formation | Hold the right mouse button and drag: the arrow shows which way the men will face, and the longer the drag, the wider they spread. Turn the mouse wheel while holding the button to switch between line, wedge and column. Start the drag on the team itself and it turns where it stands; start it elsewhere and a menu asks whether to move there (Move, Move Fast, Sneak) or to defend or dig in where it is, facing that way |
 | Pan | W A S D, arrow keys, or drag with the middle mouse button |
 | Zoom | Mouse wheel |
 | Aim and fire | Pick Fire from the order menu, or press F. A line runs from the team to the mouse: pale where your men can see, red beyond the point where the view is blocked, with the range and how many men can see the spot. Left-click to fire, right-click or Esc to cancel |

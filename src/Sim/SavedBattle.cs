@@ -6,8 +6,17 @@ using System.Text.Json;
 
 namespace Saltdal.Sim;
 
-/// <summary>One order the player gave, and the moment (in ticks) it was given.</summary>
-public sealed record Command(long Tick, string Kind, int Team = -1, float X = 0, float Y = 0, int Value = 0);
+/// <summary>
+/// One order the player gave, and the moment (in ticks) it was given. Facing,
+/// Shape and Spacing hold a formation the player dragged out with the right
+/// mouse button (Shape 0: none, the team takes its usual shape).
+/// </summary>
+public sealed record Command(long Tick, string Kind, int Team = -1, float X = 0, float Y = 0, int Value = 0,
+    float Facing = 0, int Shape = 0, float Spacing = 0)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Deployment? Deployment => Shape > 0 ? new Deployment(Facing, (Formation)Shape, Spacing) : null;
+}
 
 /// <summary>
 /// A battle in progress, kept so it can be saved and picked up again. The
@@ -48,7 +57,14 @@ public sealed class SavedBattle
 
     // ---------------------------------------------------------------- the player's orders
 
-    public void Move(Team team, Vector2 to, MoveMode mode) => Give(new Command(Sim.TickCount, "move", team.Id, to.X, to.Y, (int)mode));
+    public void Move(Team team, Vector2 to, MoveMode mode, Deployment? deploy = null) =>
+        Give(new Command(Sim.TickCount, "move", team.Id, to.X, to.Y, (int)mode) with
+        {
+            Facing = deploy?.Facing ?? 0, Shape = (int?)deploy?.Shape ?? 0, Spacing = deploy?.Spacing ?? 0,
+        });
+    /// <summary>Stay and defend, or dig in, in the shape the player dragged out.</summary>
+    public void Deploy(Team team, Deployment deploy, bool dig) =>
+        Give(new Command(Sim.TickCount, dig ? "dig" : "defend", team.Id, 0, 0, 0, deploy.Facing, (int)deploy.Shape, deploy.Spacing));
     public void Fire(Team team, Vector2 at) => Give(new Command(Sim.TickCount, "fire", team.Id, at.X, at.Y));
     public void Defend(Team team, Vector2 facing) => Give(new Command(Sim.TickCount, "defend", team.Id, facing.X, facing.Y));
     public void Hide(Team team) => Give(new Command(Sim.TickCount, "hide", team.Id));
@@ -70,12 +86,16 @@ public sealed class SavedBattle
         var at = new Vector2(c.X, c.Y);
         switch (c.Kind)
         {
-            case "move" when team != null: Sim.OrderMove(team, at, (MoveMode)c.Value); break;
+            case "move" when team != null: Sim.OrderMove(team, at, (MoveMode)c.Value, deploy: c.Deployment); break;
             case "fire" when team != null: Sim.OrderFire(team, at); break;
-            case "defend" when team != null: Sim.OrderDefend(team, at); break;
+            case "defend" when team != null:
+                if (c.Deployment is { } dd) Sim.OrderDefend(team, dd); else Sim.OrderDefend(team, at);
+                break;
             case "hide" when team != null: Sim.OrderHide(team); break;
             case "stop" when team != null: Sim.Stop(team); break;
-            case "dig" when team != null: Sim.OrderDigIn(team, at); break;
+            case "dig" when team != null:
+                if (c.Deployment is { } dg) Sim.OrderDigIn(team, dg); else Sim.OrderDigIn(team, at);
+                break;
             case "support" when team != null && c.Value >= 0 && c.Value < Sim.Support.Count:
                 if (Sim.OrderSupport(team, Sim.Support[c.Value], at) is { } problem) Sim.Log(PlayerSide, problem);
                 break;
