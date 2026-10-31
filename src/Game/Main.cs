@@ -17,12 +17,14 @@ public partial class Main : Node2D
 
     // Order menu ids
     const int OrderMove = 0, OrderMoveFast = 1, OrderSneak = 2, OrderFire = 3, OrderDefend = 4, OrderHide = 5, OrderStop = 6;
+    const int OrderSupportFirst = 100; // + index into Simulation.Support
 
     MapData _map = null!;
     Simulation _sim = null!;
     UnitsView _units = null!;
     CameraRig _camera = null!;
     Label _hud = null!;
+    Label _log = null!;
     PopupMenu _orderMenu = null!;
     TeamPanel _panel = null!;
     PanelContainer _endScreen = null!;
@@ -91,6 +93,15 @@ public partial class Main : Node2D
         hudBox.AddChild(_hud);
         ui.AddChild(hudBox);
 
+        _log = new Label { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _log.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft);
+        _log.Position = new Vector2(12, -230);
+        _log.AddThemeFontSizeOverride("font_size", 14);
+        _log.AddThemeColorOverride("font_shadow_color", Colors.Black);
+        _log.AddThemeConstantOverride("shadow_offset_x", 1);
+        _log.AddThemeConstantOverride("shadow_offset_y", 1);
+        ui.AddChild(_log);
+
         _panel = new TeamPanel();
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomWide);
         _panel.GrowVertical = Control.GrowDirection.Begin;
@@ -112,6 +123,7 @@ public partial class Main : Node2D
         _orderMenu.AddSeparator();
         _orderMenu.AddItem("Stop", OrderStop);
         _orderMenu.IdPressed += OnOrderChosen;
+        _orderMenu.AboutToPopup += FillSupportItems;
         ui.AddChild(_orderMenu);
 
         var center = new CenterContainer();
@@ -151,6 +163,7 @@ public partial class Main : Node2D
         _units.QueueRedraw();
         _panel.Refresh(_selected);
         UpdateHud();
+        UpdateLog();
         if (_sim.IsOver && !_endScreen.Visible)
             ShowEndScreen();
     }
@@ -230,6 +243,28 @@ public partial class Main : Node2D
             case OrderDefend: _sim.OrderDefend(_selected, _orderTarget); break;
             case OrderHide: _sim.OrderHide(_selected); break;
             case OrderStop: _sim.Stop(_selected); break;
+            case >= OrderSupportFirst:
+                var asset = _sim.Support[(int)id - OrderSupportFirst];
+                var problem = _sim.OrderSupport(_selected, asset, _orderTarget);
+                if (problem != null) _sim.Log(PlayerSide, problem);
+                break;
+        }
+    }
+
+    /// <summary>Headquarters teams get one extra menu line per off-map asset they can call.</summary>
+    void FillSupportItems()
+    {
+        while (_orderMenu.ItemCount > 9)
+            _orderMenu.RemoveItem(_orderMenu.ItemCount - 1);
+        if (_selected == null || !_selected.IsHeadquarters) return;
+        for (int i = 0; i < _sim.Support.Count; i++)
+        {
+            var a = _sim.Support[i];
+            if (a.Side != PlayerSide) continue;
+            if (_orderMenu.ItemCount == 9) _orderMenu.AddSeparator();
+            string state = a.MissionsLeft <= 0 ? "used up" : a.IsAvailable(_sim.Time) ? $"{a.MissionsLeft} left" : "busy";
+            _orderMenu.AddItem($"Call {a.Name} ({state})", OrderSupportFirst + i);
+            _orderMenu.SetItemDisabled(_orderMenu.ItemCount - 1, !a.IsAvailable(_sim.Time));
         }
     }
 
@@ -275,6 +310,16 @@ public partial class Main : Node2D
             $"{flags}\n" +
             $"Cursor: {cursor}\n" +
             "Left-click: select   Right-click: orders   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
+    }
+
+    /// <summary>The last few battle messages meant for the player, fading after 15 seconds.</summary>
+    void UpdateLog()
+    {
+        var lines = _sim.Messages
+            .Where(m => (m.ForSide == null || m.ForSide == PlayerSide) && _sim.Time - m.Time < 15f)
+            .TakeLast(5)
+            .Select(m => $"{(int)m.Time / 60:00}:{(int)m.Time % 60:00}  {m.Text}");
+        _log.Text = string.Join("\n", lines);
     }
 
     void ShowEndScreen()

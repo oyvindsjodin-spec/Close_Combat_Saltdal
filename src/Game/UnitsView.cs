@@ -40,6 +40,8 @@ public partial class UnitsView : Node2D
                 DrawSoldier(s, team == Selected, k);
         }
         DrawShots(k);
+        DrawBlasts(k);
+        DrawAircraft(k);
         foreach (var team in Sim.Teams)
             if (team.Side == PlayerSide || RevealAll)
                 DrawLabel(View.ToScreen(team.Center) + new Vector2(-30, -16) * k, team.Name,
@@ -103,6 +105,44 @@ public partial class UnitsView : Node2D
             float fade = Mathf.Clamp(1f - age / 0.6f, 0f, 1f);
             var color = shot.Side == Side.Allied ? new Color(1f, 0.9f, 0.5f, fade) : new Color(1f, 0.6f, 0.4f, fade);
             DrawLine(from, to, color, 1f * k);
+        }
+    }
+
+    void DrawBlasts(float k)
+    {
+        foreach (var b in Sim!.RecentBlasts)
+        {
+            float age = Sim.Time - b.Time;
+            var p = View.ToScreen(b.At);
+            float size = b.Explosive.KillRadius * View.Scale;
+            if (age < 0.4f)
+            {
+                // The flash, growing fast
+                float t = age / 0.4f;
+                DrawCircle(p, size * (0.6f + 1.2f * t), new Color(1f, 0.75f, 0.3f, 0.9f * (1 - t)));
+                DrawCircle(p, size * 0.5f, new Color(1f, 1f, 0.8f, 1 - t));
+            }
+            // Smoke that drifts and fades over a few seconds
+            float fade = Mathf.Clamp(1f - age / 3f, 0f, 1f);
+            DrawCircle(p + new Vector2(age * 4f, -age * 2f), size * (1f + age * 0.6f), new Color(0.35f, 0.33f, 0.3f, 0.45f * fade));
+        }
+    }
+
+    void DrawAircraft(float k)
+    {
+        foreach (var a in Sim!.AircraftOverhead)
+        {
+            if (!a.IsFlying(Sim.Time)) continue;
+            var p = View.ToScreen(a.PositionAt(Sim.Time));
+            var dir = (View.ToScreen(a.To) - View.ToScreen(a.From)).Normalized();
+            var side = new Vector2(-dir.Y, dir.X);
+            float s = 14f * k;
+            var dark = new Color(0.12f, 0.12f, 0.12f, 0.9f);
+            // A gull-winged silhouette: fuselage, wings, tail
+            DrawLine(p - dir * s, p + dir * s, dark, 3f * k);
+            DrawPolyline(new[] { p + side * s * 1.2f + dir * s * 0.1f, p + side * s * 0.5f + dir * s * 0.3f, p, p - side * s * 0.5f + dir * s * 0.3f, p - side * s * 1.2f + dir * s * 0.1f }, dark, 3f * k);
+            DrawLine(p - dir * s + side * s * 0.4f, p - dir * s - side * s * 0.4f, dark, 2f * k);
+            DrawCircle(p + new Vector2(10, 12) * k, s * 0.6f, new Color(0, 0, 0, 0.15f));
         }
     }
 

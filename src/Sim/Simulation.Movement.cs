@@ -12,6 +12,8 @@ public sealed partial class Simulation
             return;
 
         UpdatePosture(s);
+        if (!s.Fleeing && Time < s.Team.OrderDelayUntil)
+            return;
 
         // Pinned and cowering men stay where they are; their route waits for them
         bool frozen = !s.Fleeing && s.Morale is MoraleState.Pinned or MoraleState.Cowering;

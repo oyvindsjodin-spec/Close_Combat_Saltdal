@@ -27,6 +27,15 @@ public sealed class Team
     /// <summary>Where to shoot for Fire, or which way to face for Defend.</summary>
     public Vector2 OrderPoint { get; internal set; }
 
+    /// <summary>A headquarters team: its leaders steady nearby men of other teams too, and it can call off-map support.</summary>
+    public bool IsHeadquarters { get; set; }
+
+    /// <summary>Until this time the team is still passing the last order around and does not move.</summary>
+    public float OrderDelayUntil { get; internal set; }
+
+    /// <summary>Whether the team still has a leader on his feet and steady enough to lead.</summary>
+    public bool HasLeader => _soldiers.Any(s => s.IsLeader && s.CanAct && s.Morale <= MoraleState.Pinned);
+
     readonly List<Soldier> _soldiers = new();
     public IReadOnlyList<Soldier> Soldiers => _soldiers;
 

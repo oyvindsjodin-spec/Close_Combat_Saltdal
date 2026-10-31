@@ -83,6 +83,8 @@ public sealed class Soldier
 
     internal float FireCooldown;
     internal int BurstLeft;
+    /// <summary>Bombs still to fire at a Fire order's point (mortars only).</summary>
+    internal int BarrageLeft;
     internal float LastUnderFire = float.NegativeInfinity;
     internal float LastFired = float.NegativeInfinity;
     internal bool Fleeing;

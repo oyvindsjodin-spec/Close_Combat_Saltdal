@@ -46,7 +46,9 @@ public partial class TeamPanel : PanelContainer
             int fit = team.Soldiers.Count(s => s.CanAct);
             string state = team.IsDestroyed ? "Out of action" : team.Morale.ToString();
             string order = team.IsMoving ? team.Mode.ToString() : team.Order == TeamOrder.None ? "Idle" : team.Order.ToString();
-            b.Text = $"{team.Name}\n{fit}/{total} men   {state}\n{order}   ammo {team.AmmoPercent}%";
+            var mortar = team.Soldiers.FirstOrDefault(s => s.Weapon.IsIndirect && s.Health != Health.Dead);
+            string ammo = mortar != null ? $"bombs {mortar.Ammo}" : $"ammo {team.AmmoPercent}%";
+            b.Text = $"{team.Name}\n{fit}/{total} men   {state}\n{order}   {ammo}";
             b.Modulate = team == selected ? new Color(1.2f, 1.2f, 1.0f) : team.IsDestroyed ? new Color(0.6f, 0.6f, 0.6f) : Colors.White;
             b.AddThemeColorOverride("font_color", StateColor(team));
         }

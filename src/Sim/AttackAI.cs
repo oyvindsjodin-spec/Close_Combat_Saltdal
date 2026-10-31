@@ -18,10 +18,13 @@ public sealed class AttackAI : ICommander
     public float EngageRange { get; set; } = 400f;
     /// <summary>How far a team moves in one bound before it stops to look and shoot.</summary>
     public float BoundLength { get; set; } = 150f;
+    /// <summary>How far a team dashes when moving under fire.</summary>
+    public float RushLength { get; set; } = 60f;
     /// <summary>Teams this close to their flag charge it.</summary>
     public float AssaultRange { get; set; } = 180f;
 
     readonly Dictionary<Team, float> _fightingUntil = new();
+    float _nextSupportCall = 120f;
     float _lastContact = float.NegativeInfinity;
 
     public AttackAI(Side side) => Side = side;
@@ -29,6 +32,7 @@ public sealed class AttackAI : ICommander
     public void Update(Simulation sim)
     {
         var enemies = sim.VisibleEnemies(Side).Where(e => e.CanAct).ToList();
+        UseSupport(sim, enemies);
         // The whole force goes for one flag at a time: the open one nearest its centre
         var ours = sim.Soldiers.Where(s => s.Side == Side && s.IsEffective).ToList();
         var mass = ours.Count == 0 ? Vector2.Zero : ours.Aggregate(Vector2.Zero, (a, s) => a + s.Position) / ours.Count;
@@ -40,6 +44,11 @@ public sealed class AttackAI : ICommander
                 continue;
             if (_fightingUntil.TryGetValue(team, out var until) && sim.Time < until)
                 continue;
+            if (team.Soldiers.Any(s => s.Weapon.IsIndirect))
+            {
+                PlaceSupportTeam(sim, team, focus);
+                continue;
+            }
 
             var center = team.Center;
             var nearest = enemies.OrderBy(e => Vector2.DistanceSquared(e.Position, center)).FirstOrDefault();
@@ -91,10 +100,67 @@ public sealed class AttackAI : ICommander
             // In contact, move in short bounds through cover; out of contact, go all the way
             bool contact = underFire || enemyDist < EngageRange + 150f || sim.Time - _lastContact < 120f;
             if (underFire || nearest != null) _lastContact = sim.Time;
-            // Creep only when the enemy is close or shooting; otherwise walk the bound
-            var mode = underFire || enemyDist < 250f ? MoveMode.Sneak : MoveMode.Move;
-            float bound = contact && Vector2.Distance(goal, center) > BoundLength * 1.5f ? BoundLength : float.PositiveInfinity;
+            // Under fire, dash from cover to cover; close to an enemy who has not
+            // seen us, creep; otherwise walk
+            var mode = underFire ? MoveMode.MoveFast : enemyDist < 250f ? MoveMode.Sneak : MoveMode.Move;
+            float length = underFire ? RushLength : BoundLength;
+            float bound = contact && Vector2.Distance(goal, center) > length * 1.5f ? length : float.PositiveInfinity;
             sim.OrderMove(team, goal, mode, preferCover: contact, maxDistance: bound);
         }
+    }
+
+    /// <summary>
+    /// Mortar teams stay back: they set up behind the attack, within range of
+    /// the flag it is going for, and fire on whatever the rest of the force can see.
+    /// </summary>
+    static void PlaceSupportTeam(Simulation sim, Team team, VictoryFlag? focus)
+    {
+        if (focus == null || team.IsMoving) return;
+        var mortar = team.Soldiers.First(s => s.Weapon.IsIndirect);
+        float stand = Math.Clamp(mortar.Weapon.Range * 0.35f, mortar.Weapon.MinRange + 100f, 700f);
+        var center = team.Center;
+        float d = Vector2.Distance(center, focus.Position);
+        if (d > stand * 0.7f && d < stand * 1.3f)
+        {
+            if (team.Order != TeamOrder.Defend)
+                sim.OrderDefend(team, focus.Position);
+            return;
+        }
+        var back = Vector2.Normalize(center - focus.Position + new Vector2(0, 0.01f));
+        sim.OrderMove(team, focus.Position + back * stand, MoveMode.Move, preferCover: true);
+    }
+
+    /// <summary>
+    /// Call guns or aircraft on the thickest group of enemies in sight, as long
+    /// as none of our own men are close to it. Aircraft are saved for a big target.
+    /// </summary>
+    void UseSupport(Simulation sim, List<Soldier> enemies)
+    {
+        if (sim.Time < _nextSupportCall || enemies.Count == 0) return;
+        var assets = sim.Support.Where(a => a.Side == Side && a.IsAvailable(sim.Time)).ToList();
+        if (assets.Count == 0) return;
+
+        Soldier? best = null;
+        int bestCount = 0;
+        foreach (var e in enemies)
+        {
+            int count = enemies.Count(o => Vector2.DistanceSquared(o.Position, e.Position) < 20 * 20);
+            if (count > bestCount)
+            {
+                bestCount = count;
+                best = e;
+            }
+        }
+        if (best == null || bestCount < 3) return;
+
+        var asset = bestCount >= 4 ? assets.FirstOrDefault(a => a.IsAircraft) : null;
+        asset ??= assets.FirstOrDefault(a => !a.IsAircraft) ?? assets[0];
+        float danger = asset.Explosive.WoundRadius * 2 + asset.Spread;
+        bool friendsClose = sim.Soldiers.Any(s => s.Side == Side && s.IsEffective
+                                                  && Vector2.Distance(s.Position, best.Position) < danger);
+        if (friendsClose) return;
+
+        sim.CallSupport(asset, best.Position);
+        _nextSupportCall = sim.Time + 90f;
     }
 }
