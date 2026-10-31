@@ -23,7 +23,20 @@ time runs out wins. Mortars, 25-pounder guns, German mountain guns and a Stuka
 add shellfire, and leaders keep their men steady. Houses give good cover and
 block sight; fords let men wade the river slowly and in the open.
 
-## Running the game
+## Playing without Godot
+
+Ready-made versions for Windows and Mac come as zips: unzip, then open
+`CloseCombatSaltdal.exe` (Windows) or `Close Combat Saltdal.app` (Mac). The
+`Read me.txt` inside says how to get past the warning Windows or macOS gives
+the first time, since the game is not signed by a known publisher. Each zip has
+a copy of the `data` folder beside the game, so the numbers can still be changed
+(see below).
+
+To build the zips yourself, install the export templates once in Godot
+(Editor > Manage Export Templates > Download and Install), then run
+`GODOT=/path/to/godot sh tools/package.sh`. They land in `build/`.
+
+## Running the game in Godot
 
 You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 
