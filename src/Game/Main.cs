@@ -17,7 +17,7 @@ public partial class Main : Node2D
     Side PlayerSide = Side.Allied;
 
     // Order menu ids
-    const int OrderMove = 0, OrderMoveFast = 1, OrderSneak = 2, OrderFire = 3, OrderDefend = 4, OrderHide = 5, OrderStop = 6;
+    const int OrderMove = 0, OrderMoveFast = 1, OrderSneak = 2, OrderFire = 3, OrderDefend = 4, OrderHide = 5, OrderStop = 6, OrderDigIn = 7;
     const int OrderSupportFirst = 100; // + index into Simulation.Support
 
     MapData _map = null!;
@@ -43,6 +43,12 @@ public partial class Main : Node2D
     PanelContainer _hudBox = null!;
     Label _log = null!;
     PopupMenu _orderMenu = null!;
+    int _baseOrderItems;
+    GroundworksView _groundworks = null!;
+    FireView _fire = null!;
+    AimView _aim = null!;
+    /// <summary>Picking a target for a Fire order: the aiming line follows the mouse.</summary>
+    bool _aiming;
     CommandBar _panel = null!;
     PanelContainer _endScreen = null!;
     Label _endText = null!;
@@ -77,8 +83,15 @@ public partial class Main : Node2D
         _mapView = new MapView();
         AddChild(_mapView);
 
+        // Trenches, ruins and house floors lie under the men; flames and smoke rise over them
+        _groundworks = new GroundworksView();
+        AddChild(_groundworks);
         _units = new UnitsView { PlayerSide = PlayerSide };
         AddChild(_units);
+        _fire = new FireView();
+        AddChild(_fire);
+        _aim = new AimView();
+        AddChild(_aim);
 
         _camera = new CameraRig();
         AddChild(_camera);
@@ -107,6 +120,37 @@ public partial class Main : Node2D
         }
         else if (args.Contains("--operation")) StartOperation(Side.German);
         else ShowMenu();
+        if (args.Contains("--house") && _simOrNull != null)
+        {
+            // Developer check: the first team runs into the nearest house
+            var team = _sim.Teams.First(t => t.Side == PlayerSide);
+            var house = _sim.Houses.Where(h => h.Cells.Count >= 6).OrderBy(h => Vec.Distance(h.Center, team.Center)).First();
+            _sim.OrderMove(team, house.Center, MoveMode.MoveFast);
+            _camera.Position = View.ToScreen(house.Center);
+        }
+        if (args.Contains("--aim") && _simOrNull != null)
+        {
+            // Developer check: the first team takes aim at a spot towards the enemy
+            _selected = _sim.Teams.First(t => t.Side == PlayerSide);
+            _sim.EndPrep();
+            _aiming = true;
+            _camera.Position = View.ToScreen(_selected.Center + new Vec(0, PlayerSide == Side.Allied ? 120 : -120));
+            CallDeferred(nameof(AimMouseForCheck));
+        }
+        if (args.Contains("--fire") && _simOrNull != null)
+        {
+            // Developer check: the house nearest the player's men catches fire, and the camera looks at it
+            var near = View.ToWorld(_camera.Position);
+            var house = _sim.Houses.Where(h => h.Cells.Count >= 4).OrderBy(h => Vec.Distance(h.Center, near)).FirstOrDefault();
+            if (house != null)
+            {
+                _sim.SetOnFire(house);
+                _camera.Position = View.ToScreen(house.Center);
+            }
+        }
+        if (args.Contains("--dig") && _simOrNull != null)
+            foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide))
+                _sim.OrderDigIn(t, t.Center + new Vec(0, PlayerSide == Side.Allied ? 200 : -200));
         foreach (var a in args)
             if (a.StartsWith("--zoom=") && _simOrNull != null)
             {
@@ -167,6 +211,8 @@ public partial class Main : Node2D
         _simOrNull = _scenario.Build(_map, _seed++, side, _picks);
         _units.Sim = _sim;
         _units.PlayerSide = side;
+        _groundworks.Sim = _fire.Sim = _aim.Sim = _sim;
+        _aiming = false;
         _selected = null;
         _accumulator = 0;
         _panel.Build(_sim, PlayerSide, _map, _mapView.Ground);
@@ -221,8 +267,10 @@ public partial class Main : Node2D
         _orderMenu.AddItem("Fire", OrderFire);
         _orderMenu.AddItem("Defend", OrderDefend);
         _orderMenu.AddItem("Hide", OrderHide);
+        _orderMenu.AddItem("Dig In", OrderDigIn);
         _orderMenu.AddSeparator();
         _orderMenu.AddItem("Stop", OrderStop);
+        _baseOrderItems = _orderMenu.ItemCount;
         _orderMenu.IdPressed += OnOrderChosen;
         _orderMenu.AboutToPopup += FillSupportItems;
         ui.AddChild(_orderMenu);
@@ -290,6 +338,16 @@ public partial class Main : Node2D
         _units.Selected = _selected;
         _units.Zoom = _camera.Zoom.X;
         _units.QueueRedraw();
+        _groundworks.PlayerSide = PlayerSide;
+        _groundworks.RevealAll = _units.RevealAll;
+        _groundworks.QueueRedraw();
+        _fire.Zoom = _camera.Zoom.X;
+        if (_aiming && (_selected == null || _selected.IsDestroyed || _sim.IsOver)) _aiming = false;
+        _aim.Team = _aiming ? _selected : null;
+        _aim.Target = View.ToWorld(GetGlobalMousePosition());
+        _aim.Zoom = _camera.Zoom.X;
+        _aim.QueueRedraw();
+        _fire.QueueRedraw();
         var viewSize = GetViewportRect().Size / _camera.Zoom;
         _panel.Refresh(_selected, new Rect2(_camera.GetScreenCenterPosition() - viewSize / 2, viewSize), _units.RevealAll);
         UpdateHud();
@@ -320,6 +378,14 @@ public partial class Main : Node2D
         if (e is InputEventMouseButton { Pressed: true } mb && !_sim.IsOver)
         {
             var world = View.ToWorld(GetGlobalMousePosition());
+            if (_aiming && mb.ButtonIndex is MouseButton.Left or MouseButton.Right)
+            {
+                // Left-click fires at the spot; right-click puts the aim away
+                if (mb.ButtonIndex == MouseButton.Left && _selected != null) _sim.OrderFire(_selected, world);
+                _aiming = false;
+                GetViewport().SetInputAsHandled();
+                return;
+            }
             if (mb.ButtonIndex == MouseButton.Left)
             {
                 _selected = TeamAt(world);
@@ -337,8 +403,15 @@ public partial class Main : Node2D
                 case Key.Space:
                     _paused = !_paused;
                     break;
+                case Key.Enter or Key.KpEnter when _sim.InPrep:
+                    _sim.EndPrep();
+                    break;
                 case Key.Escape:
-                    _selected = null;
+                    if (_aiming) _aiming = false;
+                    else _selected = null;
+                    break;
+                case Key.F when _selected != null && !_sim.IsOver:
+                    StartAiming();
                     break;
                 case Key.Tab:
                     CycleSelection();
@@ -388,18 +461,42 @@ public partial class Main : Node2D
         _camera.Position = View.ToScreen(_selected.Center);
     }
 
+    void AimMouseForCheck()
+    {
+        var spot = View.ToScreen(_selected!.Center + new Vec(60, PlayerSide == Side.Allied ? 260 : -260));
+        Input.WarpMouse(GetViewport().GetCanvasTransform() * spot);
+    }
+
+    /// <summary>Take aim: the line follows the mouse until the player clicks a target.</summary>
+    void StartAiming()
+    {
+        if (_sim.InPrep && PlayerSide == _sim.Attacker)
+        {
+            _sim.Log(PlayerSide, "Your men wait for the attack to begin. Press Enter to start it now.");
+            return;
+        }
+        _aiming = true;
+    }
+
     void OnOrderChosen(long id)
     {
         if (_selected == null) return;
+        // While the defenders get ready, the attackers wait where they are
+        if (_sim.InPrep && PlayerSide == _sim.Attacker && id is OrderMove or OrderMoveFast or OrderSneak or OrderFire)
+        {
+            _sim.Log(PlayerSide, "Your men wait for the attack to begin. Press Enter to start it now.");
+            return;
+        }
         switch (id)
         {
             case OrderMove: _sim.OrderMove(_selected, _orderTarget, MoveMode.Move); break;
             case OrderMoveFast: _sim.OrderMove(_selected, _orderTarget, MoveMode.MoveFast); break;
             case OrderSneak: _sim.OrderMove(_selected, _orderTarget, MoveMode.Sneak); break;
-            case OrderFire: _sim.OrderFire(_selected, _orderTarget); break;
+            case OrderFire: StartAiming(); break;
             case OrderDefend: _sim.OrderDefend(_selected, _orderTarget); break;
             case OrderHide: _sim.OrderHide(_selected); break;
             case OrderStop: _sim.Stop(_selected); break;
+            case OrderDigIn: _sim.OrderDigIn(_selected, _orderTarget); break;
             case >= OrderSupportFirst:
                 var asset = _sim.Support[(int)id - OrderSupportFirst];
                 var problem = _sim.OrderSupport(_selected, asset, _orderTarget);
@@ -411,14 +508,14 @@ public partial class Main : Node2D
     /// <summary>Headquarters teams get one extra menu line per off-map asset they can call.</summary>
     void FillSupportItems()
     {
-        while (_orderMenu.ItemCount > 9)
+        while (_orderMenu.ItemCount > _baseOrderItems)
             _orderMenu.RemoveItem(_orderMenu.ItemCount - 1);
         if (_selected == null || !_selected.IsHeadquarters) return;
         for (int i = 0; i < _sim.Support.Count; i++)
         {
             var a = _sim.Support[i];
             if (a.Side != PlayerSide) continue;
-            if (_orderMenu.ItemCount == 9) _orderMenu.AddSeparator();
+            if (_orderMenu.ItemCount == _baseOrderItems) _orderMenu.AddSeparator();
             string state = a.MissionsLeft <= 0 ? "used up" : a.IsAvailable(_sim.Time) ? $"{a.MissionsLeft} left" : "busy";
             _orderMenu.AddItem($"Call {a.Name} ({state})", OrderSupportFirst + i);
             _orderMenu.SetItemDisabled(_orderMenu.ItemCount - 1, !a.IsAvailable(_sim.Time));
@@ -449,24 +546,29 @@ public partial class Main : Node2D
     void UpdateHud()
     {
         var world = View.ToWorld(GetGlobalMousePosition());
-        var (cx, cy) = _map.WorldToCell(world);
-        string cursor = _map.InBounds(cx, cy)
-            ? $"{TerrainInfo.Name(_map.TerrainAt(cx, cy))}, {_map.HeightAt(world):0} m"
+        var map = _sim.Map;
+        var (cx, cy) = map.WorldToCell(world);
+        string cursor = map.InBounds(cx, cy)
+            ? $"{TerrainInfo.Name(map.TerrainAt(cx, cy))}, {map.HeightAt(world):0} m"
             : "off map";
-        if (_selected != null && _map.InBounds(cx, cy))
+        if (_selected != null && map.InBounds(cx, cy))
         {
             float range = Vec.Distance(_selected.Center, world);
             cursor += $", {range:0} m from {_selected.Name}";
         }
-        int left = (int)(_sim.TimeLimit - _sim.Time);
+        int left = (int)(_sim.TimeLimit - System.MathF.Max(_sim.Time, _sim.PrepUntil));
+        int prep = (int)System.MathF.Ceiling(_sim.PrepUntil - _sim.Time);
+        string clock = _sim.InPrep
+            ? $"The attack begins in {prep / 60:00}:{prep % 60:00} (Enter: begin now), then {left / 60:00}:{left % 60:00} of battle"
+            : $"{left / 60:00}:{left % 60:00} left";
         string status = _paused ? "   PAUSED" : _speed > 1 ? $"   speed x{_speed}" : "";
         if (CeasefireAsked) status += "   Press C again to call a ceasefire";
         string flags = string.Join("   ", _sim.Flags.Select(f => $"{f.Name}: {(f.Owner == null ? "nobody" : View.SideName(f.Owner.Value))}"));
         _hud.Text =
-            $"{_sim.Title}    {left / 60:00}:{left % 60:00} left{status}\n" +
+            $"{_sim.Title}    {clock}{status}\n" +
             $"{flags}\n" +
             $"Cursor: {cursor}\n" +
-            "Left-click: select   Right-click: orders   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
+            "Left-click: select   Right-click: orders   F: aim and fire   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
     }
 
     /// <summary>The last few battle messages meant for the player, fading after 15 seconds.</summary>

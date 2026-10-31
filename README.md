@@ -60,7 +60,9 @@ three battles in order, as the British or as the Germans:
 | Give an order | Right-click on the map, then pick an order |
 | Pan | W A S D, arrow keys, or drag with the middle mouse button |
 | Zoom | Mouse wheel |
+| Aim and fire | Pick Fire from the order menu, or press F. A line runs from the team to the mouse: pale where your men can see, red beyond the point where the view is blocked, with the range and how many men can see the spot. Left-click to fire, right-click or Esc to cancel |
 | Pause | Space (you can still give orders) |
+| Start the attack early | Enter, while the clock counts down to the attack |
 | Game speed | 1, 2 or 3 for normal, double and four times speed |
 | Ask for a ceasefire | C twice. The enemy agrees once half the time has gone, or at once if you are behind on flags |
 | After the battle | R fight again (single battle), N next battle (operation), M back to the menu |
@@ -71,9 +73,10 @@ three battles in order, as the British or as the Germans:
 | Move | Walks to the point, returning fire at close range |
 | Move Fast | Runs to the point without stopping to shoot |
 | Sneak | Creeps, crouched and hard to spot, slowly |
-| Fire | Shoots at enemies near the point, or sprays the area to keep heads down |
+| Fire | Takes aim (see above), then shoots at enemies near the point, or sprays the area to keep heads down |
 | Defend | Lies down facing the point and fires at anything in range |
 | Hide | Lies low and holds fire unless the enemy gets very close |
+| Dig In | Each man digs a trench where he stands, facing the point. Takes about a minute and a half on grass, fields, forest or snow (not on rock, roads or in houses); then the team defends from the trenches |
 | Stop | Halts where it is |
 | Call 25-pounders, mountain guns or Stuka | HQ teams only (Platoon HQ, Zugtrupp): the strike lands about a minute later. The HQ must be able to see the spot, and each has only one or two missions |
 
@@ -97,6 +100,30 @@ bottom shows a card for each team (a square per man, coloured the same way),
 the men of the selected team, and a mini-map. You only see German soldiers
 while one of your men can see them; a faint circle marks where one was last seen.
 
+## Houses, fire and trenches
+
+Each battle starts with a quiet spell before the attack: 5 minutes at
+Viskiskoia and Rognan, 10 at Pothus. Nobody fires and no guns can be called.
+The defender uses the time to get into position and dig in; the attacker waits
+where he is (press Enter to start the attack at once). The clock at the top
+left counts down to the attack, then shows the battle time left.
+
+Order a team to Move into a house and the men spread through its rooms, one at
+each window. You see the house with its roof off while your men are in it.
+Men inside are hard to hit and can shoot out of the windows, but nobody can see
+through a house from one side to the other.
+
+Shells, mortar bombs and bombs can set a house on fire, and a burning house can
+set the one next to it alight. Men inside get out as fast as they can, however
+frightened. The fire burns about five minutes and leaves a burnt-out ruin,
+which still gives some cover. Smoke drifts off downwind and hides whatever is
+behind it.
+
+A man in a trench is about four times harder to hit lying down, and shell
+splinters mostly fly over him. The British computer side digs in by itself
+before the attack. You see your own trenches always, and enemy ones once your
+men have spotted them.
+
 ## Changing the numbers
 
 The game's numbers are in plain text files in `data/`, so you can change them
@@ -106,7 +133,7 @@ with any text editor (Notepad, TextEdit) and start a new battle to try them:
 | --- | --- |
 | `data/weapons.json` | Range, rate of fire, accuracy, ammunition and blast of every weapon and shell |
 | `data/units.json` | What each kind of team carries, its experience and its cost in points; the off-map guns and the Stuka |
-| `data/battles/*.json` | Each battle: time limit, flags, where every team starts, soldiers' names, which teams are historical and which are reserves, and the budget |
+| `data/battles/*.json` | Each battle: time limit, minutes before the attack (`prepMinutes`), flags, where every team starts, soldiers' names, which teams are historical and which are reserves, and the budget |
 
 Keep the commas, quotes and brackets as they are. If a file has a mistake,
 the game says which file and where instead of starting.

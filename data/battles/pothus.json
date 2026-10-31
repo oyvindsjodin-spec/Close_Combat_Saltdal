@@ -5,6 +5,7 @@
   "title": "Pothus, 25 May 1940",
   "map": "pothus",
   "minutes": 60,
+  "prepMinutes": 10,
   "briefing": "Two days later and 25 km further north. At Pothus, where a side valley joins Saltdalselva, the Irish Guards and a Norwegian mortar team hold the line. The road bridge is already blown; the British hold the west bank, the ridge between the valleys and Pothus farm. Hold the flags for an hour; the bridge and the ridge count double.",
   "alliedRole": "Defend. Three Irish Guards sections, platoon HQ and the Norwegian 81 mm mortar. The HQ can call a troop of 25-pounders twice, if the signal gets through.",
   "germanRole": "Attack. Six squads with MG 34s, the Zugtrupp and a mortar. The Zugtrupp can call the mountain guns twice and one Stuka. The river can be waded at two gravel bars.",

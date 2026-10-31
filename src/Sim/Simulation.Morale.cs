@@ -25,7 +25,7 @@ public sealed partial class Simulation
 
             if (s.Morale >= MoraleState.Cowering && TryToSurrender(s))
                 continue;
-            if (s.Morale >= MoraleState.Panicked && !s.Fleeing)
+            if (s.Morale >= MoraleState.Panicked && !s.Fleeing && !s.EscapingFire)
                 StartFleeing(s);
             else if (s.Morale < MoraleState.Panicked && s.Fleeing)
             {

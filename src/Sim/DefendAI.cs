@@ -64,6 +64,19 @@ public sealed class DefendAI : ICommander
             }
             // At the post: lie down facing the nearest enemy, or where the enemy comes from
             var facing = nearest?.Position ?? post.Spot + EnemyDirection(sim) * 200f;
+            float nearestDist = nearest == null ? float.MaxValue : Vector2.Distance(nearest.Position, team.Center);
+            // Dig in while the enemy is far off; stop digging and fight when he comes close
+            if (team.Order == TeamOrder.DigIn)
+            {
+                if (nearestDist < 200f) sim.OrderDefend(team, facing);
+                continue;
+            }
+            int diggable = team.Active.Count(s => !sim.HasTrench(s.Position) && Simulation.CanDig(sim.Map.TerrainAt(s.Position)));
+            if (diggable * 2 > team.EffectiveCount && nearestDist > 300f)
+            {
+                sim.OrderDigIn(team, post.Spot + EnemyDirection(sim) * 200f);
+                continue;
+            }
             bool turnToFace = nearest != null && team.Order == TeamOrder.Defend
                               && Angle(team.OrderPoint - team.Center, facing - team.Center) > 1.2f;
             if (team.Order != TeamOrder.Defend || turnToFace)

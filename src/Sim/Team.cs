@@ -14,6 +14,8 @@ public enum TeamOrder
     Fire,
     Defend,
     Hide,
+    /// <summary>Dig trenches where the team stands, then defend from them.</summary>
+    DigIn,
 }
 
 /// <summary>A squad or team: the unit the player gives orders to.</summary>
@@ -35,6 +37,7 @@ public sealed class Team
 
     /// <summary>Until this time the team is still passing the last order around and does not move.</summary>
     public float OrderDelayUntil { get; internal set; }
+    internal long LastFireWarning = -1000;
 
     /// <summary>Whether the team still has a leader on his feet and steady enough to lead.</summary>
     public bool HasLeader => _soldiers.Any(s => s.IsLeader && s.CanAct && s.Morale <= MoraleState.Pinned);

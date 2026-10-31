@@ -55,6 +55,8 @@ public sealed partial class Simulation
         else if (terrain == TerrainType.Rock) range *= 0.6f;
         else if (terrain == TerrainType.Building) range *= 0.3f;
         else if (terrain == TerrainType.Ford) range *= 1.2f;
+        else if (terrain == TerrainType.Trench) range *= 0.45f;
+        else if (terrain == TerrainType.Ruin) range *= 0.5f;
         if (target.IsMoving && target.Team.Mode == MoveMode.MoveFast) range *= 1.4f;
         if (Time - target.LastFired < 2f) range = MathF.Max(range * 2.5f, 750f); // muzzle flash and noise
         range *= 1f - MathF.Min(observer.Stress, 100f) / 200f;
@@ -74,6 +76,9 @@ public sealed partial class Simulation
         float step = Map.CellSize * 0.5f;
         int n = (int)(dist / step);
         float forest = 0;
+        // The walls of the house a man is in do not block his own view: he looks out of its windows
+        var houseA = Map.TerrainAt(a) is TerrainType.Building or TerrainType.BurningHouse ? HouseAt(a) : null;
+        var houseB = Map.TerrainAt(b) is TerrainType.Building or TerrainType.BurningHouse ? HouseAt(b) : null;
         for (int i = 1; i < n; i++)
         {
             float t = i / (float)n;
@@ -87,8 +92,12 @@ public sealed partial class Simulation
             if (nearEnds || z - ground >= TreeHeight) continue;
             var terrain = Map.TerrainAt(p);
             // Walls: a man in a house sees out of its windows, but nobody sees through it
-            if (terrain == TerrainType.Building && along > 6f && dist - along > 6f && z - ground < HouseHeight)
-                return false;
+            if (terrain is TerrainType.Building or TerrainType.BurningHouse && z - ground < HouseHeight
+                && along > 6f && dist - along > 6f)
+            {
+                var h = HouseAt(p);
+                if (h == null || (h != houseA && h != houseB)) return false;
+            }
             if (terrain == TerrainType.Forest)
             {
                 forest += step;
@@ -96,6 +105,6 @@ public sealed partial class Simulation
                     return false;
             }
         }
-        return true;
+        return _smoke.Count == 0 || !SmokeBlocks(a, b);
     }
 }

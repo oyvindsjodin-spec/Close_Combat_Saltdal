@@ -227,6 +227,10 @@ public sealed partial class Simulation
             TerrainType.Rock => 0.45f,
             TerrainType.Building => 0.3f,
             TerrainType.Ford => 1.2f,
+            // A man in a trench shows only his head and shoulders, unless he stands up
+            TerrainType.Trench => target.Posture == Posture.Standing ? 0.5f : 0.25f,
+            TerrainType.Ruin => 0.5f,
+            TerrainType.BurningHouse => 0.8f,
             _ => 1f,
         };
         if (target.IsMoving) p *= 0.7f;
