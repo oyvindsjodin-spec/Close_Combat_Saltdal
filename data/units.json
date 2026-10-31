@@ -48,6 +48,14 @@
         { "weapon": "krag", "count": 2 }
       ]
     },
+    "norwegian_ski": {
+      "name": "Norwegian ski troops", "nation": "norwegian", "side": "allied", "cost": 35, "experience": 0.5,
+      "about": "A handful of Norwegian ski soldiers with Krag rifles, at home in the hills.",
+      "men": [
+        { "weapon": "krag", "leader": true, "experience": 0.55 },
+        { "weapon": "krag", "count": 4 }
+      ]
+    },
 
     "gruppe": {
       "name": "Gruppe", "nation": "german", "side": "german", "cost": 85, "experience": 0.6,

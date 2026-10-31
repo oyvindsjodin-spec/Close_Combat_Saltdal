@@ -5,15 +5,19 @@
   "title": "Viskiskoia, 23 May 1940",
   "map": "viskiskoia",
   "minutes": 40,
-  "prepMinutes": 5,
-  "briefing": "The Germans have crossed Saltfjellet. In the open birch country of the upper valley a company of the Scots Guards, with men of No. 2 Independent Company on the far bank, holds the road bridge at Viskiskoia. Hold the bridge and the road behind it for 40 minutes; the bridge counts double.",
-  "alliedRole": "Defend. Three Scots Guards sections, HQ, a 3-inch mortar and two Independent Company sections on the east bank. No artillery.",
-  "germanRole": "Attack. Five squads, the Zugtrupp and a mortar. The Zugtrupp can call the mountain guns and a Stuka. The river can be waded at a gravel bar downstream.",
+  "prepMinutes": 3,
+  "briefing": "The Germans have crossed Saltfjellet. The Scots Guards, worn out after five days of retreat from Mo, were told only last night to stand here: the position was taken up this morning and there has been little time to dig. The Guards cover the blown road bridge at Viskiskoia. No. 3 Independent Company, with a few Norwegian ski troops, has just come up on foot, tired, and must climb to the height on the east bank that looks down on the bridge. Two Bofors guns are out of action and the gunners have lost their signal equipment: one 3-inch mortar is all the support there is. Hold the bridge and the road behind it for 40 minutes; the bridge counts double.",
+  "alliedRole": "Defend. Three tired Scots Guards sections, Company HQ and one 3-inch mortar on the west bank. Two No. 3 Independent Company sections and a Norwegian ski team arrive late on the east bank: get them up onto the height before the Germans do. No artillery.",
+  "germanRole": "Attack. Five squads, the Zugtrupp and a mortar. The Zugtrupp can call the mountain guns and a low-flying aircraft. Take the height on the east bank first: from there you can fire into the bridge position from the side. The river can be waded at a gravel bar downstream.",
   "flags": [
     {
       "name": "Viskiskoia bridge",
       "at": [0.3, 0.5],
       "value": 2
+    },
+    {
+      "name": "The height",
+      "at": [0.66, 0.55]
     },
     {
       "name": "The hut",
@@ -31,55 +35,63 @@
         "type": "rifle_section",
         "name": "7 Section",
         "at": [0.29, 0.47],
-        "experience": 0.6,
+        "experience": 0.55,
         "men": ["Cpl Grant", "LCpl Reid", "Gdsm Hunter", "Gdsm Watt", "Gdsm Baird", "Gdsm Kerr", "Gdsm Muir"]
       },
       {
         "type": "rifle_section",
         "name": "8 Section",
         "at": [0.24, 0.4],
-        "experience": 0.6,
+        "experience": 0.55,
         "men": ["Cpl Duncan", "LCpl Boyd", "Gdsm Hay", "Gdsm Ogilvie", "Gdsm Craig", "Gdsm Fyfe", "Gdsm Lindsay"]
       },
       {
         "type": "rifle_section",
         "name": "9 Section",
         "at": [0.26, 0.27],
-        "experience": 0.6,
+        "experience": 0.55,
         "men": ["Cpl Paterson", "LCpl Allan", "Gdsm Moir", "Gdsm Rennie", "Gdsm Imrie", "Gdsm Laing", "Gdsm Doig"]
       },
       {
         "type": "independent_section",
-        "name": "No. 2 Ind. Coy (1)",
-        "at": [0.5, 0.44],
-        "men": ["Sgt Cameron", "Pte Robertson", "Pte Stewart", "Pte Morrison", "Pte Macleod", "Pte Campbell"]
+        "name": "No. 3 Ind. Coy (1)",
+        "at": [0.52, 0.3],
+        "men": ["Sgt Cameron", "Pte Robertson", "Pte Stewart", "Pte Morrison", "Pte Macleod", "Pte Campbell"],
+        "experience": 0.4
       },
       {
         "type": "independent_section",
-        "name": "No. 2 Ind. Coy (2)",
-        "at": [0.68, 0.4],
-        "men": ["Cpl MacDonald", "Pte Fraser", "Pte Murray", "Pte Maclean", "Pte Kennedy", "Pte Bell"]
+        "name": "No. 3 Ind. Coy (2)",
+        "at": [0.6, 0.26],
+        "men": ["Cpl MacDonald", "Pte Fraser", "Pte Murray", "Pte Maclean", "Pte Kennedy", "Pte Bell"],
+        "experience": 0.4
+      },
+      {
+        "type": "norwegian_ski",
+        "name": "Norwegian ski team",
+        "at": [0.66, 0.28],
+        "men": ["Sersjant Berg", "Korporal Lie", "Soldat Haugen", "Soldat Moen", "Soldat Vik"]
       },
       {
         "type": "platoon_hq",
         "name": "Company HQ",
         "at": [0.22, 0.33],
         "required": true,
-        "experience": 0.6,
+        "experience": 0.55,
         "men": ["Capt Lindsay-Hogg", "CSM Gibb", "Gdsm Rae", "Gdsm Aird"]
       },
       {
         "type": "mortar_3in",
         "name": "3-inch mortar",
         "at": [0.18, 0.22],
-        "experience": 0.6,
+        "experience": 0.55,
         "men": ["Sgt Bruce", "Gdsm Christie", "Gdsm Ure"]
       },
       {
         "type": "rifle_section",
         "name": "Pioneer section",
         "at": [0.2, 0.3],
-        "experience": 0.6,
+        "experience": 0.55,
         "default": false,
         "men": ["Cpl Forbes", "LCpl Gow", "Gdsm Mackie", "Gdsm Petrie", "Gdsm Sim", "Gdsm Tait", "Gdsm Wylie"]
       }
