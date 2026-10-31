@@ -236,7 +236,7 @@ def paint(name, root, crop=None, out=None):
     hpx = ndimage.zoom(hts, up, order=1)[:ph, :pw]
     gy_, gx_ = np.gradient(hpx, 1.0 / PX_PER_M)
     slope_light = (gy_ * SUN[0] + gx_ * SUN[1])      # facing the sun: positive
-    shade = 1.0 + np.where(slope_light > 0, 0.18, 0.40) * np.tanh(slope_light * 1.3)
+    shade = 1.0 + np.where(slope_light > 0, 0.18, 0.32) * np.tanh(slope_light * 1.3)
     img *= shade[..., None]
     del gy_, gx_, hpx, bump
 

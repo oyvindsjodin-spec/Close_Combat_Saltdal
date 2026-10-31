@@ -42,13 +42,13 @@
       {
         "type": "independent_section",
         "name": "No. 3 Ind. Coy (1)",
-        "at": [0.53, 0.38],
+        "at": [0.522, 0.38],
         "men": ["Sgt Fraser", "Pte Munro", "Pte Ross", "Pte Gunn", "Pte Mackay", "Pte Sutherland"]
       },
       {
         "type": "independent_section",
         "name": "No. 3 Ind. Coy (2)",
-        "at": [0.44, 0.33],
+        "at": [0.44, 0.337],
         "men": ["Cpl Grant", "Pte Bain", "Pte Mackenzie", "Pte Urquhart", "Pte Matheson", "Pte Dunbar"]
       },
       {
