@@ -21,6 +21,8 @@ public sealed class GameData
     public IReadOnlyDictionary<string, SupportType> SupportTypes { get; }
     /// <summary>The battles in the order they were fought.</summary>
     public IReadOnlyList<Scenario> Battles { get; }
+    /// <summary>The battles of the operation: the historical ones, leaving out what-ifs.</summary>
+    public IReadOnlyList<Scenario> OperationBattles { get; }
 
     GameData(Dictionary<string, Explosive> explosives, Dictionary<string, Weapon> weapons,
         Dictionary<string, TeamType> teams, Dictionary<string, SupportType> support, List<Scenario> battles)
@@ -30,6 +32,7 @@ public sealed class GameData
         TeamTypes = teams;
         SupportTypes = support;
         Battles = battles;
+        OperationBattles = battles.Where(b => b.InOperation).ToList();
     }
 
     public Scenario Find(string id) => Battles.FirstOrDefault(b => b.Id == id)
@@ -121,7 +124,8 @@ public sealed class GameData
         }
         return new Scenario(b.Str("id"), (int)b.Num("order", 0), b.Str("title"), b.Str("map"), (int)b.Num("minutes"),
             b.Str("briefing"), b.Str("alliedRole"), b.Str("germanRole"), flags,
-            ReadSide(Side.Allied, "allied"), ReadSide(Side.German, "german"), (int)b.Num("prepMinutes", 0));
+            ReadSide(Side.Allied, "allied"), ReadSide(Side.German, "german"), (int)b.Num("prepMinutes", 0),
+            b.Bool("operation", true));
     }
 
     static Node Parse(string file, string json)
@@ -287,7 +291,7 @@ public sealed record SideForces(Side Side, int Budget, Vector2? Face, IReadOnlyL
 /// <summary>A battle that can be picked from the menu, read from data/battles.</summary>
 public sealed record Scenario(string Id, int Order, string Title, string Map, int Minutes,
     string Briefing, string AlliedRole, string GermanRole, IReadOnlyList<FlagSpec> Flags,
-    SideForces Allied, SideForces German, int PrepMinutes = 0)
+    SideForces Allied, SideForces German, int PrepMinutes = 0, bool InOperation = true)
 {
     public SideForces Forces(Side side) => side == Side.Allied ? Allied : German;
 

@@ -194,7 +194,7 @@ public partial class Main : Node2D
         _panel.Visible = false;
         _hudBox.Visible = false;
         string? heading = _campaign == null ? null
-            : $"The operation, battle {_campaign.Index + 1} of {_data.Battles.Count}";
+            : $"The operation, battle {_campaign.Index + 1} of {_data.OperationBattles.Count}";
         _forceScreen.Show(_scenario, side, _picks, heading);
     }
 

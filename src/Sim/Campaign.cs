@@ -32,7 +32,7 @@ public sealed class Campaign
     /// <summary>Which battle is next, counting from 0; equal to the number of battles when the operation is over.</summary>
     public int Index { get; private set; }
     public IReadOnlyList<BattleRecord> Results => _results;
-    public bool IsOver => Index >= _data.Battles.Count;
+    public bool IsOver => Index >= _data.OperationBattles.Count;
 
     readonly GameData _data;
     readonly List<BattleRecord> _results = new();
@@ -51,7 +51,7 @@ public sealed class Campaign
         get
         {
             if (IsOver) throw new InvalidOperationException("The operation is over.");
-            var sc = _data.Battles[Index];
+            var sc = _data.OperationBattles[Index];
             return sc with { Allied = Adjust(sc.Allied), German = Adjust(sc.German) };
         }
     }
@@ -106,7 +106,7 @@ public sealed class Campaign
                 .ToList();
             _roster[Key(team.Side, team.Name)] = men;
         }
-        _results.Add(new BattleRecord(_data.Battles[Index].Id, _data.Battles[Index].Title, result.Winner,
+        _results.Add(new BattleRecord(_data.OperationBattles[Index].Id, _data.OperationBattles[Index].Title, result.Winner,
             result.Reason, result.AlliedLosses, result.GermanLosses));
         Index++;
     }
@@ -154,7 +154,7 @@ public sealed class Campaign
     public static Campaign Load(GameData data, string json)
     {
         var f = JsonSerializer.Deserialize<SaveFile>(json) ?? throw new GameDataException("The saved operation is empty.");
-        var c = new Campaign(data, Enum.Parse<Side>(f.Side)) { Index = Math.Min(f.Index, data.Battles.Count) };
+        var c = new Campaign(data, Enum.Parse<Side>(f.Side)) { Index = Math.Min(f.Index, data.OperationBattles.Count) };
         c._results.AddRange(f.Results);
         foreach (var (k, v) in f.Roster) c._roster[k] = v;
         return c;

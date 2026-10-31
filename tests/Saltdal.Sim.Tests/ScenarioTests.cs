@@ -54,7 +54,7 @@ public class ScenarioTests
     [Fact]
     public void TheBattlesComeInTheOrderTheyWereFought()
     {
-        Assert.Equal(new[] { "viskiskoia", "pothus", "pothus_west", "rognan" }, Data.Battles.Select(b => b.Id));
+        Assert.Equal(new[] { "viskiskoia", "pothus", "pothus_west", "rognan", "rognan_alt" }, Data.Battles.Select(b => b.Id));
     }
 
     [Fact]
