@@ -46,9 +46,6 @@ public partial class GroundworksView : Node2D
     Simulation? _seenIn;
     double _nextLook;
 
-    static readonly Color Spoil = new(0.47f, 0.38f, 0.27f);
-    static readonly Color SpoilLight = new(0.58f, 0.49f, 0.36f);
-    static readonly Color Slot = new(0.13f, 0.11f, 0.09f);
     static readonly Color Floor = new(0.56f, 0.46f, 0.34f);
     static readonly Color Wall = new(0.24f, 0.19f, 0.16f);
     static readonly Color Window = new(0.72f, 0.78f, 0.80f);
@@ -72,32 +69,96 @@ public partial class GroundworksView : Node2D
         LookForTrenches();
         foreach (var t in Sim.Trenches)
             if (t.Side == PlayerSide || RevealAll || _seen.Contains(t.Cell))
-                DrawTrench(View.ToScreen(t.At), t.Facing, 1f);
+                DrawTrench(View.ToScreen(t.At), t.Facing, 1f, t.Cell);
         foreach (var team in Sim.Teams)
         {
             if (team.Order != TeamOrder.DigIn || (team.Side != PlayerSide && !RevealAll)) continue;
             foreach (var s in team.Active)
                 if (s.DigProgress > 0.02f)
-                    DrawTrench(View.ToScreen(s.Position), s.Facing, s.DigProgress);
+                    {
+                    var (cx, cy) = Sim.Map.WorldToCell(s.Position);
+                    DrawTrench(View.ToScreen(s.Position), s.Facing, s.DigProgress, cy * Sim.Map.Width + cx);
+                }
         }
     }
 
+    // Fresh-dug earth in the painted look, lit from the north-west (top left)
+    static readonly Color EarthShade = new(0.25f, 0.20f, 0.14f);
+    static readonly Color Earth = new(0.39f, 0.32f, 0.23f);
+    static readonly Color EarthLit = new(0.58f, 0.50f, 0.37f);
+    static readonly Color PitWall = new(0.31f, 0.24f, 0.17f);
+    static readonly Color PitFloor = new(0.12f, 0.10f, 0.08f);
+    static readonly Vector2 ToLight = new Vector2(-1f, -1.15f).Normalized();
+
     /// <summary>
-    /// A one-man trench seen from above: a dark slot across the way he faces,
-    /// with the dug-out earth heaped in front of it. A part-dug one is shorter and shallower.
+    /// A one-man foxhole seen from above, painted like the ground: a round,
+    /// dark pit with the dug earth thrown up into a low parapet round it,
+    /// heaped highest in front. The sun from the north-west lights the near
+    /// slopes, casts a soft shadow to the south-east and leaves the north-west
+    /// inner wall of the pit in shade. A few sods are laid on the front for
+    /// cover. A part-dug hole is smaller, with less earth thrown up.
     /// </summary>
-    void DrawTrench(Vector2 at, float facing, float done)
+    void DrawTrench(Vector2 at, float facing, float done, int seed)
     {
         float m = View.Scale; // screen units per metre
-        DrawSetTransform(at, facing, Vector2.One * m);
-        // Drawn larger than life, like the men, so a trench shows round the man in it
-        float len = 2.0f + 3.0f * done;
-        DrawColoredPolygon(Shapes.Ellipse(new Vector2(1.9f, 0), 0.5f + 0.8f * done, len * 0.6f), Spoil);
-        DrawColoredPolygon(Shapes.Ellipse(new Vector2(1.7f, -0.2f), 0.3f + 0.45f * done, len * 0.42f), SpoilLight);
-        var slot = new Color(Slot, 0.35f + 0.65f * done);
-        DrawRect(new Rect2(-0.9f, -len / 2, 1.6f, len), slot);
-        DrawRect(new Rect2(-0.9f, -len / 2, 1.6f, len), new Color(0.32f, 0.26f, 0.2f, 0.9f * done), false, 0.25f);
-        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        float grow = 0.45f + 0.55f * done;
+        var fwd = new Vector2(Mathf.Cos(facing), Mathf.Sin(facing));
+        var across = new Vector2(-fwd.Y, fwd.X);
+        // Drawn larger than life, like the men, so the hole shows round the man in it
+        Vector2 P(float f, float a) => at + (fwd * f + across * a) * m;
+
+        // The earth is thrown out forward into a crescent-shaped parapet, with a
+        // lower rim of it round the sides and back of the pit
+        var pit = P(-0.2f * grow, 0);
+        float pf = 0.95f * grow, pa = 1.2f * grow;
+        var mound = P(0.95f * grow, 0);
+        float mf = 1.25f * grow, ma = 2.45f * grow;
+        // Soft shadow cast to the south-east, two layers for a blurred edge
+        var shadow = -ToLight * 0.6f * m * grow;
+        DrawColoredPolygon(Blob(mound + shadow * 1.4f, fwd, mf * 1.1f, ma * 1.06f, seed, 0), new Color(0.05f, 0.05f, 0.02f, 0.10f * done + 0.03f));
+        DrawColoredPolygon(Blob(mound + shadow, fwd, mf, ma, seed, 0), new Color(0.05f, 0.05f, 0.02f, 0.14f * done + 0.04f));
+        // Loose earth scattered thinly onto the grass
+        DrawColoredPolygon(Blob(P(0.4f * grow, 0), fwd, 2.1f * grow, 2.7f * grow, seed, 9), new Color(Earth, 0.12f * done));
+        // The rim round the pit
+        DrawColoredPolygon(Blob(pit, fwd, pf * 1.6f, pa * 1.5f, seed, 6), new Color(EarthShade, 0.85f));
+        DrawColoredPolygon(Blob(pit + ToLight * 0.15f * m, fwd, pf * 1.45f, pa * 1.38f, seed, 7), new Color(Earth, 0.85f));
+        // The parapet: dark base, then lighter towards the sun in soft steps
+        DrawColoredPolygon(Blob(mound, fwd, mf, ma, seed, 0), EarthShade);
+        DrawColoredPolygon(Blob(mound + ToLight * 0.2f * m, fwd, mf * 0.88f, ma * 0.9f, seed, 1), Earth);
+        DrawColoredPolygon(Blob(mound + ToLight * 0.4f * m, fwd, mf * 0.62f, ma * 0.72f, seed, 2), new Color(EarthLit, 0.45f));
+        DrawColoredPolygon(Blob(mound + ToLight * 0.55f * m, fwd, mf * 0.38f, ma * 0.5f, seed, 3), new Color(EarthLit, 0.35f));
+        // Clods and stones, faint, each with a speck of shadow
+        for (int i = 0; i < 6; i++)
+        {
+            float t = Shapes.Hash(seed, 100 + i) * Mathf.Tau;
+            float r = 0.3f + 0.55f * Shapes.Hash(seed, 120 + i);
+            var c = mound + (fwd * Mathf.Cos(t) * mf + across * Mathf.Sin(t) * ma) * r * m;
+            float size = (0.1f + 0.08f * Shapes.Hash(seed, 140 + i)) * m;
+            DrawCircle(c - ToLight * size * 0.7f, size, new Color(EarthShade, 0.45f * done));
+            DrawCircle(c, size * 0.8f, new Color(EarthLit, 0.5f * done));
+        }
+
+        // The pit: its lit south-east inner wall, then the shaded floor set towards the north-west
+        DrawColoredPolygon(Blob(pit, fwd, pf, pa, seed, 4), new Color(PitWall, 0.4f + 0.6f * done));
+        DrawColoredPolygon(Blob(pit + ToLight * 0.2f * m, fwd, pf * 0.8f, pa * 0.82f, seed, 5), new Color(PitFloor, 0.3f + 0.7f * done));
+    }
+
+    /// <summary>
+    /// A lumpy oval in screen space: f metres along a direction, a metres
+    /// across it, its outline wobbling steadily for a given seed.
+    /// </summary>
+    static Vector2[] Blob(Vector2 c, Vector2 fwd, float f, float a, int seed, int salt, int points = 18)
+    {
+        var across = new Vector2(-fwd.Y, fwd.X);
+        float m = View.Scale;
+        var p = new Vector2[points];
+        for (int i = 0; i < points; i++)
+        {
+            float t = Mathf.Tau * i / points;
+            float wob = 1f + 0.16f * (Shapes.Hash(seed * 31 + salt, i) - 0.5f) + 0.06f * Mathf.Sin(t * 3 + salt);
+            p[i] = c + (fwd * Mathf.Cos(t) * f + across * Mathf.Sin(t) * a) * wob * m;
+        }
+        return p;
     }
 
     /// <summary>Once a second, mark the enemy trenches the player's men can see.</summary>
