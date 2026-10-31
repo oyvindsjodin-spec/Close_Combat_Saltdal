@@ -108,6 +108,8 @@ public sealed partial class Simulation
     /// Mortars fire on anything their side can see within range, preferring
     /// groups of men, or on the point given with a Fire order.
     /// </summary>
+    const float MortarAutoPause = 15f;
+
     void ChooseMortarTarget(Soldier s)
     {
         s.Target = null;
@@ -118,14 +120,18 @@ public sealed partial class Simulation
             return d >= w.MinRange && d <= w.Range;
         }
         if (s.IsMoving || s.Team.Order == TeamOrder.Hide) return;
-        if (s.Team.Order == TeamOrder.Fire)
+        if (s.Team.Order == TeamOrder.Fire && s.BarrageLeft > 0)
         {
             if (InRange(s.Team.OrderPoint)) s.AreaTarget = s.Team.OrderPoint;
             return;
         }
+        // Left to themselves, crews save bombs: only groups of three or more,
+        // a pause between bombs to watch where they land, and one barrage
+        // kept back for when they are told where to fire
+        if (Time - s.LastFired < MortarAutoPause || s.Ammo <= MortarBarrage) return;
         var seen = VisibleEnemies(s.Side).Where(e => e.CanAct).ToList();
         Soldier? best = null;
-        int bestCount = 1; // a lone man is not worth a bomb
+        int bestCount = 2;
         foreach (var e in seen)
         {
             if (!InRange(e.Position)) continue;
@@ -144,6 +150,9 @@ public sealed partial class Simulation
         s.Ammo--;
         s.LastFired = Time;
         var aim = s.AreaTarget!.Value;
+        if (s.Team.Order == TeamOrder.Fire && s.BarrageLeft > 0 && aim == s.Team.OrderPoint
+            && --s.BarrageLeft == 0)
+            Log(s.Side, $"{s.Name}: barrage fired, {s.Ammo} bombs left.");
         float d = Vector2.Distance(s.Position, aim);
         var delta = aim - s.Position;
         if (delta.LengthSquared() > 0.01f) s.Facing = MathF.Atan2(delta.Y, delta.X);

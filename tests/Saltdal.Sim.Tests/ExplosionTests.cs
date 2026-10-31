@@ -74,4 +74,19 @@ public class ExplosionTests
         Assert.True(mortar.Soldiers[0].Ammo < Weapon.Mortar81Norwegian.Ammo, "the mortar should have fired");
         Assert.Contains(targets.Soldiers, s => s.Stress > 0 || s.Health != Health.Healthy);
     }
+
+    [Fact]
+    public void MortarFireOrderShellsThePointThenStops()
+    {
+        var sim = new Simulation(Field(), seed: 2);
+        var mortar = sim.SpawnTeam("Mortar", Side.Allied, new Vector2(150, 20), new[] { "a" }, Weapon.Mortar81Norwegian);
+        var target = new Vector2(150, 280);
+        sim.OrderFire(mortar, target);
+        for (int i = 0; i < 1200; i++) sim.Tick();
+        Assert.Equal(Weapon.Mortar81Norwegian.Ammo - Simulation.MortarBarrage, mortar.Soldiers[0].Ammo);
+        Assert.Contains(sim.Messages, m => m.Text.Contains("barrage fired"));
+
+        sim.OrderFire(mortar, new Vector2(150, 80)); // 60 m away: too close
+        Assert.Contains(sim.Messages, m => m.Text.Contains("too close"));
+    }
 }

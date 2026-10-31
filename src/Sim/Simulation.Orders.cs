@@ -46,7 +46,25 @@ public sealed partial class Simulation
     }
 
     /// <summary>Shoot at a point: at enemies seen near it, or at the area if none are.</summary>
-    public void OrderFire(Team team, Vector2 target) => SetStationaryOrder(team, TeamOrder.Fire, target);
+    public void OrderFire(Team team, Vector2 target)
+    {
+        SetStationaryOrder(team, TeamOrder.Fire, target);
+        foreach (var s in team.Soldiers.Where(s => s.Weapon.IsIndirect && s.CanAct))
+        {
+            float d = Vector2.Distance(s.Position, target);
+            if (s.Ammo == 0) Log(team.Side, $"{s.Name}: no bombs left.");
+            else if (d < s.Weapon.MinRange) Log(team.Side, $"{s.Name}: too close for the mortar, at least {s.Weapon.MinRange:0} m.");
+            else if (d > s.Weapon.Range) Log(team.Side, $"{s.Name}: out of mortar range, at most {s.Weapon.Range:0} m.");
+            else
+            {
+                s.BarrageLeft = Math.Min(MortarBarrage, s.Ammo);
+                Log(team.Side, $"{s.Name}: firing {s.BarrageLeft} bombs, {s.Ammo} left.");
+            }
+        }
+    }
+
+    /// <summary>Bombs a mortar fires at a point for one Fire order, so it does not empty itself on empty ground.</summary>
+    public const int MortarBarrage = 6;
 
     /// <summary>Stay put, go prone and fire at anything in range, facing a point.</summary>
     public void OrderDefend(Team team, Vector2 facing) => SetStationaryOrder(team, TeamOrder.Defend, facing);
@@ -97,6 +115,7 @@ public sealed partial class Simulation
             s.Target = null;
             s.AreaTarget = null;
             s.BurstLeft = 0;
+            s.BarrageLeft = 0;
             if (order != TeamOrder.None && order != TeamOrder.Hide)
             {
                 var d = point - s.Position;

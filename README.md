@@ -45,8 +45,13 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 | Stop | Halts where it is |
 | Call 25-pounders | Platoon HQ only: the guns shell the point about 50 seconds later. The HQ must be able to see the spot, and there are only two missions |
 
-Mortar teams fire on their own at groups of enemies they can see, or at the
-point you give them with Fire. They cannot fire while moving.
+Mortar teams fire on their own, now and then, at groups of three or more
+enemies they can see, but always keep the last 6 bombs back. Give a mortar team
+a Fire order and it drops a barrage of 6 bombs on that point, even where it
+cannot see. The point must be at least 150 m away (the Norwegian 81 mm reaches
+2 km). The team's button shows how many bombs are left, and the messages at the
+bottom left say when a barrage is on the way or why it cannot fire. Mortars
+cannot fire while moving.
 
 Teams with a leader (Lt O'Neill, Sgt Gallagher, the section corporals) react
 to orders at once and recover their nerve faster. A team whose leader is down
