@@ -258,6 +258,7 @@ public sealed partial class Simulation
         }
         if (before <= Health.Wounded)
         {
+            t.DownAt = Time;
             t.Path.Clear();
             t.Fleeing = false;
             t.Target = null;

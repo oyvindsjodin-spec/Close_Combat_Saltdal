@@ -47,8 +47,11 @@ public partial class Main : Node2D
     GroundworksView _groundworks = null!;
     FireView _fire = null!;
     AimView _aim = null!;
+    SoundView _sound = null!;
     /// <summary>Picking a target for a Fire order: the aiming line follows the mouse.</summary>
     bool _aiming;
+    /// <summary>Developer check (--follow): the camera keeps the selected team in view.</summary>
+    bool _follow;
     CommandBar _panel = null!;
     PanelContainer _endScreen = null!;
     Label _endText = null!;
@@ -92,6 +95,8 @@ public partial class Main : Node2D
         AddChild(_fire);
         _aim = new AimView();
         AddChild(_aim);
+        _sound = new SoundView();
+        AddChild(_sound);
 
         _camera = new CameraRig();
         AddChild(_camera);
@@ -126,6 +131,7 @@ public partial class Main : Node2D
             var team = _sim.Teams.First(t => t.Side == PlayerSide);
             var house = _sim.Houses.Where(h => h.Cells.Count >= 6).OrderBy(h => Vec.Distance(h.Center, team.Center)).First();
             _sim.OrderMove(team, house.Center, MoveMode.MoveFast);
+            _selected = team;
             _camera.Position = View.ToScreen(house.Center);
         }
         if (args.Contains("--aim") && _simOrNull != null)
@@ -137,6 +143,7 @@ public partial class Main : Node2D
             _camera.Position = View.ToScreen(_selected.Center + new Vec(0, PlayerSide == Side.Allied ? 120 : -120));
             CallDeferred(nameof(AimMouseForCheck));
         }
+        _follow = args.Contains("--follow");
         if (args.Contains("--fire") && _simOrNull != null)
         {
             // Developer check: the house nearest the player's men catches fire, and the camera looks at it
@@ -212,6 +219,7 @@ public partial class Main : Node2D
         _units.Sim = _sim;
         _units.PlayerSide = side;
         _groundworks.Sim = _fire.Sim = _aim.Sim = _sim;
+        _sound.Sim = _sim;
         _aiming = false;
         _selected = null;
         _accumulator = 0;
@@ -334,6 +342,7 @@ public partial class Main : Node2D
         }
         if (_selected != null && _selected.IsDestroyed && _selected.Soldiers.All(s => !s.CanAct))
             _selected = null;
+        if (_follow && _selected != null) _camera.Position = View.ToScreen(_selected.Center);
         _units.Alpha = (float)(_accumulator / Simulation.TickSeconds);
         _units.Selected = _selected;
         _units.Zoom = _camera.Zoom.X;
@@ -347,6 +356,7 @@ public partial class Main : Node2D
         _aim.Target = View.ToWorld(GetGlobalMousePosition());
         _aim.Zoom = _camera.Zoom.X;
         _aim.QueueRedraw();
+        _sound.Paused = _paused || _sim.IsOver;
         _fire.QueueRedraw();
         var viewSize = GetViewportRect().Size / _camera.Zoom;
         _panel.Refresh(_selected, new Rect2(_camera.GetScreenCenterPosition() - viewSize / 2, viewSize), _units.RevealAll);
@@ -433,6 +443,11 @@ public partial class Main : Node2D
                     break;
                 case Key.M when _sim.IsOver:
                     ShowMenu();
+                    break;
+                case Key.F3:
+                    // Sound on or off
+                    AudioServer.SetBusMute(0, !AudioServer.IsBusMute(0));
+                    _sim.Log(PlayerSide, AudioServer.IsBusMute(0) ? "Sound off (F3 to turn it on)." : "Sound on.");
                     break;
                 case Key.F2:
                     _units.RevealAll = !_units.RevealAll;
