@@ -32,6 +32,18 @@ public sealed partial class Simulation
         // Into a house: the men spread through its rooms instead of fanning out around the door
         var house = Map.TerrainAt(target) == TerrainType.Building ? HouseAt(target) : null;
         var places = house != null ? PlacesInHouse(house, n) : null;
+        // Onto empty foxholes of our own: each man drops into the nearest one
+        // to where he would have stood, facing the way it was dug.
+        var holeOf = new int[n];
+        Array.Fill(holeOf, -1);
+        var holes = house == null && Vector2.Distance(route[^1], target) < 2f
+            ? FreeFoxholesAround(team.Side, target, n, team) : new System.Collections.Generic.List<Trench>();
+        if (holes.Count > 0)
+        {
+            var movers = Enumerable.Range(0, n).Where(i => !team.Soldiers[i].Fleeing && !team.Soldiers[i].EscapingFire).ToList();
+            var match = MatchNearest(movers.Select(i => target + FormationOffset(i, n, heading)).ToList(), holes.Select(h => h.At).ToList());
+            for (int k = 0; k < movers.Count; k++) holeOf[movers[k]] = match[k];
+        }
         for (int i = 0; i < n; i++)
         {
             var s = team.Soldiers[i];
@@ -43,6 +55,15 @@ public sealed partial class Simulation
                 for (int w = 0; w < route.Count - 1; w++)
                     s.Path.Enqueue(route[w] + FormationOffset(i, n) * 0.3f);
                 s.Path.Enqueue(places[i]);
+                continue;
+            }
+            if (holeOf[i] >= 0)
+            {
+                var hole = holes[holeOf[i]];
+                for (int w = 0; w < route.Count - 1; w++)
+                    s.Path.Enqueue(route[w] + FormationOffset(i, n, heading) * 0.3f);
+                s.Path.Enqueue(hole.At);
+                s.FacingOnArrival = hole.Facing;
                 continue;
             }
             // Each man follows the team's route, spread a little to the side,
@@ -90,14 +111,17 @@ public sealed partial class Simulation
     /// <summary>
     /// The men spread out into a line across the way they face, each going to
     /// the nearest place in it, then turn to face the enemy. Men already in a
-    /// house or in trenches stay where they are: they have their places.
+    /// house or in trenches stay where they are: they have their places. If
+    /// there are empty foxholes of their own side close by, the men get into
+    /// those instead.
     /// </summary>
     internal void TakeUpLine(Team team, Vector2 facingPoint, bool mustDig = false)
     {
         var men = team.Soldiers.Where(s => s.CanAct && !s.Fleeing && !s.EscapingFire).ToList();
         if (men.Count == 0) return;
-        if (men.Any(s => Map.TerrainAt(s.Position) is TerrainType.Building or TerrainType.Trench)) return;
+        if (men.Any(s => Map.TerrainAt(s.Position) == TerrainType.Building)) return;
         var center = men.Aggregate(Vector2.Zero, (a, s) => a + s.Position) / men.Count;
+        if (FillFoxholes(men, center, facingPoint)) return;
         var d = facingPoint - center;
         if (d.LengthSquared() < 1) return;
         float facing = MathF.Atan2(d.Y, d.X);
@@ -116,6 +140,34 @@ public sealed partial class Simulation
             s.FacingOnArrival = facing;
             if (!s.IsMoving) s.Facing = facing;
         }
+    }
+
+    /// <summary>
+    /// Men who are not yet in a foxhole get into the empty ones of their side
+    /// near the team. Returns false if no man is in one and there are none to
+    /// get into, so the team forms an ordinary line instead. Men left over
+    /// when the holes run out stay where they are.
+    /// </summary>
+    bool FillFoxholes(System.Collections.Generic.List<Soldier> men, Vector2 center, Vector2 facingPoint)
+    {
+        bool InHole(Soldier s) => Map.TerrainAt(s.Position) == TerrainType.Trench;
+        var outside = men.Where(s => !InHole(s)).ToList();
+        var holes = outside.Count > 0
+            ? FreeFoxholesAround(men[0].Side, center, outside.Count, null)
+            : new System.Collections.Generic.List<Trench>();
+        if (outside.Count == men.Count && holes.Count == 0) return false;
+        var match = MatchNearest(outside.Select(s => s.Position).ToList(), holes.Select(h => h.At).ToList());
+        for (int k = 0; k < outside.Count; k++)
+        {
+            if (match[k] < 0) continue;
+            var s = outside[k];
+            var hole = holes[match[k]];
+            s.Path.Clear();
+            s.Path.Enqueue(hole.At);
+            var d = facingPoint - hole.At;
+            s.FacingOnArrival = d.LengthSquared() > 1 ? MathF.Atan2(d.Y, d.X) : hole.Facing;
+        }
+        return true;
     }
 
     /// <summary>The nearest spot to a point a man can stand on (and dig in, if he must).</summary>

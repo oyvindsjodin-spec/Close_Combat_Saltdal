@@ -350,6 +350,76 @@ public sealed partial class Simulation
         return men.Average(s => HasTrench(s.Position) ? 1f : s.DigProgress);
     }
 
+    // ---------------------------------------------------------------- going back into foxholes
+
+    /// <summary>Whether a man is down in a foxhole: in a dug cell and not climbing out of it.</summary>
+    public bool InFoxhole(Soldier s) => !s.IsOnTheMove && Map.TerrainAt(s.Position) == TerrainType.Trench;
+
+    int CellIndex(Vector2 p)
+    {
+        var (x, y) = Map.WorldToCell(p);
+        return Map.InBounds(x, y) ? y * Map.Width + x : -1;
+    }
+
+    /// <summary>
+    /// A foxhole is taken while a steady man of its side stays in it, or is on
+    /// his way to it. The men of <paramref name="leaving"/> do not count: they are
+    /// being given a new order and will climb out.
+    /// </summary>
+    bool FoxholeTaken(Trench t, Team? leaving) => Soldiers.Any(s =>
+        s.CanAct && s.Side == t.Side && s.Team != leaving && !s.Fleeing &&
+                (s.Path.Count == 0 ? CellIndex(s.Position) == t.Cell : CellIndex(s.Path.Last()) == t.Cell));
+
+    /// <summary>Metres from a point within which a team looks for empty foxholes of its own side.</summary>
+    public const float FoxholeReach = 10f;
+
+    /// <summary>
+    /// The empty foxholes of a side around a point: those within
+    /// <see cref="FoxholeReach"/> of it, and the rest of the line they belong
+    /// to, nearest first, at most <paramref name="count"/>.
+    /// </summary>
+    internal List<Trench> FreeFoxholesAround(Side side, Vector2 at, int count, Team? leaving)
+    {
+        var free = _trenches.Where(t => t.Side == side && Map.Terrain[t.Cell] == TerrainType.Trench && !FoxholeTaken(t, leaving)).ToList();
+        var picked = free.Where(t => Vector2.Distance(t.At, at) <= FoxholeReach).ToList();
+        if (picked.Count == 0) return picked;
+        // Follow the line on from hole to hole, so a click on one end fills it all
+        bool grew = true;
+        while (grew && picked.Count < count + 4)
+        {
+            grew = false;
+            foreach (var t in free)
+                if (!picked.Contains(t) && picked.Any(q => Vector2.Distance(q.At, t.At) <= FoxholeSpacing * 2.2f))
+                {
+                    picked.Add(t);
+                    grew = true;
+                }
+        }
+        return picked.OrderBy(t => Vector2.DistanceSquared(t.At, at)).Take(count).ToList();
+    }
+
+    /// <summary>
+    /// Pairs men with places so nobody walks far: the closest man and place
+    /// first, then the next closest of those left. Returns, for each man, the
+    /// index of his place, or -1 if there were not enough places.
+    /// </summary>
+    internal static int[] MatchNearest(IReadOnlyList<Vector2> men, IReadOnlyList<Vector2> places)
+    {
+        var result = Enumerable.Repeat(-1, men.Count).ToArray();
+        var pairs = new List<(float D, int Man, int Place)>();
+        for (int i = 0; i < men.Count; i++)
+            for (int j = 0; j < places.Count; j++)
+                pairs.Add((Vector2.DistanceSquared(men[i], places[j]), i, j));
+        var used = new bool[places.Count];
+        foreach (var (_, i, j) in pairs.OrderBy(p => p.D))
+        {
+            if (result[i] >= 0 || used[j]) continue;
+            result[i] = j;
+            used[j] = true;
+        }
+        return result;
+    }
+
     void UpdateFieldworks()
     {
         UpdateFire();

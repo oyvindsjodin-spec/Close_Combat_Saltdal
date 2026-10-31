@@ -152,4 +152,99 @@ public class FieldworkTests
         Assert.False(sim.InPrep);
         Assert.Equal(limit - (10 * 60 - sim.Time), sim.TimeLimit, 1);
     }
+
+    /// <summary>A team dug in facing south on open grass, with the preparation time still running.</summary>
+    static (Simulation Sim, Team Team) DugIn(ulong seed = 1)
+    {
+        var sim = new Simulation(Village(), seed);
+        var team = sim.SpawnTeam("Section", Side.Allied, new Vector2(100, 60), new[] { "a", "b", "c", "d", "e" });
+        sim.PrepUntil = 2000;
+        sim.OrderDigIn(team, new Vector2(100, 200));
+        for (int i = 0; i < 1200; i++) sim.Tick();
+        Assert.Equal(5, sim.Trenches.Count);
+        return (sim, team);
+    }
+
+    [Fact]
+    public void ATeamThatLeftItsFoxholesCanBeOrderedBackIntoThem()
+    {
+        var (sim, team) = DugIn();
+        // Out of the holes and away
+        Assert.True(sim.OrderMove(team, new Vector2(40, 40), MoveMode.Move));
+        for (int i = 0; i < 600; i++) sim.Tick();
+        Assert.All(team.Soldiers, s => Assert.False(sim.HasTrench(s.Position)));
+
+        // A move order onto one end of the line puts every man back in a hole of his own
+        Assert.True(sim.OrderMove(team, sim.Trenches[0].At, MoveMode.Move));
+        for (int i = 0; i < 900; i++) sim.Tick();
+        Assert.All(team.Soldiers, s => Assert.True(sim.HasTrench(s.Position)));
+        Assert.Equal(5, team.Soldiers.Select(s => sim.Map.WorldToCell(s.Position)).Distinct().Count());
+        // Facing the way the holes were dug: south
+        Assert.All(team.Soldiers, s => Assert.InRange(s.Facing, MathF.PI / 2 - 0.3f, MathF.PI / 2 + 0.3f));
+    }
+
+    [Fact]
+    public void DefendingNextToEmptyFoxholesGetsIntoThem()
+    {
+        var (sim, team) = DugIn();
+        var other = sim.SpawnTeam("Other", Side.Allied, new Vector2(100, 68), new[] { "x", "y", "z" });
+        // The first team leaves; the second, standing just behind the line, is told to defend
+        sim.OrderMove(team, new Vector2(40, 40), MoveMode.Move);
+        sim.OrderDefend(other, new Vector2(100, 200));
+        for (int i = 0; i < 600; i++) sim.Tick();
+        Assert.All(other.Soldiers, s => Assert.True(sim.HasTrench(s.Position)));
+        // The holes are taken now: the first team coming back gets only the two left
+        sim.OrderMove(team, sim.Trenches[0].At, MoveMode.Move);
+        for (int i = 0; i < 900; i++) sim.Tick();
+        Assert.Equal(2, team.Soldiers.Count(s => sim.HasTrench(s.Position)));
+        Assert.Equal(8, sim.Teams.SelectMany(t => t.Soldiers).Select(s => sim.Map.WorldToCell(s.Position)).Distinct().Count());
+    }
+
+    [Fact]
+    public void FoxholesGiveMuchBetterCoverThanLyingInTheOpen()
+    {
+        var (sim, team) = DugIn();
+        var enemy = sim.SpawnTeam("Enemy", Side.German, new Vector2(100, 200), new[] { "x" });
+        var shooter = enemy.Soldiers[0];
+        var inHole = team.Soldiers[1];
+        Assert.True(sim.InFoxhole(inHole));
+        var inOpen = sim.SpawnTeam("Open", Side.Allied, new Vector2(160, 60), new[] { "o" }).Soldiers[0];
+        sim.OrderDefend(inOpen.Team, new Vector2(160, 200));
+        for (int i = 0; i < 50; i++) sim.Tick();
+        Assert.Equal(Posture.Prone, inOpen.Posture);
+        Assert.True(sim.HitChance(shooter, inHole, 140) < sim.HitChance(shooter, inOpen, 140) * 0.35f);
+        Assert.True(sim.Exposure(inHole) < sim.Exposure(inOpen) * 0.5f);
+        Assert.True(sim.SpotRange(shooter, inHole) < sim.SpotRange(shooter, inOpen));
+    }
+
+    [Fact]
+    public void APanickedManStaysDownInHisFoxhole()
+    {
+        var (sim, team) = DugIn();
+        sim.SpawnTeam("Enemy", Side.German, new Vector2(100, 160), new[] { "x" });
+        var man = team.Soldiers[2];
+        man.Stress = 95; // panicked, not routed
+        for (int i = 0; i < 5; i++) sim.Tick();
+        Assert.Equal(MoraleState.Panicked, man.Morale);
+        Assert.False(man.Fleeing);
+        Assert.True(sim.HasTrench(man.Position));
+    }
+
+    [Fact]
+    public void ShellsBurstingNearFoxholesRarelyHurtTheMenInThem()
+    {
+        int hurtInHoles = 0, hurtInOpen = 0;
+        for (ulong seed = 1; seed <= 40; seed++)
+        {
+            var (sim, team) = DugIn(seed);
+            var open = sim.SpawnTeam("Open", Side.Allied, new Vector2(100, 120), new[] { "a", "b", "c", "d", "e" });
+            sim.OrderDefend(open, new Vector2(100, 200));
+            sim.Tick();
+            foreach (var s in team.Soldiers) sim.Explode(s.Position + new Vector2(0, 6), Explosive.Mortar81, Side.German);
+            foreach (var s in open.Soldiers) sim.Explode(s.Position + new Vector2(0, 6), Explosive.Mortar81, Side.German);
+            hurtInHoles += team.Soldiers.Count(s => s.Health != Health.Healthy);
+            hurtInOpen += open.Soldiers.Count(s => s.Health != Health.Healthy);
+        }
+        Assert.True(hurtInHoles * 3 < hurtInOpen, $"{hurtInHoles} hurt in holes, {hurtInOpen} in the open");
+    }
 }
