@@ -12,15 +12,15 @@ public sealed partial class Simulation
             return;
 
         UpdatePosture(s);
-        if (!s.Fleeing && Time < s.Team.OrderDelayUntil)
+        if (!s.Fleeing && !s.EscapingFire && Time < s.Team.OrderDelayUntil)
             return;
 
         // Pinned and cowering men stay where they are; their route waits for them
-        bool frozen = !s.Fleeing && s.Morale is MoraleState.Pinned or MoraleState.Cowering;
+        bool frozen = !s.Fleeing && !s.EscapingFire && s.Morale is MoraleState.Pinned or MoraleState.Cowering;
         if (frozen)
             return;
 
-        var mode = s.Fleeing ? MoveMode.MoveFast : s.Team.Mode;
+        var mode = s.Fleeing || s.EscapingFire ? MoveMode.MoveFast : s.Team.Mode;
         float budget = TickSeconds;
         while (budget > 0 && s.Path.Count > 0)
         {
@@ -50,15 +50,19 @@ public sealed partial class Simulation
             }
         }
         if (s.Path.Count == 0)
-            s.Fleeing = false;
+            s.Fleeing = s.EscapingFire = false;
     }
 
-    static void UpdatePosture(Soldier s)
+    void UpdatePosture(Soldier s)
     {
         if (s.Morale >= MoraleState.Pinned)
             s.Posture = Posture.Prone;
         else if (s.IsMoving)
             s.Posture = s.Team.Mode == MoveMode.Sneak ? Posture.Crouched : Posture.Standing;
+        else if (s.Team.Order == TeamOrder.DigIn)
+            s.Posture = Posture.Crouched;
+        else if (s.Team.Order is TeamOrder.Defend or TeamOrder.Fire && Map.TerrainAt(s.Position) == TerrainType.Building)
+            s.Posture = Posture.Crouched; // at a window
         else
             s.Posture = s.Team.Order is TeamOrder.Defend or TeamOrder.Hide or TeamOrder.Fire
                 ? Posture.Prone

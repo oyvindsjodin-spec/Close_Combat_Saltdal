@@ -25,7 +25,7 @@ public class CommanderTests
         sim.OrderMove(team, new Vector2(200, 60), MoveMode.MoveFast);
         for (int i = 0; i < 2500; i++) sim.Tick();
         Assert.True(Vector2.Distance(team.Center, new Vector2(200, 230)) < 30f);
-        Assert.Equal(TeamOrder.Defend, team.Order);
+        Assert.Contains(team.Order, new[] { TeamOrder.Defend, TeamOrder.DigIn }); // back at its post, maybe digging in
     }
 
     [Fact]

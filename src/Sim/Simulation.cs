@@ -93,8 +93,9 @@ public sealed partial class Simulation
         foreach (var team in _teams)
             foreach (var s in team.Soldiers)
                 MoveSoldier(s);
-        UpdateCombat();
+        if (!InPrep) UpdateCombat();
         UpdateExplosions();
+        UpdateFieldworks();
         UpdateFlags();
         _shots.RemoveAll(s => Time - s.Time > 0.6f);
         Time += TickSeconds;

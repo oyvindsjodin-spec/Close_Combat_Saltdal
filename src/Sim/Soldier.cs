@@ -53,6 +53,8 @@ public sealed class Soldier
     public Weapon Weapon { get; }
     public int Ammo { get; internal set; }
     public bool IsLeader { get; }
+    /// <summary>How far he has dug his trench, from 0 to 1.</summary>
+    public float DigProgress { get; internal set; }
     /// <summary>0 is a green recruit, 1 a veteran.</summary>
     public float Experience { get; }
 
@@ -90,6 +92,8 @@ public sealed class Soldier
     /// <summary>When he last fired, for drawing muzzle flashes.</summary>
     public float LastShotTime => LastFired;
     internal bool Fleeing;
+    /// <summary>Getting out of a burning house: he goes even if frightened.</summary>
+    internal bool EscapingFire;
 
     public Soldier(int id, string name, Vector2 position, Weapon weapon, bool isLeader = false, float experience = 0.5f)
     {

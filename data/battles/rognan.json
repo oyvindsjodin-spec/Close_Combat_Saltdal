@@ -5,6 +5,7 @@
   "title": "Rognan, 26 May 1940",
   "map": "rognan",
   "minutes": 30,
+  "prepMinutes": 5,
   "briefing": "The road ends at Rognan, at the head of Saltdalsfjorden. While ferries and puffers carry the brigade across the fjord, a rearguard holds the village and the quay. Hold the quay for 30 minutes and the last boats get away; the quay counts double.",
   "alliedRole": "Defend. Two Irish Guards sections, HQ, and two Independent Company sections in the houses. One last 25-pounder mission.",
   "germanRole": "Attack. Five squads, the Zugtrupp and a mortar, with the mountain guns and a Stuka. Take the quay before the boats leave.",

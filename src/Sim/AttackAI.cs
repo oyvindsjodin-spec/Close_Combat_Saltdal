@@ -31,6 +31,7 @@ public sealed class AttackAI : ICommander
 
     public void Update(Simulation sim)
     {
+        if (sim.InPrep) return; // waiting out of sight until the attack begins
         var enemies = sim.VisibleEnemies(Side).Where(e => e.CanAct).ToList();
         _support.Update(sim, Side, enemies);
         // The whole force goes for one flag at a time: the open one nearest its centre

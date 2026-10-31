@@ -40,6 +40,12 @@ public sealed class MapData
         return new MapData(width, height, cellSize, heights, terrain);
     }
 
+    /// <summary>
+    /// A copy with its own terrain, for one battle: trenches dug and houses burnt
+    /// down change the ground, and the next battle on this map starts fresh.
+    /// </summary>
+    public MapData Copy() => new(Width, Height, CellSize, Heights, (TerrainType[])Terrain.Clone());
+
     public bool InBounds(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
 
     public TerrainType TerrainAt(int x, int y) => Terrain[y * Width + x];

@@ -121,7 +121,7 @@ public sealed class GameData
         }
         return new Scenario(b.Str("id"), (int)b.Num("order", 0), b.Str("title"), b.Str("map"), (int)b.Num("minutes"),
             b.Str("briefing"), b.Str("alliedRole"), b.Str("germanRole"), flags,
-            ReadSide(Side.Allied, "allied"), ReadSide(Side.German, "german"));
+            ReadSide(Side.Allied, "allied"), ReadSide(Side.German, "german"), (int)b.Num("prepMinutes", 0));
     }
 
     static Node Parse(string file, string json)
@@ -287,7 +287,7 @@ public sealed record SideForces(Side Side, int Budget, Vector2? Face, IReadOnlyL
 /// <summary>A battle that can be picked from the menu, read from data/battles.</summary>
 public sealed record Scenario(string Id, int Order, string Title, string Map, int Minutes,
     string Briefing, string AlliedRole, string GermanRole, IReadOnlyList<FlagSpec> Flags,
-    SideForces Allied, SideForces German)
+    SideForces Allied, SideForces German, int PrepMinutes = 0)
 {
     public SideForces Forces(Side side) => side == Side.Allied ? Allied : German;
 
@@ -299,10 +299,12 @@ public sealed record Scenario(string Id, int Order, string Title, string Map, in
     /// </summary>
     public Simulation Build(MapData map, ulong seed, Side? playerSide, IReadOnlyCollection<string>? playerPicks = null)
     {
+        map = map.Copy();
         var sim = new Simulation(map, seed)
         {
             Title = Title,
-            TimeLimit = Minutes * 60,
+            TimeLimit = (Minutes + PrepMinutes) * 60,
+            PrepUntil = PrepMinutes * 60,
             AlliedRetreatY = 0,
             GermanRetreatY = map.WorldHeight,
         };

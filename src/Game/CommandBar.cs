@@ -61,7 +61,7 @@ public partial class CommandBar : Control
         _cards.Clear();
         foreach (var team in sim.Teams.Where(t => t.Side == side))
         {
-            var card = new TeamCard(team);
+            var card = new TeamCard(team, sim);
             card.Clicked += () => TeamClicked?.Invoke(team);
             _cardRow.AddChild(card);
             _cards.Add(card);
@@ -161,12 +161,14 @@ public partial class CommandBar : Control
     partial class TeamCard : Control
     {
         public readonly Team Team;
+        readonly Simulation _sim;
         public bool Selected;
         public event Action? Clicked;
 
-        public TeamCard(Team team)
+        public TeamCard(Team team, Simulation sim)
         {
             Team = team;
+            _sim = sim;
             CustomMinimumSize = new Vector2(150, BarHeight - 16);
             MouseFilter = MouseFilterEnum.Stop;
             TooltipText = team.Name;
@@ -194,7 +196,14 @@ public partial class CommandBar : Control
 
             string order = gone ? "Out of action"
                 : Team.IsMoving ? Team.Mode switch { MoveMode.MoveFast => "Moving fast", MoveMode.Sneak => "Sneaking", _ => "Moving" }
-                : Team.Order == TeamOrder.None ? "Idle" : Team.Order.ToString();
+                : Team.Order switch
+                {
+                    TeamOrder.None => "Idle",
+                    TeamOrder.Move or TeamOrder.MoveFast or TeamOrder.Sneak => "In position",
+                    TeamOrder.DigIn => $"Digging in {_sim.DigProgress(Team) * 100:0}%",
+                    _ => Team.Order.ToString(),
+                };
+            if (!gone && !Team.IsMoving && _sim.HouseAt(Team.Center) is { State: HouseState.Standing }) order += ", in a house";
             Look.Write(this, new Vector2(8, 36), order, 12, Look.DimText);
             var mood = Team.Morale;
             Look.Write(this, new Vector2(8, 52), gone ? "" : mood.ToString(), 12,

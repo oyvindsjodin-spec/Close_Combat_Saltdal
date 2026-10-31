@@ -26,11 +26,21 @@ public sealed partial class Simulation
         team.OrderPoint = target;
         DelayOrder(team);
         int n = team.Soldiers.Count;
+        // Into a house: the men spread through its rooms instead of fanning out around the door
+        var house = Map.TerrainAt(target) == TerrainType.Building ? HouseAt(target) : null;
+        var places = house != null ? PlacesInHouse(house, n) : null;
         for (int i = 0; i < n; i++)
         {
             var s = team.Soldiers[i];
-            if (s.Fleeing) continue;
+            if (s.Fleeing || s.EscapingFire) continue;
             s.Path.Clear();
+            if (places != null)
+            {
+                for (int w = 0; w < route.Count - 1; w++)
+                    s.Path.Enqueue(route[w] + FormationOffset(i, n) * 0.3f);
+                s.Path.Enqueue(places[i]);
+                continue;
+            }
             // Each man follows the team's route, spread a little to the side,
             // and fans out around the goal.
             var offset = FormationOffset(i, n);
@@ -97,6 +107,7 @@ public sealed partial class Simulation
     public string? OrderSupport(Team team, SupportAsset asset, Vector2 target)
     {
         if (!team.IsHeadquarters) return $"{team.Name} has no way to reach the guns.";
+        if (InPrep) return "The guns will not fire before the attack begins.";
         if (asset.Side != team.Side) return "That is not ours to call.";
         if (!asset.IsAvailable(Time)) return asset.MissionsLeft <= 0 ? $"{asset.Name} has nothing left." : $"{asset.Name} is still busy.";
         if (!CanObserve(team, target)) return $"{team.Name} cannot see that spot.";
@@ -110,7 +121,7 @@ public sealed partial class Simulation
         team.OrderPoint = point;
         foreach (var s in team.Soldiers)
         {
-            if (s.Fleeing) continue;
+            if (s.Fleeing || s.EscapingFire) continue;
             s.Path.Clear();
             s.Target = null;
             s.AreaTarget = null;

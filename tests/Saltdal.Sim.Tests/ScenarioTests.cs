@@ -46,7 +46,8 @@ public class ScenarioTests
         var german = sim.Teams.First(t => t.Side == Side.German).Center;
         Assert.All(sim.Flags, f => Assert.NotNull(sim.Pathfinder.FindPath(german, f.Position)));
 
-        for (int i = 0; i < 3000; i++) sim.Tick(); // five minutes
+        while (sim.InPrep) sim.Tick();
+        for (int i = 0; i < 3000; i++) sim.Tick(); // five minutes after the attack begins
         Assert.Contains(sim.Teams, t => t.Side == Side.German && (t.IsMoving || t.Order != TeamOrder.None));
     }
 

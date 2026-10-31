@@ -18,6 +18,12 @@ public enum TerrainType : byte
     Ford = 9,
     /// <summary>The wreck of a blown bridge: impassable.</summary>
     Wreck = 10,
+    /// <summary>A trench dug during the battle: the best cover there is against bullets and shells.</summary>
+    Trench = 11,
+    /// <summary>A burnt-out house: rubble and a few walls, some cover, and no roof to block sight.</summary>
+    Ruin = 12,
+    /// <summary>A house on fire: no shelter, and men inside get burnt.</summary>
+    BurningHouse = 13,
 }
 
 public static class TerrainInfo
@@ -36,18 +42,24 @@ public static class TerrainInfo
         TerrainType.Building => 1.4f,
         TerrainType.Ford => 3.5f,
         TerrainType.Wreck => float.PositiveInfinity,
+        TerrainType.Trench => 1.3f,
+        TerrainType.Ruin => 1.8f,
+        TerrainType.BurningHouse => 6f,
         _ => 1.0f,
     };
 
     public static bool IsPassable(TerrainType t) => !float.IsInfinity(MoveCost(t));
 
     /// <summary>Terrain that hides men and stops some of the bullets.</summary>
-    public static bool IsCover(TerrainType t) => t is TerrainType.Forest or TerrainType.Rock or TerrainType.Building;
+    public static bool IsCover(TerrainType t) => t is TerrainType.Forest or TerrainType.Rock or TerrainType.Building
+        or TerrainType.Trench or TerrainType.Ruin;
 
     public static string Name(TerrainType t) => t switch
     {
         TerrainType.Building => "House",
         TerrainType.Wreck => "Blown bridge",
+        TerrainType.Ruin => "Burnt-out house",
+        TerrainType.BurningHouse => "Burning house",
         _ => t.ToString(),
     };
 }

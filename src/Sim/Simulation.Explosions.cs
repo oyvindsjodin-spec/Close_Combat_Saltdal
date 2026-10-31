@@ -62,6 +62,7 @@ public sealed partial class Simulation
     public void Explode(Vector2 at, Explosive e, Side firedBy)
     {
         _blasts.Add(new Blast(at, e, Time));
+        TryIgnite(at, e);
         foreach (var s in Soldiers)
         {
             if (!s.IsAlive) continue;
@@ -90,6 +91,8 @@ public sealed partial class Simulation
                 TerrainType.Rock => 0.5f,
                 TerrainType.Forest => 0.85f,
                 TerrainType.Building => 0.6f,
+                TerrainType.Trench => 0.35f,
+                TerrainType.Ruin => 0.7f,
                 _ => 1f,
             };
             if (Rng.Chance(p))
@@ -104,7 +107,7 @@ public sealed partial class Simulation
     /// </summary>
     public bool CallSupport(SupportAsset asset, Vector2 target)
     {
-        if (asset.MissionsLeft <= 0 || Time < asset.ReadyAt) return false;
+        if (asset.MissionsLeft <= 0 || Time < asset.ReadyAt || InPrep) return false;
         asset.MissionsLeft--;
         asset.ReadyAt = Time + asset.Delay + asset.Rounds * asset.Interval + 30f;
         if (!Rng.Chance(asset.Reliability))
