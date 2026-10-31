@@ -1,0 +1,17 @@
+{
+  "name": "rognan",
+  "width": 512,
+  "height": 512,
+  "cellSize": 4,
+  "centerLat": 67.097,
+  "centerLon": 15.388,
+  "source": "AWS Terrain Tiles (terrarium), zoom 14; recipe rognan.json",
+  "bridges": [
+    {
+      "row": 57,
+      "col": 302,
+      "blown": false
+    }
+  ],
+  "note": "Rognan at the head of Saltdalsfjorden (67.098 N 15.390 E). The road ended here; the British crossed the fjord by ferry on 26 May 1940. Town blocks are laid out from the 1942 map and period photos, not surveyed."
+}

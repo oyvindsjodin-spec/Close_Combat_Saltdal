@@ -1,0 +1,17 @@
+{
+  "name": "viskiskoia",
+  "width": 384,
+  "height": 384,
+  "cellSize": 4,
+  "centerLat": 66.751,
+  "centerLon": 15.485,
+  "source": "AWS Terrain Tiles (terrarium), zoom 14; recipe viskiskoia.json",
+  "bridges": [
+    {
+      "row": 200,
+      "col": 124,
+      "blown": false
+    }
+  ],
+  "note": "Viskiskoia in upper Saltdal (hut at 66.75 N 15.483 E, geonames). Open birch upland with late snow; the road bridge the Scots Guards held on 23 May 1940."
+}

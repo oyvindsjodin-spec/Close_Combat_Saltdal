@@ -1,0 +1,52 @@
+{
+  "name": "viskiskoia",
+  "note": "Viskiskoia in upper Saltdal (hut at 66.75 N 15.483 E, geonames). Open birch upland with late snow; the road bridge the Scots Guards held on 23 May 1940.",
+  "lat": 66.751,
+  "lon": 15.485,
+  "size": 1536,
+  "treeline": 470,
+  "snowline": 520,
+  "riverWidth": 5,
+  "valleyForest": 0.35,
+  "seed": 5,
+  "road": [
+    [
+      0.999,
+      0.62
+    ],
+    [
+      0.6,
+      0.52
+    ],
+    [
+      0.47,
+      0.36
+    ],
+    [
+      0.3,
+      0.27
+    ],
+    [
+      0.0,
+      0.27
+    ]
+  ],
+  "fords": [
+    [
+      0.75,
+      0.3
+    ]
+  ],
+  "farms": [
+    [
+      0.42,
+      0.5,
+      2
+    ],
+    [
+      0.2,
+      0.18,
+      2
+    ]
+  ]
+}

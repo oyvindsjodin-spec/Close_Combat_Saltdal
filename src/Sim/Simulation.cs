@@ -43,6 +43,8 @@ public sealed partial class Simulation
 
     /// <summary>Game seconds until the battle ends on its own.</summary>
     public float TimeLimit { get; set; } = 30 * 60;
+    /// <summary>Shown at the top of the screen, e.g. "Pothus, 25 May 1940".</summary>
+    public string Title { get; set; } = "";
     public BattleResult? Result { get; private set; }
     public bool IsOver => Result != null;
 

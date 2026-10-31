@@ -86,11 +86,10 @@ public class SimulationTests
     [Fact]
     public void PothusMapLoadsAndCanBeCrossed()
     {
-        var dir = Path.Combine(AppContext.BaseDirectory, "../../../../../data/maps/pothus");
-        var map = MapData.FromBytes(384, 384, 4f,
-            File.ReadAllBytes(Path.Combine(dir, "height.bin")),
-            File.ReadAllBytes(Path.Combine(dir, "terrain.bin")));
+        var map = ScenarioTests.LoadMap("pothus");
         Assert.Contains(TerrainType.Water, map.Terrain);
+        Assert.Contains(TerrainType.Wreck, map.Terrain);
+        Assert.Contains(TerrainType.Building, map.Terrain);
         // Walk the valley floor from the south edge to the north edge
         var road = Enumerable.Range(0, map.Width).First(x => map.TerrainAt(x, map.Height - 1) == TerrainType.Road);
         var roadNorth = Enumerable.Range(0, map.Width).First(x => map.TerrainAt(x, 0) == TerrainType.Road);

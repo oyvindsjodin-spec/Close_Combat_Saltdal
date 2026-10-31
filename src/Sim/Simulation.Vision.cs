@@ -11,6 +11,7 @@ public sealed partial class Simulation
     /// <summary>Line of sight survives this many metres of forest, below the canopy.</summary>
     public const float MaxForestSight = 40f;
     public const float TreeHeight = 10f;
+    public const float HouseHeight = 6f;
 
     public static float EyeHeight(Posture p) => p switch
     {
@@ -52,6 +53,8 @@ public sealed partial class Simulation
         var terrain = Map.TerrainAt(target.Position);
         if (terrain == TerrainType.Forest) range *= 0.35f;
         else if (terrain == TerrainType.Rock) range *= 0.6f;
+        else if (terrain == TerrainType.Building) range *= 0.3f;
+        else if (terrain == TerrainType.Ford) range *= 1.2f;
         if (target.IsMoving && target.Team.Mode == MoveMode.MoveFast) range *= 1.4f;
         if (Time - target.LastFired < 2f) range = MathF.Max(range * 2.5f, 750f); // muzzle flash and noise
         range *= 1f - MathF.Min(observer.Stress, 100f) / 200f;
@@ -81,7 +84,12 @@ public sealed partial class Simulation
                 return false;
             float along = t * dist;
             bool nearEnds = along < 3f || dist - along < 3f;
-            if (!nearEnds && z - ground < TreeHeight && Map.TerrainAt(p) == TerrainType.Forest)
+            if (nearEnds || z - ground >= TreeHeight) continue;
+            var terrain = Map.TerrainAt(p);
+            // Walls: a man in a house sees out of its windows, but nobody sees through it
+            if (terrain == TerrainType.Building && along > 6f && dist - along > 6f && z - ground < HouseHeight)
+                return false;
+            if (terrain == TerrainType.Forest)
             {
                 forest += step;
                 if (forest > MaxForestSight)

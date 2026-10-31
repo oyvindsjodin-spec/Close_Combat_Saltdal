@@ -85,7 +85,7 @@ public sealed class MapData
                 {
                     if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r) continue;
                     int x = cx + dx, y = cy + dy;
-                    if (IsPassable(x, y) && TerrainAt(x, y) != TerrainType.Rock)
+                    if (IsPassable(x, y) && TerrainAt(x, y) is not (TerrainType.Rock or TerrainType.Building or TerrainType.Ford))
                         return CellCenter(x, y);
                 }
         return CellCenter(Math.Clamp(cx, 0, Width - 1), Math.Clamp(cy, 0, Height - 1));

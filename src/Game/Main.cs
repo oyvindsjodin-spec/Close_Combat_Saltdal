@@ -13,7 +13,6 @@ namespace Saltdal.Game;
 /// </summary>
 public partial class Main : Node2D
 {
-    const string MapFolder = "res://data/maps/pothus";
     Side PlayerSide = Side.Allied;
 
     // Order menu ids
@@ -21,6 +20,9 @@ public partial class Main : Node2D
     const int OrderSupportFirst = 100; // + index into Simulation.Support
 
     MapData _map = null!;
+    MapView _mapView = null!;
+    Scenario _scenario = Scenarios.Find("pothus");
+    string? _loadedMap;
     Simulation? _simOrNull;
     Simulation _sim => _simOrNull!;
     BattleMenu _menu = null!;
@@ -43,27 +45,27 @@ public partial class Main : Node2D
 
     public override void _Ready()
     {
-        _map = MapLoader.Load(MapFolder);
-
-        var mapView = new MapView();
-        mapView.Build(_map);
-        AddChild(mapView);
+        _mapView = new MapView();
+        AddChild(_mapView);
 
         _units = new UnitsView { PlayerSide = PlayerSide };
         AddChild(_units);
 
-        var size = new Vector2(_map.WorldWidth, _map.WorldHeight) * View.Scale;
-        _camera = new CameraRig { Bounds = new Rect2(Vector2.Zero, size) };
+        _camera = new CameraRig();
         AddChild(_camera);
         _camera.MakeCurrent();
 
         BuildUi();
+        LoadMap(_scenario.Map);
 
         var args = OS.GetCmdlineUserArgs();
         // Developer switches: `godot -- --reveal` shows every soldier, `--fast` runs at 4x,
-        // `--british` or `--german` skips the menu
+        // `--british` or `--german` skips the menu, `--battle=rognan` picks a battle
         if (args.Contains("--reveal")) _units.RevealAll = true;
         if (args.Contains("--fast")) _speed = 4;
+        foreach (var a in args)
+            if (a.StartsWith("--battle="))
+                _scenario = Scenarios.Find(a["--battle=".Length..]);
         if (args.Contains("--german")) StartBattle(Side.German);
         else if (args.Contains("--british")) StartBattle(Side.Allied);
         else ShowMenu();
@@ -76,13 +78,30 @@ public partial class Main : Node2D
         _menu.Visible = true;
     }
 
+    void LoadMap(string name)
+    {
+        if (_loadedMap == name) return;
+        _map = MapLoader.Load($"res://data/maps/{name}");
+        _mapView.Build(_map);
+        _camera.Bounds = new Rect2(Vector2.Zero, new Vector2(_map.WorldWidth, _map.WorldHeight) * View.Scale);
+        _camera.Position = _camera.Bounds.GetCenter();
+        _loadedMap = name;
+    }
+
+    void ChooseBattle(Scenario scenario)
+    {
+        _scenario = scenario;
+        LoadMap(scenario.Map);
+    }
+
     void StartBattle(Side side)
     {
+        LoadMap(_scenario.Map);
         PlayerSide = side;
         _menu.Visible = false;
         _panel.Visible = true;
         _paused = false;
-        _simOrNull = Scenarios.PothusDayOne(_map, _seed++, side);
+        _simOrNull = _scenario.Build(_map, _seed++, side);
         _units.Sim = _sim;
         _units.PlayerSide = side;
         _selected = null;
@@ -161,6 +180,7 @@ public partial class Main : Node2D
 
         _menu = new BattleMenu();
         _menu.SideChosen += StartBattle;
+        _menu.BattleChosen += ChooseBattle;
         center.AddChild(_menu);
     }
 
@@ -334,7 +354,7 @@ public partial class Main : Node2D
         if (CeasefireAsked) status += "   Press C again to call a ceasefire";
         string flags = string.Join("   ", _sim.Flags.Select(f => $"{f.Name}: {(f.Owner == null ? "nobody" : View.SideName(f.Owner.Value))}"));
         _hud.Text =
-            $"Pothus, 25 May 1940    {left / 60:00}:{left % 60:00} left{status}\n" +
+            $"{_sim.Title}    {left / 60:00}:{left % 60:00} left{status}\n" +
             $"{flags}\n" +
             $"Cursor: {cursor}\n" +
             "Left-click: select   Right-click: orders   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
@@ -361,7 +381,7 @@ public partial class Main : Node2D
             $"{r.Reason}\n\n{verdict}\n" +
             $"Flags held: British {r.AlliedFlagValue}, German {r.GermanFlagValue}\n\n" +
             $"{Line("British", r.AlliedLosses)}\n{Line("German", r.GermanLosses)}\n\n" +
-            "R: fight again    M: choose a side";
+            "R: fight again    M: back to the menu";
         _endScreen.Visible = true;
     }
 }

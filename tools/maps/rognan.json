@@ -1,0 +1,104 @@
+{
+  "name": "rognan",
+  "note": "Rognan at the head of Saltdalsfjorden (67.098 N 15.390 E). The road ended here; the British crossed the fjord by ferry on 26 May 1940. Town blocks are laid out from the 1942 map and period photos, not surveyed.",
+  "lat": 67.097,
+  "lon": 15.388,
+  "size": 2048,
+  "treeline": 400,
+  "snowline": 700,
+  "seaLevel": 1.0,
+  "riverWidth": 8,
+  "valleyForest": 0.3,
+  "seed": 7,
+  "road": [
+    [
+      0.999,
+      0.15
+    ],
+    [
+      0.6,
+      0.3
+    ],
+    [
+      0.45,
+      0.45
+    ],
+    [
+      0.36,
+      0.5
+    ],
+    [
+      0.16,
+      0.54
+    ]
+  ],
+  "town": {
+    "rect": [
+      0.3,
+      0.42,
+      0.43,
+      0.58
+    ],
+    "street": 12,
+    "density": 0.55
+  },
+  "farms": [
+    [
+      0.7,
+      0.2,
+      3
+    ],
+    [
+      0.82,
+      0.33,
+      3
+    ],
+    [
+      0.6,
+      0.55,
+      2
+    ],
+    [
+      0.55,
+      0.16,
+      3
+    ],
+    [
+      0.92,
+      0.22,
+      2
+    ],
+    [
+      0.66,
+      0.4,
+      2
+    ],
+    [
+      0.5,
+      0.3,
+      2
+    ]
+  ],
+  "tracks": [
+    [
+      [
+        0.17,
+        0.56
+      ],
+      [
+        0.08,
+        0.6
+      ]
+    ],
+    [
+      [
+        0.4,
+        0.58
+      ],
+      [
+        0.3,
+        0.7
+      ]
+    ]
+  ]
+}

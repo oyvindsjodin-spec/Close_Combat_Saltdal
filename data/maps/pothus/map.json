@@ -1,20 +1,17 @@
 {
   "name": "pothus",
-  "width": 384,
-  "height": 384,
+  "width": 512,
+  "height": 512,
   "cellSize": 4,
-  "centerLat": 66.95,
-  "centerLon": 15.302,
-  "source": "AWS Terrain Tiles (terrarium), zoom 14",
+  "centerLat": 66.979,
+  "centerLon": 15.325,
+  "source": "AWS Terrain Tiles (terrarium), zoom 14; recipe pothus.json",
   "bridges": [
     {
-      "row": 153,
-      "col": 162
-    },
-    {
-      "row": 306,
-      "col": 164
+      "row": 89,
+      "col": 244,
+      "blown": true
     }
   ],
-  "note": "Terrain types are derived from height and slope only; hand edits come later."
+  "note": "Pothus, where a side valley joins Saltdalselva just south of R\u00f8kland. Pothus farm at 66.983 N 15.333 E (geonames). The road bridge was blown in 1940; the river has gravel bars that can be waded."
 }

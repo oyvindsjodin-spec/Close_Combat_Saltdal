@@ -47,7 +47,7 @@ public sealed class Pathfinder
         var to = _map.TerrainAt(x1, y1);
         float terrain = (TerrainInfo.MoveCost(_map.TerrainAt(x0, y0)) + TerrainInfo.MoveCost(to)) / 2;
         // A careful route keeps to the trees and rocks, out of sight
-        if (preferCover && to is not (TerrainType.Forest or TerrainType.Rock))
+        if (preferCover && !TerrainInfo.IsCover(to))
             terrain *= OpenGroundPenalty;
         return run * terrain * slope;
     }

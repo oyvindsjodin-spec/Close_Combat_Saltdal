@@ -16,6 +16,10 @@ public partial class MapView : Sprite2D
         TerrainType.Water => new Color(0.28f, 0.44f, 0.60f),
         TerrainType.Road => new Color(0.72f, 0.64f, 0.48f),
         TerrainType.Bridge => new Color(0.38f, 0.28f, 0.20f),
+        TerrainType.Field => new Color(0.70f, 0.68f, 0.44f),
+        TerrainType.Building => new Color(0.45f, 0.24f, 0.20f),
+        TerrainType.Ford => new Color(0.42f, 0.56f, 0.66f),
+        TerrainType.Wreck => new Color(0.20f, 0.18f, 0.17f),
         _ => Colors.Magenta,
     };
 

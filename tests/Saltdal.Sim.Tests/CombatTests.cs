@@ -112,13 +112,9 @@ public class CombatTests
     [Fact]
     public void PothusBattleIsRepeatableAndEnds()
     {
-        var dir = Path.Combine(AppContext.BaseDirectory, "../../../../../data/maps/pothus");
-        MapData Load() => MapData.FromBytes(384, 384, 4f,
-            File.ReadAllBytes(Path.Combine(dir, "height.bin")),
-            File.ReadAllBytes(Path.Combine(dir, "terrain.bin")));
         BattleResult Run()
         {
-            var sim = Scenarios.PothusDayOne(Load(), seed: 3);
+            var sim = Scenarios.PothusDayOne(ScenarioTests.LoadMap("pothus"), seed: 3);
             while (!sim.IsOver) sim.Tick();
             return sim.Result!;
         }
