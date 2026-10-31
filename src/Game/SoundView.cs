@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Saltdal.Sim;
+using Side = Saltdal.Sim.Side;
 using Vec = System.Numerics.Vector2;
 
 namespace Saltdal.Game;
@@ -9,8 +10,10 @@ namespace Saltdal.Game;
 /// <summary>
 /// Plays the sounds of the battle: shots, mortar bombs leaving the tube,
 /// explosions, aircraft, burning houses and digging. Sounds come from where
-/// they happen, so distant fighting is quieter and off to one side. The sounds
-/// themselves are made by tools/make_sounds.py.
+/// they happen, so distant fighting is quieter and off to one side. Each
+/// weapon of 1940 has its own sound: the Lee-Enfield, Krag and Mauser rifles,
+/// the Bren, Colt and MG 34 machine guns, the MP 40. The sounds themselves are
+/// made by tools/make_sounds.py.
 /// </summary>
 public partial class SoundView : Node2D
 {
@@ -19,7 +22,10 @@ public partial class SoundView : Node2D
     public bool Paused { get; set; }
 
     const int Voices = 24;
-    const float WhistleSeconds = 1.2f;
+    /// <summary>How long before landing each kind of round is heard coming, matching the length of its sound.</summary>
+    const float ShellWhistle = 1.2f, MortarWhoosh = 0.9f, BombWhistle = 2.0f;
+    /// <summary>The far-off boom of the guns firing, this long before their shells land.</summary>
+    const float GunReport = 6f;
     /// <summary>At most this many new sounds of one kind start in a frame, so speeded-up fighting does not roar.</summary>
     const int PerKindPerFrame = 3;
 
@@ -27,6 +33,9 @@ public partial class SoundView : Node2D
     readonly List<AudioStreamPlayer2D> _pool = new();
     int _next;
     AudioStreamPlayer2D _aircraft = null!;
+    AudioStreamPlayer2D _siren = null!;
+    AudioStreamPlayer _distant = null!;
+    readonly Dictionary<Weapon, string> _weaponSound = new();
     readonly Dictionary<int, AudioStreamPlayer2D> _fires = new();
     readonly Dictionary<int, Soldier> _byId = new();
     readonly Dictionary<Team, float> _nextDig = new();
@@ -35,7 +44,12 @@ public partial class SoundView : Node2D
 
     public override void _Ready()
     {
-        foreach (var name in new[] { "rifle", "smg", "mg", "mortar", "blast_small", "blast_shell", "blast_bomb", "dig", "incoming" })
+        foreach (var name in new[]
+                 {
+                     "rifle_lee_enfield", "rifle_krag", "rifle_kar98k", "mg_bren", "mg_colt", "mg_mg34", "smg_mp40",
+                     "ricochet", "mortar", "mortar_light", "blast_small", "blast_shell", "blast_bomb",
+                     "incoming_shell", "incoming_mortar", "incoming_bomb", "distant_gun", "stuka_siren", "dig",
+                 })
             _sounds[name] = GD.Load<AudioStream>($"res://assets/sounds/{name}.wav");
         _sounds["aircraft"] = Looping("aircraft");
         _sounds["fire"] = Looping("fire");
@@ -47,7 +61,39 @@ public partial class SoundView : Node2D
         _aircraft = MakePlayer();
         _aircraft.Stream = _sounds["aircraft"];
         _aircraft.MaxDistance = 6000;
+        _siren = MakePlayer();
+        _siren.Stream = _sounds["stuka_siren"];
+        _siren.MaxDistance = 6000;
+        _distant = new AudioStreamPlayer { Stream = _sounds["distant_gun"], VolumeDb = -16 };
+        AddChild(_distant);
     }
+
+    /// <summary>Which sound a weapon makes, from its name in data/weapons.json, or from what kind of gun it is.</summary>
+    string WeaponSound(Soldier? s)
+    {
+        if (s == null) return "rifle_lee_enfield";
+        var w = s.Weapon;
+        if (_weaponSound.TryGetValue(w, out var known)) return known;
+        string n = w.Name.ToLowerInvariant();
+        bool german = s.Side == Side.German, norwegian = s.Team.Nation == "norwegian";
+        string kind =
+            n.Contains("enfield") || n.Contains("no. 1") ? "rifle_lee_enfield"
+            : n.Contains("krag") ? "rifle_krag"
+            : n.Contains("98") || n.Contains("mauser") ? "rifle_kar98k"
+            : n.Contains("bren") ? "mg_bren"
+            : n.Contains("colt") ? "mg_colt"
+            : n.Contains("mg 34") || n.Contains("mg34") ? "mg_mg34"
+            : n.Contains("mp 40") || n.Contains("mp40") ? "smg_mp40"
+            // Something new in the data: go by what kind of gun it is
+            : w.Burst >= 5 && w.Range >= 500 ? (german ? "mg_mg34" : norwegian ? "mg_colt" : "mg_bren")
+            : w.Burst > 1 ? "smg_mp40"
+            : german ? "rifle_kar98k" : norwegian ? "rifle_krag" : "rifle_lee_enfield";
+        _weaponSound[w] = kind;
+        return kind;
+    }
+
+    static bool IsMortarBomb(Explosive e) => e.Name.Contains("mortar", System.StringComparison.OrdinalIgnoreCase);
+    static bool IsAircraftBomb(Explosive e) => e.Name.Contains("kg") || (!IsMortarBomb(e) && e.KillRadius > 6f);
 
     static AudioStream Looping(string name)
     {
@@ -79,6 +125,8 @@ public partial class SoundView : Node2D
             _fires.Clear();
             _nextDig.Clear();
             _aircraft.Stop();
+            _siren.Stop();
+            _distant.Stop();
         }
         var started = new Dictionary<string, int>();
         void Play(string name, Vec at, float db, float pitchSpread = 0.08f)
@@ -103,25 +151,45 @@ public partial class SoundView : Node2D
         foreach (var shot in Sim.RecentShots)
         {
             if (!New(shot.Time)) continue;
-            var weapon = _byId.TryGetValue(shot.ShooterId, out var s) ? s.Weapon : null;
-            string kind = weapon == null ? "rifle"
-                : weapon.Burst >= 5 && weapon.Range >= 500 ? "mg"
-                : weapon.Burst > 1 ? "smg" : "rifle";
-            Play(kind, shot.From, kind == "rifle" ? -6 : -8);
+            string kind = WeaponSound(_byId.GetValueOrDefault(shot.ShooterId));
+            Play(kind, shot.From, kind.StartsWith("rifle") ? -6 : -8, 0.05f);
+            // Now and then a miss glances off a stone and whines away
+            if (!shot.Hit && GD.Randf() < 0.08f)
+                Play("ricochet", shot.To, -12, 0.15f);
         }
         foreach (var s in _byId.Values)
             if (s.Weapon.IsIndirect && New(s.LastShotTime))
-                Play("mortar", s.Position, -4, 0.04f);
+                Play(s.Weapon.Shell is { KillRadius: < 3f } ? "mortar_light" : "mortar", s.Position, -4, 0.04f);
         foreach (var b in Sim.RecentBlasts)
         {
             if (!New(b.Time)) continue;
-            float r = b.Explosive.KillRadius;
-            Play(r <= 4.5f ? "blast_small" : r <= 6f ? "blast_shell" : "blast_bomb", b.At, r <= 4.5f ? -3 : 0, 0.1f);
+            var e = b.Explosive;
+            string kind = IsMortarBomb(e) ? "blast_small" : IsAircraftBomb(e) ? "blast_bomb" : "blast_shell";
+            Play(kind, b.At, kind == "blast_small" ? -3 : 0, 0.1f);
         }
-        // The whistle of a shell coming in, just over a second before it lands
-        foreach (var (at, landsAt) in Sim.Incoming)
-            if (New(landsAt - WhistleSeconds))
-                Play("incoming", at, -10, 0.05f);
+        // Rounds heard coming in just before they land: the whoosh of a mortar
+        // bomb, the whistle of a shell, the scream of a bomb. Guns are also
+        // heard firing far away, a few seconds before their shells arrive.
+        foreach (var (at, e, landsAt, _) in Sim.IncomingRounds)
+        {
+            if (IsMortarBomb(e))
+            {
+                if (New(landsAt - MortarWhoosh)) Play("incoming_mortar", at, -8, 0.06f);
+            }
+            else if (IsAircraftBomb(e))
+            {
+                if (New(landsAt - BombWhistle)) Play("incoming_bomb", at, -8, 0.04f);
+            }
+            else
+            {
+                if (New(landsAt - ShellWhistle)) Play("incoming_shell", at, -9, 0.05f);
+                if (New(landsAt - GunReport) && !_distant.Playing)
+                {
+                    _distant.PitchScale = 1f + (float)GD.RandRange(-0.08, 0.08);
+                    _distant.Play();
+                }
+            }
+        }
         DigSounds();
         Loops();
         _seenUntil = now;
@@ -157,6 +225,18 @@ public partial class SoundView : Node2D
         }
         else if (_aircraft.Playing) _aircraft.Stop();
         _aircraft.StreamPaused = Paused;
+
+        // A Stuka's siren wails as it tips into its dive
+        foreach (var a in Sim.AircraftOverhead)
+            if (a.Dives && a.Start >= _seenUntil && a.Start < Sim.Time)
+            {
+                _siren.PitchScale = 1f + (float)GD.RandRange(-0.04, 0.04);
+                _siren.Play();
+            }
+        var diving = Sim.AircraftOverhead.FirstOrDefault(a => a.Dives && a.IsFlying(Sim.Time));
+        if (_siren.Playing && diving.Dives) _siren.Position = View.ToScreen(diving.PositionAt(Sim.Time));
+        _siren.StreamPaused = Paused;
+        _distant.StreamPaused = Paused;
 
         foreach (var house in Sim.Houses)
         {
