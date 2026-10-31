@@ -31,7 +31,7 @@ public partial class Main : Node2D
     Label _hud = null!;
     Label _log = null!;
     PopupMenu _orderMenu = null!;
-    TeamPanel _panel = null!;
+    CommandBar _panel = null!;
     PanelContainer _endScreen = null!;
     Label _endText = null!;
 
@@ -69,6 +69,12 @@ public partial class Main : Node2D
         if (args.Contains("--german")) StartBattle(Side.German);
         else if (args.Contains("--british")) StartBattle(Side.Allied);
         else ShowMenu();
+        foreach (var a in args)
+            if (a.StartsWith("--zoom=") && _simOrNull != null)
+            {
+                _camera.Zoom = Vector2.One * float.Parse(a["--zoom=".Length..], System.Globalization.CultureInfo.InvariantCulture);
+                _selected = _sim.Teams.First(t => t.Side == PlayerSide);
+            }
     }
 
     void ShowMenu()
@@ -82,7 +88,7 @@ public partial class Main : Node2D
     {
         if (_loadedMap == name) return;
         _map = MapLoader.Load($"res://data/maps/{name}");
-        _mapView.Build(_map);
+        _mapView.Build(_map, $"res://data/maps/{name}");
         _camera.Bounds = new Rect2(Vector2.Zero, new Vector2(_map.WorldWidth, _map.WorldHeight) * View.Scale);
         _camera.Position = _camera.Bounds.GetCenter();
         _loadedMap = name;
@@ -106,7 +112,7 @@ public partial class Main : Node2D
         _units.PlayerSide = side;
         _selected = null;
         _accumulator = 0;
-        _panel.Build(_sim, PlayerSide);
+        _panel.Build(_sim, PlayerSide, _map, _mapView.Ground);
         _endScreen.Visible = false;
         var ours = _sim.Teams.Where(t => t.Side == PlayerSide).ToList();
         var center = ours.Aggregate(Vec.Zero, (a, t) => a + t.Center) / ours.Count;
@@ -121,28 +127,27 @@ public partial class Main : Node2D
         AddChild(ui);
 
         var hudBox = new PanelContainer { Position = new Vector2(8, 8), MouseFilter = Control.MouseFilterEnum.Ignore };
-        hudBox.AddThemeStyleboxOverride("panel", new StyleBoxFlat
-        {
-            BgColor = new Color(0, 0, 0, 0.45f),
-            ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 4, ContentMarginBottom = 4,
-        });
+        hudBox.AddThemeStyleboxOverride("panel", CommandBar.Look.PanelStyle(0.88f));
         _hud = new Label();
         _hud.AddThemeFontSizeOverride("font_size", 14);
+        _hud.AddThemeColorOverride("font_color", CommandBar.Look.Text);
         hudBox.AddChild(_hud);
         ui.AddChild(hudBox);
 
         _log = new Label { MouseFilter = Control.MouseFilterEnum.Ignore };
         _log.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft);
-        _log.Position = new Vector2(12, -230);
+        _log.Position = new Vector2(12, -CommandBar.BarHeight - 100);
         _log.AddThemeFontSizeOverride("font_size", 14);
         _log.AddThemeColorOverride("font_shadow_color", Colors.Black);
         _log.AddThemeConstantOverride("shadow_offset_x", 1);
         _log.AddThemeConstantOverride("shadow_offset_y", 1);
         ui.AddChild(_log);
 
-        _panel = new TeamPanel();
+        _panel = new CommandBar();
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomWide);
+        _panel.OffsetTop = -CommandBar.BarHeight;
         _panel.GrowVertical = Control.GrowDirection.Begin;
+        _panel.MapClicked += p => _camera.Position = p;
         _panel.TeamClicked += team =>
         {
             _selected = team;
@@ -169,9 +174,11 @@ public partial class Main : Node2D
         center.MouseFilter = Control.MouseFilterEnum.Ignore;
         ui.AddChild(center);
         _endScreen = new PanelContainer { Visible = false };
+        _endScreen.AddThemeStyleboxOverride("panel", CommandBar.Look.PanelStyle(0.95f));
         center.AddChild(_endScreen);
         _endText = new Label { HorizontalAlignment = HorizontalAlignment.Center };
         _endText.AddThemeFontSizeOverride("font_size", 18);
+        _endText.AddThemeColorOverride("font_color", CommandBar.Look.Text);
         var margin = new MarginContainer();
         foreach (var side in new[] { "left", "right", "top", "bottom" })
             margin.AddThemeConstantOverride($"margin_{side}", 24);
@@ -205,7 +212,8 @@ public partial class Main : Node2D
         _units.Selected = _selected;
         _units.Zoom = _camera.Zoom.X;
         _units.QueueRedraw();
-        _panel.Refresh(_selected);
+        var viewSize = GetViewportRect().Size / _camera.Zoom;
+        _panel.Refresh(_selected, new Rect2(_camera.GetScreenCenterPosition() - viewSize / 2, viewSize), _units.RevealAll);
         UpdateHud();
         UpdateLog();
         if (_sim.IsOver && !_endScreen.Visible)

@@ -17,12 +17,11 @@ public partial class BattleMenu : PanelContainer
 
     public override void _Ready()
     {
-        AddThemeStyleboxOverride("panel", new StyleBoxFlat
-        {
-            BgColor = new Color(0.08f, 0.09f, 0.08f, 0.92f),
-            ContentMarginLeft = 28, ContentMarginRight = 28, ContentMarginTop = 22, ContentMarginBottom = 22,
-            CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4, CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
-        });
+        var style = CommandBar.Look.PanelStyle(0.96f);
+        style.ContentMarginLeft = style.ContentMarginRight = 28;
+        style.ContentMarginTop = style.ContentMarginBottom = 22;
+        AddThemeStyleboxOverride("panel", style);
+        AddThemeColorOverride("font_color", CommandBar.Look.Text);
         var box = new VBoxContainer { CustomMinimumSize = new Vector2(660, 0) };
         box.AddThemeConstantOverride("separation", 14);
         AddChild(box);

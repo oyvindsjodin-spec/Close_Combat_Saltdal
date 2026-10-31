@@ -80,7 +80,7 @@ while one of your men can see them; a faint circle marks where one was last seen
 | `src/Game` | Godot scripts that draw the simulation and handle input |
 | `scenes` | Godot scenes |
 | `data/maps` | Battle maps (height, terrain type, metadata) |
-| `tools` | `build_map.py`, which makes a map from real elevation data |
+| `tools` | `build_map.py`, which makes a map from real elevation data, and `paint_ground.py`, which paints its ground picture |
 | `tests` | Unit tests for the simulation (`dotnet test tests/Saltdal.Sim.Tests`) |
 
 ## Maps
@@ -93,6 +93,13 @@ forest, rock, snow and the river from height and slope, adds the recipe's parts
 and writes the map to `data/maps/<name>/`:
 
     python3 tools/build_map.py tools/maps/pothus.json tools/maps/viskiskoia.json tools/maps/rognan.json
+
+`tools/paint_ground.py` then paints the overhead picture the game shows,
+`data/maps/<name>/ground.jpg`, at 2 pixels per metre: fields with furrows,
+single trees with shadows, roofs, roads, the river with its depth, and hill
+shading lit from the north-west. Run it again after changing a map:
+
+    python3 tools/paint_ground.py pothus viskiskoia rognan
 
 Locations: Pothus farm 66.983 N 15.333 E (the map is centred on 66.979 N
 15.325 E), Viskiskoia 66.75 N 15.483 E, Rognan 67.098 N 15.39 E. The roads,

@@ -4,7 +4,11 @@ using Saltdal.Sim;
 
 namespace Saltdal.Game;
 
-/// <summary>Draws the terrain as one shaded image. Placeholder art until Phase 4.</summary>
+/// <summary>
+/// Draws the ground. A map folder with a painted ground.jpg (from
+/// tools/paint_ground.py) shows that; otherwise the terrain cells are shaded
+/// into a plain image.
+/// </summary>
 public partial class MapView : Sprite2D
 {
     static Color TerrainColor(TerrainType t) => t switch
@@ -23,7 +27,25 @@ public partial class MapView : Sprite2D
         _ => Colors.Magenta,
     };
 
-    public void Build(MapData map)
+    /// <summary>The ground picture, also used by the mini-map.</summary>
+    public Texture2D? Ground => Texture;
+
+    public void Build(MapData map, string folder)
+    {
+        string painted = $"{folder}/ground.jpg";
+        if (ResourceLoader.Exists(painted))
+        {
+            var tex = GD.Load<Texture2D>(painted);
+            Texture = tex;
+            Centered = false;
+            Scale = new Vector2(map.WorldWidth * View.Scale / tex.GetWidth(), map.WorldHeight * View.Scale / tex.GetHeight());
+            TextureFilter = TextureFilterEnum.LinearWithMipmaps;
+            return;
+        }
+        BuildFromCells(map);
+    }
+
+    void BuildFromCells(MapData map)
     {
         var image = Image.CreateEmpty(map.Width, map.Height, false, Image.Format.Rgb8);
         // Light from the north-west, like a printed relief map
