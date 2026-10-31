@@ -4,12 +4,14 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 2a. One battle at Pothus on 25 May 1940: you command a
-platoon of the Irish Guards and a Norwegian mortar team holding three flags,
-and the computer attacks with five German squads and a mortar team. Soldiers
-see, shoot, take cover, get pinned, panic and run; whoever holds more flag value
-when time runs out wins. Mortars, a troop of 25-pounder guns, German mountain
-guns and a Stuka dive bomber add shellfire, and leaders keep their men steady.
+**Status:** Phase 2b. One battle at Pothus on 25 May 1940, playable from
+either side. As the British you command a platoon of the Irish Guards and a
+Norwegian mortar team holding three flags against five German squads. As the
+Germans you attack with those squads, a mortar and the platoon HQ, against a
+computer that holds its flags, reinforces and counter-attacks. Soldiers see,
+shoot, take cover, get pinned, panic and run; whoever holds more flag value when
+time runs out wins. Mortars, 25-pounder guns, German mountain guns and a Stuka
+dive bomber add shellfire, and leaders keep their men steady.
 
 ## Running the game
 
@@ -19,6 +21,7 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 2. Pick the `project.godot` file in this folder, then **Import & Edit**.
 3. The first time, click **Build** (the hammer icon, top right) and wait for it to finish.
 4. Press **F5**, or the play button (top right), to run the game.
+5. Pick a side in the menu.
 
 ## Controls
 
@@ -31,7 +34,7 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 | Pause | Space (you can still give orders) |
 | Game speed | 1, 2 or 3 for normal, double and four times speed |
 | Call a ceasefire | C twice |
-| Fight again after the battle | R |
+| Fight again after the battle | R (same side) or M (back to the menu) |
 | Show all soldiers (for testing) | F2 |
 
 | Order | What the team does |
@@ -43,7 +46,7 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 | Defend | Lies down facing the point and fires at anything in range |
 | Hide | Lies low and holds fire unless the enemy gets very close |
 | Stop | Halts where it is |
-| Call 25-pounders | Platoon HQ only: the guns shell the point about 50 seconds later. The HQ must be able to see the spot, and there are only two missions |
+| Call 25-pounders / mountain guns / Stuka | HQ teams only (Platoon HQ, Zugtrupp): the guns shell the point about 50 seconds later. The HQ must be able to see the spot, and there are only two missions |
 
 Mortar teams fire on their own, now and then, at groups of three or more
 enemies they can see, but always keep the last 6 bombs back. Give a mortar team
