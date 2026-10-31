@@ -24,7 +24,7 @@ public sealed class AttackAI : ICommander
     public float AssaultRange { get; set; } = 180f;
 
     readonly Dictionary<Team, float> _fightingUntil = new();
-    float _nextSupportCall = 120f;
+    readonly SupportPlanner _support = new(firstCall: 120f);
     float _lastContact = float.NegativeInfinity;
 
     public AttackAI(Side side) => Side = side;
@@ -32,7 +32,7 @@ public sealed class AttackAI : ICommander
     public void Update(Simulation sim)
     {
         var enemies = sim.VisibleEnemies(Side).Where(e => e.CanAct).ToList();
-        UseSupport(sim, enemies);
+        _support.Update(sim, Side, enemies);
         // The whole force goes for one flag at a time: the open one nearest its centre
         var ours = sim.Soldiers.Where(s => s.Side == Side && s.IsEffective).ToList();
         var mass = ours.Count == 0 ? Vector2.Zero : ours.Aggregate(Vector2.Zero, (a, s) => a + s.Position) / ours.Count;
@@ -47,6 +47,11 @@ public sealed class AttackAI : ICommander
             if (team.Soldiers.Any(s => s.Weapon.IsIndirect))
             {
                 PlaceSupportTeam(sim, team, focus);
+                continue;
+            }
+            if (team.IsHeadquarters)
+            {
+                FollowAttack(sim, team, mass, focus);
                 continue;
             }
 
@@ -110,6 +115,23 @@ public sealed class AttackAI : ICommander
     }
 
     /// <summary>
+    /// The headquarters keeps behind the middle of the attack, close enough for
+    /// its leaders to steady the squads and to see where the guns are needed.
+    /// </summary>
+    static void FollowAttack(Simulation sim, Team team, Vector2 mass, VictoryFlag? focus)
+    {
+        if (team.IsMoving || focus == null) return;
+        var back = Vector2.Normalize(mass - focus.Position + new Vector2(0, 0.01f));
+        var spot = mass + back * 80f;
+        if (Vector2.Distance(spot, team.Center) < 60f)
+        {
+            if (team.Order != TeamOrder.Defend) sim.OrderDefend(team, focus.Position);
+            return;
+        }
+        sim.OrderMove(team, spot, MoveMode.Move, preferCover: true);
+    }
+
+    /// <summary>
     /// Mortar teams stay back: they set up behind the attack, within range of
     /// the flag it is going for, and fire on whatever the rest of the force can see.
     /// </summary>
@@ -128,39 +150,5 @@ public sealed class AttackAI : ICommander
         }
         var back = Vector2.Normalize(center - focus.Position + new Vector2(0, 0.01f));
         sim.OrderMove(team, focus.Position + back * stand, MoveMode.Move, preferCover: true);
-    }
-
-    /// <summary>
-    /// Call guns or aircraft on the thickest group of enemies in sight, as long
-    /// as none of our own men are close to it. Aircraft are saved for a big target.
-    /// </summary>
-    void UseSupport(Simulation sim, List<Soldier> enemies)
-    {
-        if (sim.Time < _nextSupportCall || enemies.Count == 0) return;
-        var assets = sim.Support.Where(a => a.Side == Side && a.IsAvailable(sim.Time)).ToList();
-        if (assets.Count == 0) return;
-
-        Soldier? best = null;
-        int bestCount = 0;
-        foreach (var e in enemies)
-        {
-            int count = enemies.Count(o => Vector2.DistanceSquared(o.Position, e.Position) < 20 * 20);
-            if (count > bestCount)
-            {
-                bestCount = count;
-                best = e;
-            }
-        }
-        if (best == null || bestCount < 3) return;
-
-        var asset = bestCount >= 4 ? assets.FirstOrDefault(a => a.IsAircraft) : null;
-        asset ??= assets.FirstOrDefault(a => !a.IsAircraft) ?? assets[0];
-        float danger = asset.Explosive.WoundRadius * 2 + asset.Spread;
-        bool friendsClose = sim.Soldiers.Any(s => s.Side == Side && s.IsEffective
-                                                  && Vector2.Distance(s.Position, best.Position) < danger);
-        if (friendsClose) return;
-
-        sim.CallSupport(asset, best.Position);
-        _nextSupportCall = sim.Time + 90f;
     }
 }

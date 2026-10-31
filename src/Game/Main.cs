@@ -7,20 +7,23 @@ using Vec = System.Numerics.Vector2;
 namespace Saltdal.Game;
 
 /// <summary>
-/// The Pothus battle: the player commands the Irish Guards platoon against the
-/// German AI. Runs the simulation in fixed ticks and draws between them.
+/// The Pothus battle: the player picks a side in the opening menu and the
+/// computer commands the other. Runs the simulation in fixed ticks and draws
+/// between them.
 /// </summary>
 public partial class Main : Node2D
 {
     const string MapFolder = "res://data/maps/pothus";
-    const Side PlayerSide = Side.Allied;
+    Side PlayerSide = Side.Allied;
 
     // Order menu ids
     const int OrderMove = 0, OrderMoveFast = 1, OrderSneak = 2, OrderFire = 3, OrderDefend = 4, OrderHide = 5, OrderStop = 6;
     const int OrderSupportFirst = 100; // + index into Simulation.Support
 
     MapData _map = null!;
-    Simulation _sim = null!;
+    Simulation? _simOrNull;
+    Simulation _sim => _simOrNull!;
+    BattleMenu _menu = null!;
     UnitsView _units = null!;
     CameraRig _camera = null!;
     Label _hud = null!;
@@ -55,25 +58,41 @@ public partial class Main : Node2D
         _camera.MakeCurrent();
 
         BuildUi();
-        StartBattle();
 
         var args = OS.GetCmdlineUserArgs();
-        // Developer switches: `godot -- --reveal` shows every soldier, `--fast` runs at 4x
+        // Developer switches: `godot -- --reveal` shows every soldier, `--fast` runs at 4x,
+        // `--british` or `--german` skips the menu
         if (args.Contains("--reveal")) _units.RevealAll = true;
         if (args.Contains("--fast")) _speed = 4;
+        if (args.Contains("--german")) StartBattle(Side.German);
+        else if (args.Contains("--british")) StartBattle(Side.Allied);
+        else ShowMenu();
     }
 
-    void StartBattle()
+    void ShowMenu()
     {
-        _sim = Scenarios.PothusDayOne(_map, _seed++);
+        _endScreen.Visible = false;
+        _panel.Visible = false;
+        _menu.Visible = true;
+    }
+
+    void StartBattle(Side side)
+    {
+        PlayerSide = side;
+        _menu.Visible = false;
+        _panel.Visible = true;
+        _paused = false;
+        _simOrNull = Scenarios.PothusDayOne(_map, _seed++, side);
         _units.Sim = _sim;
+        _units.PlayerSide = side;
         _selected = null;
         _accumulator = 0;
         _panel.Build(_sim, PlayerSide);
         _endScreen.Visible = false;
-        var guards = _sim.Teams.Where(t => t.Side == PlayerSide).ToList();
-        var center = guards.Aggregate(Vec.Zero, (a, t) => a + t.Center) / guards.Count;
-        _camera.Position = View.ToScreen(center + new Vec(0, 150));
+        var ours = _sim.Teams.Where(t => t.Side == PlayerSide).ToList();
+        var center = ours.Aggregate(Vec.Zero, (a, t) => a + t.Center) / ours.Count;
+        // Look a little towards the enemy
+        _camera.Position = View.ToScreen(center + new Vec(0, side == Side.Allied ? 150 : -150));
         _camera.Zoom = Vector2.One;
     }
 
@@ -139,10 +158,15 @@ public partial class Main : Node2D
             margin.AddThemeConstantOverride($"margin_{side}", 24);
         margin.AddChild(_endText);
         _endScreen.AddChild(margin);
+
+        _menu = new BattleMenu();
+        _menu.SideChosen += StartBattle;
+        center.AddChild(_menu);
     }
 
     public override void _Process(double delta)
     {
+        if (_simOrNull == null) return;
         if (!_paused && !_sim.IsOver)
         {
             _accumulator += delta * _speed;
@@ -170,6 +194,7 @@ public partial class Main : Node2D
 
     public override void _UnhandledInput(InputEvent e)
     {
+        if (_simOrNull == null || _menu.Visible) return;
         if (e is InputEventMouseButton { Pressed: true } mb && !_sim.IsOver)
         {
             var world = View.ToWorld(GetGlobalMousePosition());
@@ -202,7 +227,10 @@ public partial class Main : Node2D
                     else _ceasefireAskedAt = Time.GetTicksMsec();
                     break;
                 case Key.R when _sim.IsOver:
-                    StartBattle();
+                    StartBattle(PlayerSide);
+                    break;
+                case Key.M when _sim.IsOver:
+                    ShowMenu();
                     break;
                 case Key.F2:
                     _units.RevealAll = !_units.RevealAll;
@@ -325,14 +353,15 @@ public partial class Main : Node2D
     void ShowEndScreen()
     {
         var r = _sim.Result!;
-        string verdict = r.Winner == null ? "Draw" : r.Winner == PlayerSide ? "British victory" : "German victory";
+        string verdict = r.Winner == null ? "Draw" : $"{View.SideName(r.Winner.Value)} victory";
+        if (r.Winner != null) verdict += r.Winner == PlayerSide ? ": you won" : ": you lost";
         string Line(string name, Losses l) =>
             $"{name}: {l.Killed} killed, {l.Incapacitated} badly wounded, {l.Wounded} wounded, {l.Surrendered} captured, of {l.Men}";
         _endText.Text =
             $"{r.Reason}\n\n{verdict}\n" +
             $"Flags held: British {r.AlliedFlagValue}, German {r.GermanFlagValue}\n\n" +
             $"{Line("British", r.AlliedLosses)}\n{Line("German", r.GermanLosses)}\n\n" +
-            "Press R to fight again";
+            "R: fight again    M: choose a side";
         _endScreen.Visible = true;
     }
 }

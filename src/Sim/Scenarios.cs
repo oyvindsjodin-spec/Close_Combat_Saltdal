@@ -9,7 +9,9 @@ public static class Scenarios
     /// Pothus, 25 May 1940: a platoon of the Irish Guards holds the crossing;
     /// a German mountain company's leading platoons attack from the south (the AI). Names are invented.
     /// </summary>
-    public static Simulation PothusDayOne(MapData map, ulong seed = 1)
+    /// <param name="playerSide">The side a person commands; the computer takes the other.
+    /// Null lets the computer fight both sides.</param>
+    public static Simulation PothusDayOne(MapData map, ulong seed = 1, Side? playerSide = Side.Allied)
     {
         var sim = new Simulation(map, seed)
         {
@@ -66,6 +68,14 @@ public static class Scenarios
         Gruppe(sim, "5. Gruppe", map.NearestOpenGround(0.58f, 0.98f), jaeger,
             "Uffz. Graf", "Gefr. Lindner", "Jg. Hackl", "Jg. Kern", "Jg. Pirker", "Jg. Rauch", "Jg. Sommer", "Jg. Thaler", "Jg. Vogl");
 
+        // The platoon leader with his runner: he can call the guns and the Stuka
+        var zug = sim.AddTeam("Zugtrupp", Side.German);
+        zug.IsHeadquarters = true;
+        var zugAt = map.NearestOpenGround(0.50f, 0.99f);
+        sim.AddSoldier(zug, "Lt. Kranz", zugAt, Weapon.Mp40, leader: true, experience: 0.65f);
+        sim.AddSoldier(zug, "Ofw. Riedl", zugAt + new Vector2(4, 0), Weapon.Mp40, leader: true, experience: 0.7f);
+        sim.AddSoldier(zug, "Gefr. Ebner", zugAt + new Vector2(-4, 2), Weapon.Kar98k, experience: jaeger);
+
         var grw = sim.AddTeam("Granatwerfer", Side.German);
         var grwAt = map.NearestOpenGround(0.55f, 0.99f);
         sim.AddSoldier(grw, "Uffz. Eder", grwAt, Weapon.Kar98k, leader: true, experience: jaeger);
@@ -78,7 +88,8 @@ public static class Scenarios
         sim.Support.Add(new SupportAsset("Ju 87 Stuka", Side.German, Explosive.Bomb250Kg,
             missions: 1, rounds: 1, delay: 60f, interval: 0f, spread: 15f, reliability: 0.8f, isAircraft: true));
 
-        sim.Commanders.Add(new AttackAI(Side.German));
+        if (playerSide != Side.Allied) sim.Commanders.Add(new DefendAI(Side.Allied));
+        if (playerSide != Side.German) sim.Commanders.Add(new AttackAI(Side.German));
         return sim;
     }
 
