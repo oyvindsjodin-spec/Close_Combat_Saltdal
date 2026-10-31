@@ -4,8 +4,10 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 3. Three battles from the fighting in Saltdal, each
-playable from either side on its own or one after another as an operation:
+**Status:** Phase 4. Four battles from the fighting in Saltdal and one what-if,
+each playable from either side on its own, or one after another as an operation.
+The game has sound, animated soldiers, saving mid-battle and a tutorial, and
+runs on its own on Windows and Mac without Godot.
 
 | Battle | Map | What happens |
 | --- | --- | --- |
@@ -21,7 +23,20 @@ time runs out wins. Mortars, 25-pounder guns, German mountain guns and a Stuka
 add shellfire, and leaders keep their men steady. Houses give good cover and
 block sight; fords let men wade the river slowly and in the open.
 
-## Running the game
+## Playing without Godot
+
+Ready-made versions for Windows and Mac come as zips: unzip, then open
+`CloseCombatSaltdal.exe` (Windows) or `Close Combat Saltdal.app` (Mac). The
+`Read me.txt` inside says how to get past the warning Windows or macOS gives
+the first time, since the game is not signed by a known publisher. Each zip has
+a copy of the `data` folder beside the game, so the numbers can still be changed
+(see below).
+
+To build the zips yourself, install the export templates once in Godot
+(Editor > Manage Export Templates > Download and Install), then run
+`GODOT=/path/to/godot sh tools/package.sh`. They land in `build/`.
+
+## Running the game in Godot
 
 You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 
@@ -29,7 +44,10 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 2. Pick the `project.godot` file in this folder, then **Import & Edit**.
 3. The first time, click **Build** (the hammer icon, top right) and wait for it to finish.
 4. Press **F5**, or the play button (top right), to run the game.
-5. Pick a battle and a side in the menu.
+5. Pick a battle and a side in the menu. New to the game? The button at the
+   top of the menu starts a short practice battle at Viskiskoia that teaches
+   the controls one at a time, in a box at the top right. Each lesson moves on
+   once you have done what it asks; **Skip** moves on anyway.
 6. Choose your forces. The historical force is ticked to begin with; your
    budget is what it cost. Untick a team to free points for a reserve team or
    more off-map support, then press **Start battle**. The computer always
@@ -68,6 +86,8 @@ four historical battles in order, as the British or as the Germans:
 | Game speed | 1, 2 or 3 for normal, double and four times speed |
 | Ask for a ceasefire | C twice. The enemy agrees once half the time has gone, or at once if you are behind on flags |
 | After the battle | R fight again (single battle), N next battle (operation), M back to the menu |
+| Save the battle | F5. **Continue the saved battle** at the top of the menu picks it up again, paused. There is one save; F5 again replaces it |
+| Sound on or off | F3 |
 | Show all soldiers (for testing) | F2 |
 
 | Order | What the team does |
@@ -126,6 +146,21 @@ A man in a trench is about four times harder to hit lying down, and shell
 splinters mostly fly over him. The British computer side digs in by itself
 before the attack. You see your own trenches always, and enemy ones once your
 men have spotted them.
+
+## Sound and saving
+
+The sounds are made by the game itself (`tools/make_sounds.py` builds them
+from noise and tones), so nothing is recorded or borrowed. You hear the fighting
+from where it happens: far-off firing is quieter and comes from one side.
+Rifles crack, machine guns rattle, mortar bombs leave the tube with a hollow
+thump, and a shell whistles in for a second before it lands. Aircraft drone
+overhead, burning houses crackle and spades bite into the earth.
+
+A saved battle holds how the battle began and every order you gave. Loading it
+plays the battle through again from the start, very quickly, so it comes out
+exactly the same; a long battle takes a few seconds. A battle saved during the
+operation carries on the operation when it ends. Once the battle is over the
+save is removed.
 
 ## Changing the numbers
 

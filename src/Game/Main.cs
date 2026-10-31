@@ -33,6 +33,9 @@ public partial class Main : Node2D
     bool _operationDemo;
     double _demoWait;
     const string OperationSave = "user://operation.json";
+    const string BattleSave = "user://battle.json";
+    /// <summary>The battle being fought, with every order the player has given: what F5 saves.</summary>
+    SavedBattle _battle = null!;
     string? _loadedMap;
     Simulation? _simOrNull;
     Simulation _sim => _simOrNull!;
@@ -47,8 +50,12 @@ public partial class Main : Node2D
     GroundworksView _groundworks = null!;
     FireView _fire = null!;
     AimView _aim = null!;
+    SoundView _sound = null!;
+    Tutorial _tutorial = null!;
     /// <summary>Picking a target for a Fire order: the aiming line follows the mouse.</summary>
     bool _aiming;
+    /// <summary>Developer check (--follow): the camera keeps the selected team in view.</summary>
+    bool _follow;
     CommandBar _panel = null!;
     PanelContainer _endScreen = null!;
     Label _endText = null!;
@@ -60,6 +67,9 @@ public partial class Main : Node2D
     int _speed = 1;
     ulong _ceasefireAskedAt;  // real time in ms, so it works while paused too
     ulong _seed = 1;
+    float _saveAt = -1;
+    /// <summary>For the tutorial: whether the player has paused since the lesson began.</summary>
+    bool _wasPaused;
 
     public override void _Ready()
     {
@@ -92,6 +102,8 @@ public partial class Main : Node2D
         AddChild(_fire);
         _aim = new AimView();
         AddChild(_aim);
+        _sound = new SoundView();
+        AddChild(_sound);
 
         _camera = new CameraRig();
         AddChild(_camera);
@@ -101,6 +113,8 @@ public partial class Main : Node2D
         LoadMap(_scenario.Map);
 
         var args = OS.GetCmdlineUserArgs();
+        // Each battle a new one; developer checks always play the same battle
+        if (args.Length == 0) _seed = Time.GetTicksUsec() ^ (ulong)Time.GetUnixTimeFromSystem();
         // Developer switches: `godot -- --reveal` shows every soldier, `--fast` runs at 4x,
         // `--british` or `--german` skips the menu, `--battle=rognan` picks a battle
         if (args.Contains("--reveal")) _units.RevealAll = true;
@@ -125,18 +139,25 @@ public partial class Main : Node2D
             // Developer check: the first team runs into the nearest house
             var team = _sim.Teams.First(t => t.Side == PlayerSide);
             var house = _sim.Houses.Where(h => h.Cells.Count >= 6).OrderBy(h => Vec.Distance(h.Center, team.Center)).First();
-            _sim.OrderMove(team, house.Center, MoveMode.MoveFast);
+            _battle.Move(team, house.Center, MoveMode.MoveFast);
+            _selected = team;
             _camera.Position = View.ToScreen(house.Center);
         }
         if (args.Contains("--aim") && _simOrNull != null)
         {
             // Developer check: the first team takes aim at a spot towards the enemy
             _selected = _sim.Teams.First(t => t.Side == PlayerSide);
-            _sim.EndPrep();
+            _battle.EndPrep();
             _aiming = true;
             _camera.Position = View.ToScreen(_selected.Center + new Vec(0, PlayerSide == Side.Allied ? 120 : -120));
             CallDeferred(nameof(AimMouseForCheck));
         }
+        _follow = args.Contains("--follow");
+        // Developer checks: `--save-at=60` saves the battle a minute in; `--load` picks the save up again
+        foreach (var a in args)
+            if (a.StartsWith("--save-at="))
+                _saveAt = float.Parse(a["--save-at=".Length..], System.Globalization.CultureInfo.InvariantCulture);
+        if (args.Contains("--load")) LoadBattle();
         if (args.Contains("--fire") && _simOrNull != null)
         {
             // Developer check: the house nearest the player's men catches fire, and the camera looks at it
@@ -150,7 +171,7 @@ public partial class Main : Node2D
         }
         if (args.Contains("--dig") && _simOrNull != null)
             foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide))
-                _sim.OrderDigIn(t, t.Center + new Vec(0, PlayerSide == Side.Allied ? 200 : -200));
+                _battle.DigIn(t, t.Center + new Vec(0, PlayerSide == Side.Allied ? 200 : -200));
         foreach (var a in args)
             if (a.StartsWith("--zoom=") && _simOrNull != null)
             {
@@ -161,6 +182,7 @@ public partial class Main : Node2D
 
     void ShowMenu()
     {
+        _tutorial.Stop();
         _endScreen.Visible = false;
         _panel.Visible = false;
         _hudBox.Visible = false;
@@ -201,17 +223,27 @@ public partial class Main : Node2D
     void StartBattle(Side side)
     {
         LoadMap(_scenario.Map);
+        _paused = false;
+        _battle = new SavedBattle(_scenario.Id, _seed++, side, _picks, _campaign?.Save());
+        _simOrNull = _battle.Begin(_scenario, _map);
+        ShowBattle(side);
+    }
+
+    /// <summary>Hook the views up to the battle just begun or loaded.</summary>
+    void ShowBattle(Side side)
+    {
         PlayerSide = side;
+        if (_scenario.IsTutorial) _tutorial.Start(Lessons());
+        else _tutorial.Stop();
         _menu.Visible = false;
         _forceScreen.Visible = false;
         _panel.Visible = true;
-        _paused = false;
         _recorded = false;
         _hudBox.Visible = true;
-        _simOrNull = _scenario.Build(_map, _seed++, side, _picks);
         _units.Sim = _sim;
         _units.PlayerSide = side;
         _groundworks.Sim = _fire.Sim = _aim.Sim = _sim;
+        _sound.Sim = _sim;
         _aiming = false;
         _selected = null;
         _accumulator = 0;
@@ -259,6 +291,13 @@ public partial class Main : Node2D
         };
         ui.AddChild(_panel);
 
+        _tutorial = new Tutorial();
+        _tutorial.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
+        _tutorial.GrowHorizontal = Control.GrowDirection.Begin;
+        _tutorial.OffsetRight = -10;
+        _tutorial.OffsetTop = 10;
+        ui.AddChild(_tutorial);
+
         _orderMenu = new PopupMenu();
         _orderMenu.AddItem("Move", OrderMove);
         _orderMenu.AddItem("Move Fast", OrderMoveFast);
@@ -291,7 +330,7 @@ public partial class Main : Node2D
         margin.AddChild(_endText);
         _endScreen.AddChild(margin);
 
-        _menu = new BattleMenu { Battles = _data.Battles, HasSavedOperation = LoadOperation() is { IsOver: false } };
+        _menu = new BattleMenu { Battles = _data.Battles, HasTutorial = _data.Tutorial != null, HasSavedOperation = LoadOperation() is { IsOver: false } };
         _menu.SideChosen += side =>
         {
             _campaign = null;
@@ -304,6 +343,9 @@ public partial class Main : Node2D
             if (_campaign != null) NextOperationBattle();
         };
         _menu.BattleChosen += ChooseBattle;
+        _menu.SavedBattle = SavedBattleName();
+        _menu.SavedBattleLoaded += LoadBattle;
+        _menu.TutorialChosen += StartTutorial;
         center.AddChild(_menu);
 
         _forceScreen = new ForceScreen { Visible = false };
@@ -334,6 +376,7 @@ public partial class Main : Node2D
         }
         if (_selected != null && _selected.IsDestroyed && _selected.Soldiers.All(s => !s.CanAct))
             _selected = null;
+        if (_follow && _selected != null) _camera.Position = View.ToScreen(_selected.Center);
         _units.Alpha = (float)(_accumulator / Simulation.TickSeconds);
         _units.Selected = _selected;
         _units.Zoom = _camera.Zoom.X;
@@ -347,6 +390,7 @@ public partial class Main : Node2D
         _aim.Target = View.ToWorld(GetGlobalMousePosition());
         _aim.Zoom = _camera.Zoom.X;
         _aim.QueueRedraw();
+        _sound.Paused = _paused || _sim.IsOver;
         _fire.QueueRedraw();
         var viewSize = GetViewportRect().Size / _camera.Zoom;
         _panel.Refresh(_selected, new Rect2(_camera.GetScreenCenterPosition() - viewSize / 2, viewSize), _units.RevealAll);
@@ -359,7 +403,16 @@ public partial class Main : Node2D
             SaveOperation();
         }
         if (_sim.IsOver && !_endScreen.Visible)
+        {
             ShowEndScreen();
+            ForgetSavedBattle();
+        }
+        if (_saveAt >= 0 && _sim.Time >= _saveAt)
+        {
+            _saveAt = -1;
+            SaveBattle();
+            GD.Print($"Saved at tick {_sim.TickCount}: {Snapshot()}");
+        }
         if (_operationDemo)
         {
             if (!_sim.IsOver && _sim.Time > 5) _sim.CallCeasefire();
@@ -381,7 +434,7 @@ public partial class Main : Node2D
             if (_aiming && mb.ButtonIndex is MouseButton.Left or MouseButton.Right)
             {
                 // Left-click fires at the spot; right-click puts the aim away
-                if (mb.ButtonIndex == MouseButton.Left && _selected != null) _sim.OrderFire(_selected, world);
+                if (mb.ButtonIndex == MouseButton.Left && _selected != null) _battle.Fire(_selected, world);
                 _aiming = false;
                 GetViewport().SetInputAsHandled();
                 return;
@@ -402,9 +455,10 @@ public partial class Main : Node2D
             {
                 case Key.Space:
                     _paused = !_paused;
+                    if (_paused) _wasPaused = true;
                     break;
                 case Key.Enter or Key.KpEnter when _sim.InPrep:
-                    _sim.EndPrep();
+                    _battle.EndPrep();
                     break;
                 case Key.Escape:
                     if (_aiming) _aiming = false;
@@ -421,7 +475,7 @@ public partial class Main : Node2D
                     if (CeasefireAsked)
                     {
                         _ceasefireAskedAt = 0;
-                        if (_sim.RequestCeasefire(PlayerSide) is { } refusal) _sim.Log(PlayerSide, refusal);
+                        _battle.AskCeasefire();
                     }
                     else _ceasefireAskedAt = Time.GetTicksMsec();
                     break;
@@ -433,6 +487,14 @@ public partial class Main : Node2D
                     break;
                 case Key.M when _sim.IsOver:
                     ShowMenu();
+                    break;
+                case Key.F5 when !_sim.IsOver && !_operationDemo:
+                    SaveBattle();
+                    break;
+                case Key.F3:
+                    // Sound on or off
+                    AudioServer.SetBusMute(0, !AudioServer.IsBusMute(0));
+                    _sim.Log(PlayerSide, AudioServer.IsBusMute(0) ? "Sound off (F3 to turn it on)." : "Sound on.");
                     break;
                 case Key.F2:
                     _units.RevealAll = !_units.RevealAll;
@@ -489,19 +551,15 @@ public partial class Main : Node2D
         }
         switch (id)
         {
-            case OrderMove: _sim.OrderMove(_selected, _orderTarget, MoveMode.Move); break;
-            case OrderMoveFast: _sim.OrderMove(_selected, _orderTarget, MoveMode.MoveFast); break;
-            case OrderSneak: _sim.OrderMove(_selected, _orderTarget, MoveMode.Sneak); break;
+            case OrderMove: _battle.Move(_selected, _orderTarget, MoveMode.Move); break;
+            case OrderMoveFast: _battle.Move(_selected, _orderTarget, MoveMode.MoveFast); break;
+            case OrderSneak: _battle.Move(_selected, _orderTarget, MoveMode.Sneak); break;
             case OrderFire: StartAiming(); break;
-            case OrderDefend: _sim.OrderDefend(_selected, _orderTarget); break;
-            case OrderHide: _sim.OrderHide(_selected); break;
-            case OrderStop: _sim.Stop(_selected); break;
-            case OrderDigIn: _sim.OrderDigIn(_selected, _orderTarget); break;
-            case >= OrderSupportFirst:
-                var asset = _sim.Support[(int)id - OrderSupportFirst];
-                var problem = _sim.OrderSupport(_selected, asset, _orderTarget);
-                if (problem != null) _sim.Log(PlayerSide, problem);
-                break;
+            case OrderDefend: _battle.Defend(_selected, _orderTarget); break;
+            case OrderHide: _battle.Hide(_selected); break;
+            case OrderStop: _battle.Stop(_selected); break;
+            case OrderDigIn: _battle.DigIn(_selected, _orderTarget); break;
+            case >= OrderSupportFirst: _battle.Support(_selected, (int)id - OrderSupportFirst, _orderTarget); break;
         }
     }
 
@@ -644,6 +702,151 @@ public partial class Main : Node2D
             GD.PushWarning($"Could not read the saved operation: {e.Message}");
             return null;
         }
+    }
+
+    // ---------------------------------------------------------------- the tutorial
+
+    void StartTutorial()
+    {
+        if (_data.Tutorial == null) return;
+        _campaign = null;
+        _scenario = _data.Tutorial;
+        _picks = null;
+        StartBattle(Side.Allied);
+    }
+
+    bool Gave(string kind) => _battle.Commands.Any(c => c.Kind == kind);
+
+    /// <summary>The lessons, one control at a time, in the order a battle needs them.</summary>
+    IReadOnlyList<Lesson> Lessons()
+    {
+        var look = Vector2.Zero;
+        float zoom = 1;
+        int moves = 0, digs = 0, fires = 0;
+        int Count(string kind) => _battle.Commands.Count(c => c.Kind == kind);
+        return new List<Lesson>
+        {
+            new("Your men",
+                "Two rifle sections, the Platoon HQ and a mortar hold the hut. Two German squads will come up the road " +
+                "from the south. Select 1 Section: left-click one of its soldiers, or its card in the bar at the bottom. " +
+                "Tab steps through your teams.",
+                () => _selected != null),
+            new("Look around",
+                "Move the view with W A S D or the arrow keys, or drag with the middle mouse button. The mouse wheel " +
+                "zooms. Click the mini-map at the bottom right to jump to a place.",
+                () => _camera.Position.DistanceTo(look) > 250 || Mathf.Abs(_camera.Zoom.X - zoom) > 0.1f,
+                () => (look, zoom) = (_camera.Position, _camera.Zoom.X)),
+            new("Give an order",
+                "With a team selected, right-click on the map where it should go and pick Move. Move Fast runs and " +
+                "does not stop to shoot; Sneak creeps, slowly and hard to see.",
+                () => Count("move") > moves,
+                () => moves = Count("move")),
+            new("Pause",
+                "Press Space to pause. You can still look around and give orders while the game is paused. " +
+                "Press Space again to carry on.",
+                () => _wasPaused && !_paused,
+                () => _wasPaused = false),
+            new("Dig in",
+                "Select a section, right-click a little to the south of it, towards the road, and pick Dig In. " +
+                "Each man digs a trench where he stands, facing that way. It takes about a minute and a half, " +
+                "and a man in a trench is very hard to hit.",
+                () => Count("dig") > digs,
+                () => digs = Count("dig")),
+            new("Faster",
+                "The quiet before the attack is the time to get ready. Press 2 for double speed or 3 for four times, " +
+                "and 1 for normal speed again.",
+                () => _speed > 1),
+            new("Start the attack",
+                "The clock at the top left counts down to the attack. When your men are ready, press Enter to " +
+                "start it now.",
+                () => !_sim.InPrep),
+            new("Fire",
+                "Your men fire by themselves at Germans they can see. To make a team fire at a spot, select it and " +
+                "press F. A line runs to the mouse: pale where your men can see, red beyond where the view is " +
+                "blocked. Left-click to fire, right-click to cancel.",
+                () => Count("fire") > fires,
+                () => fires = Count("fire")),
+            new("Call the guns",
+                "Select the Platoon HQ, right-click on the road where the Germans are coming, and pick the 25-pounders. " +
+                "The HQ must be able to see the spot. The shells land about a minute later.",
+                () => _sim.Support.Any(a => a.Side == Side.Allied && a.MissionsLeft == 0)),
+            new("Hold the hut",
+                "Keep the flag at the hut until the time runs out or the Germans give up. A coloured dot over a man " +
+                "means he is shaken: yellow pinned, red panicked. F5 saves the battle; C twice asks for a ceasefire. " +
+                "Good luck.",
+                null),
+        };
+    }
+
+    // ---------------------------------------------------------------- saving a battle in progress
+
+    void SaveBattle()
+    {
+        using (var f = FileAccess.Open(BattleSave, FileAccess.ModeFlags.Write))
+        {
+            if (f == null)
+            {
+                _sim.Log(PlayerSide, "Could not save the battle.");
+                return;
+            }
+            f.StoreString(_battle.Save());
+        }
+        _sim.Log(PlayerSide, "Battle saved. Continue it later from the menu.");
+        _menu.SavedBattle = SavedBattleName();
+    }
+
+    /// <summary>Once a battle is over its save is no use, and loading it could undo the operation's progress.</summary>
+    void ForgetSavedBattle()
+    {
+        if (ReadSavedBattle() is not { } s || s.Battle.Seed != _battle.Seed || s.Battle.BattleId != _battle.BattleId) return;
+        DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(BattleSave));
+        _menu.SavedBattle = null;
+    }
+
+    /// <summary>Read the save, or null when there is none or it cannot be used.</summary>
+    (SavedBattle Battle, long Tick, Scenario Scenario, Campaign? Operation)? ReadSavedBattle()
+    {
+        if (!FileAccess.FileExists(BattleSave)) return null;
+        try
+        {
+            var saved = SavedBattle.Load(FileAccess.GetFileAsString(BattleSave), out long tick);
+            var operation = saved.Operation == null ? null : Campaign.Load(_data, saved.Operation);
+            var scenario = operation != null ? operation.Current : _data.Find(saved.BattleId);
+            return (saved, tick, scenario, operation);
+        }
+        catch (System.Exception e)
+        {
+            GD.PushWarning($"Could not read the saved battle: {e.Message}");
+            return null;
+        }
+    }
+
+    string? SavedBattleName()
+    {
+        if (ReadSavedBattle() is not { } s) return null;
+        float seconds = s.Tick * Simulation.TickSeconds;
+        return $"{s.Scenario.Title}, {View.SideName(s.Battle.PlayerSide)} side, {(int)seconds / 60}:{(int)seconds % 60:00} in" +
+               (s.Operation != null ? " (the operation)" : "");
+    }
+
+    /// <summary>Pick up the saved battle: play it through again, quickly, to where it was saved.</summary>
+    /// <summary>A few numbers that differ if two battles have gone differently, for checking saves.</summary>
+    string Snapshot() => $"{_sim.Soldiers.Sum(s => s.Position.X + 3 * s.Position.Y):0.000}" +
+                         $" men left {_sim.Soldiers.Count(s => s.CanAct)}";
+
+    void LoadBattle()
+    {
+        if (ReadSavedBattle() is not { } s) return;
+        _campaign = s.Operation;
+        _scenario = s.Scenario;
+        _picks = s.Battle.Picks;
+        LoadMap(_scenario.Map);
+        _battle = s.Battle;
+        _simOrNull = _battle.Replay(_scenario, _map, s.Tick);
+        ShowBattle(_battle.PlayerSide);
+        _paused = true;
+        _sim.Log(PlayerSide, "Battle loaded. Press Space to carry on.");
+        GD.Print($"Loaded at tick {_sim.TickCount}: {Snapshot()}");
     }
 
     void ShowEndScreen()

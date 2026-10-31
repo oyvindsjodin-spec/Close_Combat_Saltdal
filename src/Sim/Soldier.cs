@@ -91,6 +91,8 @@ public sealed class Soldier
     internal float LastFired = float.NegativeInfinity;
     /// <summary>When he last fired, for drawing muzzle flashes.</summary>
     public float LastShotTime => LastFired;
+    /// <summary>When he was put out of action, for the falling animation; -1 while he is on his feet.</summary>
+    public float DownAt { get; internal set; } = -1;
     internal bool Fleeing;
     /// <summary>Getting out of a burning house: he goes even if frightened.</summary>
     internal bool EscapingFire;

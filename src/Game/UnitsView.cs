@@ -25,6 +25,9 @@ public partial class UnitsView : Node2D
     const float RadiusPx = 4f;
     const int FontPx = 12;
     const float LastKnownSeconds = 20f;
+    const float FallSeconds = 0.5f;
+    /// <summary>Battle time between ticks, so animations run smoothly.</summary>
+    float Now => Sim!.Time + Alpha * Simulation.TickSeconds;
 
     public override void _Draw()
     {
@@ -81,6 +84,18 @@ public partial class UnitsView : Node2D
         if (selected && !down)
             DrawArc(prone ? new Vector2(-2, 0) : Vector2.Zero, prone ? 8.5f : 6.5f, 0, Mathf.Tau, 20, new Color(1, 1, 1, 0.85f), 1.0f);
 
+        // Falling: for half a second after being hit the body pitches over and stretches out
+        float sinceDown = s.DownAt < 0 ? 99f : Now - s.DownAt;
+        if (down && sinceDown < FallSeconds)
+        {
+            float t = sinceDown / FallSeconds;
+            float ease = 1 - (1 - t) * (1 - t);
+            DrawSetTransform(p, s.Facing + (1 - ease) * 0.5f, new Vector2(f * (0.4f + 0.6f * ease), f));
+            DrawProne(look.Dimmed(0.3f * ease), s, false);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+            return;
+        }
+
         if (s.Health == Health.Dead)
         {
             var dead = look.Dimmed(0.45f);
@@ -118,6 +133,15 @@ public partial class UnitsView : Node2D
     /// <summary>Standing or crouching: shoulders across, pack behind, helmet on top.</summary>
     void DrawUpright(Uniform u, Soldier s, bool crouched)
     {
+        if (s.IsMoving)
+        {
+            // Legs striding out in front and behind, quicker when running
+            float rate = s.Team.Mode == MoveMode.MoveFast || s.Fleeing ? 14f : s.Team.Mode == MoveMode.Sneak ? 6f : 9f;
+            float swing = Mathf.Sin(Now * rate + s.Id * 1.7f) * (crouched ? 3f : 4.2f);
+            var legs = u.Cloth.Darkened(0.45f);
+            DrawLine(new Vector2(-0.5f, -1.5f), new Vector2(-0.5f + swing, -1.5f), legs, 1.6f);
+            DrawLine(new Vector2(-0.5f, 1.5f), new Vector2(-0.5f - swing, 1.5f), legs, 1.6f);
+        }
         float w = crouched ? 4.2f : 4.8f;    // half the shoulder width
         DrawEllipse(new Vector2(-0.3f, 0), 2.6f, w, u.Cloth.Darkened(0.35f));
         DrawEllipse(new Vector2(-0.1f, 0), 2.2f, w - 0.6f, u.Cloth);
@@ -130,8 +154,10 @@ public partial class UnitsView : Node2D
     void DrawProne(Uniform u, Soldier s, bool withWeapon)
     {
         var legs = u.Cloth.Darkened(0.2f);
-        DrawLine(new Vector2(-5, -1.2f), new Vector2(-10.5f, -2.6f), legs, 1.8f);
-        DrawLine(new Vector2(-5, 1.2f), new Vector2(-10.5f, 2.4f), legs, 1.8f);
+        // Crawling: the legs work in turn
+        float crawl = withWeapon && s.IsMoving ? Mathf.Sin(Now * 7f + s.Id * 1.7f) * 1.4f : 0f;
+        DrawLine(new Vector2(-5, -1.2f), new Vector2(-10.5f + crawl, -2.6f - crawl * 0.4f), legs, 1.8f);
+        DrawLine(new Vector2(-5, 1.2f), new Vector2(-10.5f - crawl, 2.4f - crawl * 0.4f), legs, 1.8f);
         DrawEllipse(new Vector2(-2, 0), 4.8f, 2.9f, u.Cloth.Darkened(0.3f));
         DrawEllipse(new Vector2(-1.8f, 0), 4.3f, 2.4f, u.Cloth);
         DrawRect(new Rect2(-4.4f, -1.5f, 2.6f, 3f), u.Kit);
@@ -145,6 +171,9 @@ public partial class UnitsView : Node2D
         var metal = new Color(0.12f, 0.12f, 0.11f);
         var wood = new Color(0.36f, 0.24f, 0.14f);
         var from = upright ? new Vector2(0.5f, 2.6f) : new Vector2(2f, 0.9f);
+        // Recoil: the weapon kicks back for a moment as it fires
+        float sinceShot = Now - s.LastShotTime;
+        if (sinceShot >= 0 && sinceShot < 0.12f) from -= new Vector2(1.2f * (1 - sinceShot / 0.12f), 0);
         if (w.IsIndirect)
         {
             // The mortar tube set up beside him, seen end-on
@@ -248,6 +277,21 @@ public partial class UnitsView : Node2D
                 float t = age / 0.4f;
                 DrawCircle(p, size * (0.6f + 1.2f * t), new Color(1f, 0.75f, 0.3f, 0.9f * (1 - t)));
                 DrawCircle(p, size * 0.5f, new Color(1f, 1f, 0.8f, 1 - t));
+            }
+            // Earth and stones thrown up and falling back
+            if (age < 1.0f)
+            {
+                int seed = (int)(b.At.X * 13 + b.At.Y * 7);
+                for (int i = 0; i < 10; i++)
+                {
+                    float angle = Shapes.Hash(seed, i) * Mathf.Tau;
+                    float speed = size * (0.8f + 1.4f * Shapes.Hash(seed, i + 20));
+                    float lift = size * (1.5f + 2f * Shapes.Hash(seed, i + 40));
+                    var dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                    // Seen from above, a clod flies out and its rise shows as a drift up the screen
+                    var at = p + dir * speed * age + new Vector2(0, -(lift * age - lift * age * age));
+                    DrawCircle(at, (1.2f + Shapes.Hash(seed, i + 60)) * Mathf.Max(1, size / 10), new Color(0.27f, 0.22f, 0.16f, 1 - age));
+                }
             }
             // Smoke that drifts and fades over a few seconds
             float fade = Mathf.Clamp(1f - age / 3f, 0f, 1f);

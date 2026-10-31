@@ -24,6 +24,8 @@ public readonly record struct BattleMessage(float Time, Side? ForSide, string Te
 public sealed partial class Simulation
 {
     readonly List<IncomingRound> _incoming = new();
+    /// <summary>Where and when shells and bombs now in the air will land, for the sound of them coming.</summary>
+    public IEnumerable<(Vector2 At, float LandsAt)> Incoming => _incoming.Select(r => (r.At, r.LandsAt));
     readonly List<Blast> _blasts = new();
     readonly List<Aircraft> _aircraft = new();
     readonly List<BattleMessage> _messages = new();

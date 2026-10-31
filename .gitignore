@@ -12,3 +12,4 @@ obj/
 # Map builder download cache
 data/maps/.tilecache/
 __pycache__/
+build/
