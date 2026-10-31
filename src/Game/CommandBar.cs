@@ -88,17 +88,19 @@ public partial class CommandBar : Control
     {
         var r = new Rect2(Vector2.Zero, Size);
         DrawRect(r, Look.Panel);
-        // Fine horizontal grain, like painted steel
+        // A fine weave, like the webbing and canvas of the kit
         for (float y = 2; y < Size.Y; y += 3)
-            DrawLine(new Vector2(0, y), new Vector2(Size.X, y), new Color(0, 0, 0, 0.05f));
+            DrawLine(new Vector2(0, y), new Vector2(Size.X, y), new Color(0, 0, 0, 0.06f));
+        for (float x = 1; x < Size.X; x += 3)
+            DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), new Color(1, 1, 0.85f, 0.025f));
         Look.Bevel(this, r, raised: true, 3);
     }
 
     /// <summary>Colours and edges shared by the bar, the HUD and the menus.</summary>
     public static class Look
     {
-        public static readonly Color Panel = new(0.30f, 0.31f, 0.23f);
-        public static readonly Color Inset = new(0.17f, 0.18f, 0.13f);
+        public static readonly Color Panel = new(0.32f, 0.30f, 0.21f);
+        public static readonly Color Inset = new(0.15f, 0.14f, 0.10f);
         public static readonly Color Text = new(0.90f, 0.88f, 0.76f);
         public static readonly Color DimText = new(0.68f, 0.67f, 0.56f);
         public static readonly Color Highlight = new(0.95f, 0.85f, 0.45f);
