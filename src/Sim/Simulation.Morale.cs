@@ -46,9 +46,24 @@ public sealed partial class Simulation
         return MoraleState.Ready;
     }
 
-    bool LeaderNearby(Soldier s) =>
-        s.Team.Soldiers.Any(l => l.IsLeader && l != s && l.CanAct && l.Morale <= MoraleState.Pinned
-                                 && Vector2.DistanceSquared(l.Position, s.Position) < 40 * 40);
+    /// <summary>
+    /// A steady leader of his own team within 40 m, or an officer or sergeant
+    /// of a headquarters team within 60 m, helps a man pull himself together.
+    /// </summary>
+    bool LeaderNearby(Soldier s)
+    {
+        foreach (var team in _teams)
+        {
+            if (team.Side != s.Side) continue;
+            if (team != s.Team && !team.IsHeadquarters) continue;
+            float reach = team == s.Team ? 40f : 60f;
+            foreach (var l in team.Soldiers)
+                if (l.IsLeader && l != s && l.CanAct && l.Morale <= MoraleState.Pinned
+                    && Vector2.DistanceSquared(l.Position, s.Position) < reach * reach)
+                    return true;
+        }
+        return false;
+    }
 
     internal void AddStress(Soldier s, float amount)
     {

@@ -56,6 +56,11 @@ public sealed partial class Simulation
     void ChooseTarget(Soldier s)
     {
         s.AreaTarget = null;
+        if (s.Weapon.IsIndirect)
+        {
+            ChooseMortarTarget(s);
+            return;
+        }
         var order = s.Team.Order;
         float range = s.Weapon.Range;
         if (s.IsMoving)
@@ -99,8 +104,64 @@ public sealed partial class Simulation
         s.Target = candidates.Take(5).FirstOrDefault(CanHit);
     }
 
+    /// <summary>
+    /// Mortars fire on anything their side can see within range, preferring
+    /// groups of men, or on the point given with a Fire order.
+    /// </summary>
+    void ChooseMortarTarget(Soldier s)
+    {
+        s.Target = null;
+        var w = s.Weapon;
+        bool InRange(Vector2 p)
+        {
+            float d = Vector2.Distance(p, s.Position);
+            return d >= w.MinRange && d <= w.Range;
+        }
+        if (s.IsMoving || s.Team.Order == TeamOrder.Hide) return;
+        if (s.Team.Order == TeamOrder.Fire)
+        {
+            if (InRange(s.Team.OrderPoint)) s.AreaTarget = s.Team.OrderPoint;
+            return;
+        }
+        var seen = VisibleEnemies(s.Side).Where(e => e.CanAct).ToList();
+        Soldier? best = null;
+        int bestCount = 1; // a lone man is not worth a bomb
+        foreach (var e in seen)
+        {
+            if (!InRange(e.Position)) continue;
+            int count = seen.Count(o => Vector2.DistanceSquared(o.Position, e.Position) < 12 * 12);
+            if (count > bestCount)
+            {
+                bestCount = count;
+                best = e;
+            }
+        }
+        if (best != null) s.AreaTarget = best.Position;
+    }
+
+    void FireMortar(Soldier s)
+    {
+        s.Ammo--;
+        s.LastFired = Time;
+        var aim = s.AreaTarget!.Value;
+        float d = Vector2.Distance(s.Position, aim);
+        var delta = aim - s.Position;
+        if (delta.LengthSquared() > 0.01f) s.Facing = MathF.Atan2(delta.Y, delta.X);
+        // Better when the crew can see where its bombs land themselves
+        bool observed = LineOfSight(s.Position, EyeHeight(Posture.Crouched), aim, 0.5f);
+        float spread = ((observed ? 4f : 8f) + d * 0.03f) * (1.3f - 0.6f * s.Experience) * (1 + s.Stress / 100f);
+        float angle = Rng.Range(0, MathF.Tau);
+        var at = aim + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * spread * MathF.Sqrt(Rng.NextFloat());
+        FireRoundAt(at, s.Weapon.Shell!, 2f + d / 150f, s.Side);
+    }
+
     void FireRound(Soldier s)
     {
+        if (s.Weapon.IsIndirect)
+        {
+            FireMortar(s);
+            return;
+        }
         s.Ammo--;
         s.LastFired = Time;
         var aim = s.Target?.Position ?? s.AreaTarget!.Value;

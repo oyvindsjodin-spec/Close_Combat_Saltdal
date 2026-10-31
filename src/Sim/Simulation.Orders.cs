@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Saltdal.Sim;
@@ -23,6 +24,7 @@ public sealed partial class Simulation
             _ => TeamOrder.Move,
         };
         team.OrderPoint = target;
+        DelayOrder(team);
         int n = team.Soldiers.Count;
         for (int i = 0; i < n; i++)
         {
@@ -53,6 +55,36 @@ public sealed partial class Simulation
     public void OrderHide(Team team) => SetStationaryOrder(team, TeamOrder.Hide, team.Center);
 
     public void Stop(Team team) => SetStationaryOrder(team, TeamOrder.None, team.Center);
+
+    /// <summary>
+    /// A team with a leader moves off at once; without one the men take a
+    /// while to agree what to do, longer the more frightened they are.
+    /// </summary>
+    void DelayOrder(Team team)
+    {
+        if (team.HasLeader) { team.OrderDelayUntil = Time; return; }
+        float stress = team.Active.Select(s => s.Stress).DefaultIfEmpty(0).Average();
+        team.OrderDelayUntil = Time + 4f + stress / 10f;
+    }
+
+    /// <summary>Whether any steady man of the team can see a point on the ground.</summary>
+    public bool CanObserve(Team team, Vector2 point) =>
+        team.Soldiers.Any(s => s.CanAct && s.Morale <= MoraleState.Pinned
+                               && LineOfSight(s.Position, EyeHeight(Posture.Crouched), point, 0.5f));
+
+    /// <summary>
+    /// The player's way to call support: a headquarters team must be able to
+    /// see the target. Returns a message to show if it could not be called.
+    /// </summary>
+    public string? OrderSupport(Team team, SupportAsset asset, Vector2 target)
+    {
+        if (!team.IsHeadquarters) return $"{team.Name} has no way to reach the guns.";
+        if (asset.Side != team.Side) return "That is not ours to call.";
+        if (!asset.IsAvailable(Time)) return asset.MissionsLeft <= 0 ? $"{asset.Name} has nothing left." : $"{asset.Name} is still busy.";
+        if (!CanObserve(team, target)) return $"{team.Name} cannot see that spot.";
+        CallSupport(asset, target);
+        return null;
+    }
 
     void SetStationaryOrder(Team team, TeamOrder order, Vector2 point)
     {
@@ -95,8 +127,8 @@ public sealed partial class Simulation
 
     public static Vector2 FormationOffset(int index, int count)
     {
-        // A loose two-row line, about 4 m between men
-        const float spacing = 4f;
+        // A loose two-row line, about 6 m between men
+        const float spacing = 6f;
         int perRow = (count + 1) / 2;
         int row = index / perRow, col = index % perRow;
         float x = (col - (perRow - 1) / 2f) * spacing;

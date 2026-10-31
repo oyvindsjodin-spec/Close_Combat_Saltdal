@@ -4,10 +4,12 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 1 (vertical slice). One battle at Pothus on 25 May 1940:
-you command a platoon of the Irish Guards holding three flags, and the computer
-attacks with five German squads. Soldiers see, shoot, take cover, get pinned,
-panic and run; whoever holds more flag value when time runs out wins.
+**Status:** Phase 2a. One battle at Pothus on 25 May 1940: you command a
+platoon of the Irish Guards and a Norwegian mortar team holding three flags,
+and the computer attacks with five German squads and a mortar team. Soldiers
+see, shoot, take cover, get pinned, panic and run; whoever holds more flag value
+when time runs out wins. Mortars, a troop of 25-pounder guns, German mountain
+guns and a Stuka dive bomber add shellfire, and leaders keep their men steady.
 
 ## Running the game
 
@@ -41,6 +43,15 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 | Defend | Lies down facing the point and fires at anything in range |
 | Hide | Lies low and holds fire unless the enemy gets very close |
 | Stop | Halts where it is |
+| Call 25-pounders | Platoon HQ only: the guns shell the point about 50 seconds later. The HQ must be able to see the spot, and there are only two missions |
+
+Mortar teams fire on their own at groups of enemies they can see, or at the
+point you give them with Fire. They cannot fire while moving.
+
+Teams with a leader (Lt O'Neill, Sgt Gallagher, the section corporals) react
+to orders at once and recover their nerve faster. A team whose leader is down
+waits a few seconds before obeying. Messages such as "on the way, 50 seconds" and
+"Aircraft overhead!" appear at the bottom left.
 
 Khaki dots are British, grey dots are German. The ring around each man shows
 his state of mind: black is steady, yellow pinned, orange cowering, red

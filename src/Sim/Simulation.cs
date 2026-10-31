@@ -92,6 +92,7 @@ public sealed partial class Simulation
             foreach (var s in team.Soldiers)
                 MoveSoldier(s);
         UpdateCombat();
+        UpdateExplosions();
         UpdateFlags();
         _shots.RemoveAll(s => Time - s.Time > 0.6f);
         Time += TickSeconds;
