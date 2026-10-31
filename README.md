@@ -13,6 +13,7 @@ playable from either side on its own or one after another as an operation:
 | Pothus, 25 May 1940 | Where a side valley joins Saltdalselva, 2 km square | Irish Guards hold the ridge on the east bank and the blown girder bridge from the west bank, with a Norwegian machine gun, two Norwegian mortars and 25-pounders firing over open sights |
 | Pothus, 26 May 1940 | The same map | The Germans crossed on a pontoon bridge in the night and attack the west bank from upstream; hold until the retreat |
 | Rognan, 26 May 1940 | Village and quay at the head of the fjord, 2 km square | A rearguard holds the quay while the last boats leave |
+| Rognan: what if | The same map | Did not happen: the fresh troops gathered for the Finneid line reach Rognan in time. South Wales Borderers, two mortars, Norwegians and working artillery against a bigger German attack. Not part of the operation |
 
 The computer attacks or defends, whichever side you do not pick. Soldiers see,
 shoot, take cover, get pinned, panic and run; whoever holds more flag value when
@@ -36,8 +37,8 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 
 ## The operation
 
-Below the battles in the menu, **The operation, 23 to 26 May** fights all
-four battles in order, as the British or as the Germans:
+Below the battles in the menu, **The operation, 23 to 26 May** fights the
+four historical battles in order, as the British or as the Germans:
 
 - Men who come through a battle fight again if their team is in the next one,
   each a little more experienced. The dead, the badly wounded and the captured

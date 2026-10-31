@@ -81,7 +81,7 @@ public partial class BattleMenu : PanelContainer
         var op = new Label { Text = "The operation, 23 to 26 May", HorizontalAlignment = HorizontalAlignment.Center };
         op.AddThemeFontSizeOverride("font_size", 22);
         box.AddChild(op);
-        box.AddChild(Text("Fight the three battles in order, from Viskiskoia to Rognan. Men who come through " +
+        box.AddChild(Text("Fight the four historical battles in order, from Viskiskoia to Rognan. Men who come through " +
                           "fight again in the next battle, a little more experienced; the dead and badly wounded do not. " +
                           "The winner of each battle gets more points for the next.", 14));
         var opRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };

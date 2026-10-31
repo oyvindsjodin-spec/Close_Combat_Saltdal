@@ -34,6 +34,9 @@ public class CampaignTests
         c.Record(Fight(c));
         Assert.True(c.IsOver);
         Assert.Equal(4, c.Results.Count);
+        // The what-if battle is in the menu but not in the operation
+        Assert.DoesNotContain(c.Results, r => r.Id == "rognan_alt");
+        Assert.Contains(Data.Battles, b => b.Id == "rognan_alt" && !b.InOperation);
     }
 
     [Fact]
