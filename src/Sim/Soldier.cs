@@ -87,6 +87,8 @@ public sealed class Soldier
     internal int BarrageLeft;
     internal float LastUnderFire = float.NegativeInfinity;
     internal float LastFired = float.NegativeInfinity;
+    /// <summary>When he last fired, for drawing muzzle flashes.</summary>
+    public float LastShotTime => LastFired;
     internal bool Fleeing;
 
     public Soldier(int id, string name, Vector2 position, Weapon weapon, bool isLeader = false, float experience = 0.5f)
