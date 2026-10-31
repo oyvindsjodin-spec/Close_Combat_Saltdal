@@ -337,12 +337,15 @@ public sealed record Scenario(string Id, int Order, string Title, string Map, in
                 team.IsHeadquarters = type.Headquarters;
                 team.Nation = type.Nation;
                 var at = At(o.At);
+                // Facing the enemy, the men stand in a line across the way they face
+                float? facing = forces.Face is { } f ? MathF.Atan2(f.Y, f.X) : null;
                 for (int i = 0; i < o.MenCount; i++)
                 {
                     var spec = type.Men[i];
                     string name = i < o.MenNames.Length ? o.MenNames[i] : $"{type.Name} {i + 1}";
                     float exp = o.MenExperience?[i] ?? spec.Experience ?? o.Experience ?? type.Experience;
-                    sim.AddSoldier(team, name, at + Simulation.FormationOffset(i, o.MenCount), spec.Weapon, spec.Leader, exp);
+                    var offset = facing is { } a ? Simulation.LineOffset(i, o.MenCount, a, type.Men[0].Leader) : Simulation.FormationOffset(i, o.MenCount);
+                    sim.AddSoldier(team, name, at + offset, spec.Weapon, spec.Leader, exp);
                 }
                 if (forces.Face is { } face)
                     sim.OrderDefend(team, team.Center + face);

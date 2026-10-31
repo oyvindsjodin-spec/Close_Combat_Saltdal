@@ -26,12 +26,74 @@ public partial class UnitsView : Node2D
     const int FontPx = 12;
     const float LastKnownSeconds = 20f;
     const float FallSeconds = 0.5f;
-    /// <summary>Battle time between ticks, so animations run smoothly.</summary>
-    float Now => Sim!.Time + Alpha * Simulation.TickSeconds;
+    /// <summary>Battle time between ticks, so animations run smoothly. Positions are drawn between the last two ticks.</summary>
+    float Now => Sim!.Time + (Alpha - 1) * Simulation.TickSeconds;
+
+    /// <summary>
+    /// What each man looks like on screen, eased towards what the simulation
+    /// says: the way he faces turns rather than snaps, he drops to the ground
+    /// and gets up over a moment, and his legs move with the ground he covers.
+    /// </summary>
+    sealed class Pose
+    {
+        public float Facing;
+        /// <summary>0 standing, 1 lying down.</summary>
+        public float Low;
+        /// <summary>Step cycle, advanced by distance walked, so feet do not slide.</summary>
+        public float Stride;
+        /// <summary>How much he is walking now (0 to 1), so the legs settle when he stops.</summary>
+        public float Walking;
+        public Vector2 LastAt;
+        public bool Fresh = true;
+    }
+    readonly System.Collections.Generic.Dictionary<Soldier, Pose> _poses = new();
+    Simulation? _poseSim;
+    ulong _lastDrawUsec;
+    float _dt;
+
+    const float TurnRate = 7f;        // radians a second
+    const float DropRate = 3.5f;      // a man gets down in under a third of a second
+    const float StrideMetres = 1.6f;  // ground covered in one full step cycle
+
+    Pose PoseOf(Soldier s, Vector2 at)
+    {
+        if (!_poses.TryGetValue(s, out var pose))
+            _poses[s] = pose = new Pose();
+        float lowTarget = s.Health >= Health.Incapacitated || s.Posture == Posture.Prone ? 1f
+            : s.Posture == Posture.Crouched ? 0.35f : 0f;
+        if (pose.Fresh)
+        {
+            pose.Facing = s.Facing;
+            pose.Low = lowTarget;
+            pose.LastAt = at;
+            pose.Fresh = false;
+            return pose;
+        }
+        // Turn the short way round, no faster than a man turns
+        float diff = Mathf.Wrap(s.Facing - pose.Facing, -Mathf.Pi, Mathf.Pi);
+        float turn = TurnRate * _dt;
+        pose.Facing += Mathf.Abs(diff) <= turn ? diff : Mathf.Sign(diff) * turn;
+        pose.Low = Mathf.MoveToward(pose.Low, lowTarget, DropRate * _dt);
+        // Steps follow the distance actually covered on screen this frame
+        float moved = (at - pose.LastAt).Length() / View.Scale;
+        pose.LastAt = at;
+        if (moved < 5f) pose.Stride += moved / StrideMetres * Mathf.Tau;
+        float walking = s.IsMoving && moved > 0.0005f ? 1f : 0f;
+        pose.Walking = Mathf.MoveToward(pose.Walking, walking, 6f * _dt);
+        return pose;
+    }
 
     public override void _Draw()
     {
         if (Sim == null) return;
+        if (_poseSim != Sim)
+        {
+            _poses.Clear();
+            _poseSim = Sim;
+        }
+        ulong usec = Time.GetTicksUsec();
+        _dt = _lastDrawUsec == 0 ? 0 : Mathf.Min((usec - _lastDrawUsec) / 1e6f, 0.1f);
+        _lastDrawUsec = usec;
         float k = 1f / Zoom;
         foreach (var flag in Sim.Flags)
             DrawFlag(flag, k);
@@ -73,14 +135,19 @@ public partial class UnitsView : Node2D
         float f = k * Mathf.Clamp(Mathf.Sqrt(Zoom), 1.0f, 2.2f);
         var look = Uniform.For(s);
         bool down = s.Health >= Health.Incapacitated;
-        bool prone = down || s.Posture == Posture.Prone;
+        var pose = PoseOf(s, p);
+        // Lying down once he is mostly down; on the way down or up he shows as a crouch
+        bool prone = down || pose.Low > 0.7f;
+        float facing = pose.Facing;
+        // Body sway with each step: the shoulders turn a little from side to side
+        float sway = pose.Walking * Mathf.Sin(pose.Stride) * (prone ? 0.10f : 0.13f);
 
         // Shadow falls to the south-east, away from the light
-        DrawSetTransform(p + new Vector2(1.6f, 1.6f) * f, s.Facing, Vector2.One * f);
+        DrawSetTransform(p + new Vector2(1.6f, 1.6f) * f, facing, Vector2.One * f);
         if (prone) DrawEllipse(new Vector2(-2, 0), 7.5f, 3.2f, new Color(0, 0, 0, 0.28f));
         else DrawEllipse(Vector2.Zero, 3.6f, 5.2f, new Color(0, 0, 0, 0.28f));
 
-        DrawSetTransform(p, s.Facing, Vector2.One * f);
+        DrawSetTransform(p, facing + sway, Vector2.One * f);
         if (selected && !down)
             DrawArc(prone ? new Vector2(-2, 0) : Vector2.Zero, prone ? 8.5f : 6.5f, 0, Mathf.Tau, 20, new Color(1, 1, 1, 0.85f), 1.0f);
 
@@ -90,8 +157,8 @@ public partial class UnitsView : Node2D
         {
             float t = sinceDown / FallSeconds;
             float ease = 1 - (1 - t) * (1 - t);
-            DrawSetTransform(p, s.Facing + (1 - ease) * 0.5f, new Vector2(f * (0.4f + 0.6f * ease), f));
-            DrawProne(look.Dimmed(0.3f * ease), s, false);
+            DrawSetTransform(p, facing + (1 - ease) * 0.5f, new Vector2(f * (0.4f + 0.6f * ease), f));
+            DrawProne(look.Dimmed(0.3f * ease), s, false, pose);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
             return;
         }
@@ -99,20 +166,26 @@ public partial class UnitsView : Node2D
         if (s.Health == Health.Dead)
         {
             var dead = look.Dimmed(0.45f);
-            DrawProne(dead, s, false);
+            DrawProne(dead, s, false, pose);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
             return;
         }
         if (s.Health == Health.Incapacitated)
         {
-            DrawProne(look.Dimmed(0.25f), s, false);
+            DrawProne(look.Dimmed(0.25f), s, false, pose);
             DrawCircle(new Vector2(-1, 0.5f), 1.1f, new Color(0.6f, 0.05f, 0.05f));
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
             return;
         }
 
-        if (prone) DrawProne(look, s, true);
-        else DrawUpright(look, s, s.Posture == Posture.Crouched);
+        if (prone)
+        {
+            // Settling to the ground: the body stretches out over the last moment
+            float settle = Mathf.Clamp((pose.Low - 0.7f) / 0.3f, 0, 1);
+            if (settle < 1) DrawSetTransform(p, facing + sway, new Vector2(f * (0.75f + 0.25f * settle), f));
+            DrawProne(look, s, true, pose);
+        }
+        else DrawUpright(look, s, pose.Low > 0.2f, pose);
 
         // Muzzle flash for a moment after each shot
         if (Sim!.Time - s.LastShotTime < 0.12f && !s.Weapon.IsIndirect)
@@ -131,31 +204,44 @@ public partial class UnitsView : Node2D
     }
 
     /// <summary>Standing or crouching: shoulders across, pack behind, helmet on top.</summary>
-    void DrawUpright(Uniform u, Soldier s, bool crouched)
+    void DrawUpright(Uniform u, Soldier s, bool crouched, Pose pose)
     {
-        if (s.IsMoving)
+        if (pose.Walking > 0.01f)
         {
-            // Legs striding out in front and behind, quicker when running
-            float rate = s.Team.Mode == MoveMode.MoveFast || s.Fleeing ? 14f : s.Team.Mode == MoveMode.Sneak ? 6f : 9f;
-            float swing = Mathf.Sin(Now * rate + s.Id * 1.7f) * (crouched ? 3f : 4.2f);
+            // Legs striding out in front and behind in time with the ground covered;
+            // a longer stride when running, shorter when crouched
+            bool running = s.Team.Mode == MoveMode.MoveFast || s.Fleeing || s.EscapingFire;
+            float reach = (running ? 4.8f : crouched ? 2.8f : 3.8f) * pose.Walking;
+            float swing = Mathf.Sin(pose.Stride) * reach;
+            // A foot is lifted while it swings forward: draw it a touch longer and lighter
             var legs = u.Cloth.Darkened(0.45f);
-            DrawLine(new Vector2(-0.5f, -1.5f), new Vector2(-0.5f + swing, -1.5f), legs, 1.6f);
-            DrawLine(new Vector2(-0.5f, 1.5f), new Vector2(-0.5f - swing, 1.5f), legs, 1.6f);
+            var boot = new Color(0.13f, 0.11f, 0.09f);
+            var l = new Vector2(-0.5f + swing, -1.6f);
+            var r = new Vector2(-0.5f - swing, 1.6f);
+            DrawLine(new Vector2(-0.5f, -1.4f), l, legs, 1.7f);
+            DrawLine(new Vector2(-0.5f, 1.4f), r, legs, 1.7f);
+            DrawCircle(l, 0.9f, boot);
+            DrawCircle(r, 0.9f, boot);
+            // Arms swing against the legs: the free hand at the side
+            float arm = -swing * 0.5f;
+            DrawLine(new Vector2(-0.2f, -4.0f), new Vector2(0.6f + arm, -4.3f), u.Cloth.Darkened(0.2f), 1.3f);
         }
         float w = crouched ? 4.2f : 4.8f;    // half the shoulder width
-        DrawEllipse(new Vector2(-0.3f, 0), 2.6f, w, u.Cloth.Darkened(0.35f));
-        DrawEllipse(new Vector2(-0.1f, 0), 2.2f, w - 0.6f, u.Cloth);
-        DrawRect(new Rect2(-3.4f, -2.2f, 1.8f, 4.4f), u.Kit);
+        // Crouching: hunched forward, the pack rides higher
+        float lean = crouched ? 0.6f : 0f;
+        DrawEllipse(new Vector2(-0.3f + lean, 0), 2.6f, w, u.Cloth.Darkened(0.35f));
+        DrawEllipse(new Vector2(-0.1f + lean, 0), 2.2f, w - 0.6f, u.Cloth);
+        DrawRect(new Rect2(-3.4f + lean, -2.2f, 1.8f, 4.4f), u.Kit);
         DrawWeapon(s, upright: true);
-        DrawHelmet(u, new Vector2(0.3f, 0));
+        DrawHelmet(u, new Vector2(0.3f + lean * 1.4f, 0));
     }
 
     /// <summary>Lying down: the body stretched out behind the head, legs apart.</summary>
-    void DrawProne(Uniform u, Soldier s, bool withWeapon)
+    void DrawProne(Uniform u, Soldier s, bool withWeapon, Pose pose)
     {
         var legs = u.Cloth.Darkened(0.2f);
-        // Crawling: the legs work in turn
-        float crawl = withWeapon && s.IsMoving ? Mathf.Sin(Now * 7f + s.Id * 1.7f) * 1.4f : 0f;
+        // Crawling: the legs work in turn, in time with the ground covered
+        float crawl = withWeapon ? Mathf.Sin(pose.Stride * 1.5f) * 1.6f * pose.Walking : 0f;
         DrawLine(new Vector2(-5, -1.2f), new Vector2(-10.5f + crawl, -2.6f - crawl * 0.4f), legs, 1.8f);
         DrawLine(new Vector2(-5, 1.2f), new Vector2(-10.5f - crawl, 2.4f - crawl * 0.4f), legs, 1.8f);
         DrawEllipse(new Vector2(-2, 0), 4.8f, 2.9f, u.Cloth.Darkened(0.3f));

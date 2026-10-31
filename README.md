@@ -96,9 +96,9 @@ four historical battles in order, as the British or as the Germans:
 | Move Fast | Runs to the point without stopping to shoot |
 | Sneak | Creeps, crouched and hard to spot, slowly |
 | Fire | Takes aim (see above), then shoots at enemies near the point, or sprays the area to keep heads down |
-| Defend | Lies down facing the point and fires at anything in range |
+| Defend | The men spread into a line across the way they face, about 5 m apart with the leader a little behind, lie down facing the point and fire at anything in range. Men in a house or in trenches stay where they are |
 | Hide | Lies low and holds fire unless the enemy gets very close |
-| Dig In | Each man digs a trench where he stands, facing the point. Takes about a minute and a half on grass, fields, forest or snow (not on rock, roads or in houses); then the team defends from the trenches |
+| Dig In | The team spreads into a line of foxholes about 5 m apart across the way it faces, staggered a little so the holes are not in a straight row, and each man digs his own facing the point. Takes about a minute and a half on grass, fields, forest or snow (not on rock, roads or in houses); then the team defends from the trenches |
 | Stop | Halts where it is |
 | Call 25-pounders, mountain guns or Stuka | HQ teams only (Platoon HQ, Zugtrupp): the strike lands about a minute later. The HQ must be able to see the spot, and each has only one or two missions |
 

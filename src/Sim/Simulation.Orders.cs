@@ -26,6 +26,9 @@ public sealed partial class Simulation
         team.OrderPoint = target;
         DelayOrder(team);
         int n = team.Soldiers.Count;
+        // The men end up in a line across the way they were going, facing on
+        var travel = target - (route.Count > 1 ? route[^2] : team.Center);
+        float heading = travel.LengthSquared() > 1 ? MathF.Atan2(travel.Y, travel.X) : MathF.PI / 2;
         // Into a house: the men spread through its rooms instead of fanning out around the door
         var house = Map.TerrainAt(target) == TerrainType.Building ? HouseAt(target) : null;
         var places = house != null ? PlacesInHouse(house, n) : null;
@@ -34,6 +37,7 @@ public sealed partial class Simulation
             var s = team.Soldiers[i];
             if (s.Fleeing || s.EscapingFire) continue;
             s.Path.Clear();
+            s.FacingOnArrival = places != null ? null : heading;
             if (places != null)
             {
                 for (int w = 0; w < route.Count - 1; w++)
@@ -43,7 +47,7 @@ public sealed partial class Simulation
             }
             // Each man follows the team's route, spread a little to the side,
             // and fans out around the goal.
-            var offset = FormationOffset(i, n);
+            var offset = FormationOffset(i, n, heading);
             for (int w = 0; w < route.Count; w++)
             {
                 bool last = w == route.Count - 1;
@@ -77,7 +81,62 @@ public sealed partial class Simulation
     public const int MortarBarrage = 6;
 
     /// <summary>Stay put, go prone and fire at anything in range, facing a point.</summary>
-    public void OrderDefend(Team team, Vector2 facing) => SetStationaryOrder(team, TeamOrder.Defend, facing);
+    public void OrderDefend(Team team, Vector2 facing)
+    {
+        SetStationaryOrder(team, TeamOrder.Defend, facing);
+        TakeUpLine(team, facing);
+    }
+
+    /// <summary>
+    /// The men spread out into a line across the way they face, each going to
+    /// the nearest place in it, then turn to face the enemy. Men already in a
+    /// house or in trenches stay where they are: they have their places.
+    /// </summary>
+    internal void TakeUpLine(Team team, Vector2 facingPoint, bool mustDig = false)
+    {
+        var men = team.Soldiers.Where(s => s.CanAct && !s.Fleeing && !s.EscapingFire).ToList();
+        if (men.Count == 0) return;
+        if (men.Any(s => Map.TerrainAt(s.Position) is TerrainType.Building or TerrainType.Trench)) return;
+        var center = men.Aggregate(Vector2.Zero, (a, s) => a + s.Position) / men.Count;
+        var d = facingPoint - center;
+        if (d.LengthSquared() < 1) return;
+        float facing = MathF.Atan2(d.Y, d.X);
+        var across = new Vector2(-MathF.Sin(facing), MathF.Cos(facing));
+        bool leaderBehind = men[0].IsLeader && men.Count > 2;
+        // Places in the line, left to right; men taken left to right too so nobody crosses another's path
+        var places = Enumerable.Range(0, men.Count).Select(i => Place(center + LineOffset(i, men.Count, facing, leaderBehind), mustDig)).ToList();
+        var order = Enumerable.Range(0, men.Count).ToList();
+        var byAcross = (leaderBehind ? men.Skip(1) : men).OrderBy(s => Vector2.Dot(s.Position - center, across)).ToList();
+        if (leaderBehind) byAcross.Insert(0, men[0]);
+        for (int i = 0; i < men.Count; i++)
+        {
+            var s = byAcross[i];
+            s.Path.Clear();
+            if (Vector2.Distance(s.Position, places[i]) > 0.5f) s.Path.Enqueue(places[i]);
+            s.FacingOnArrival = facing;
+            if (!s.IsMoving) s.Facing = facing;
+        }
+    }
+
+    /// <summary>The nearest spot to a point a man can stand on (and dig in, if he must).</summary>
+    Vector2 Place(Vector2 p, bool mustDig)
+    {
+        bool Good(Vector2 q)
+        {
+            var (x, y) = Map.WorldToCell(q);
+            if (!Map.InBounds(x, y) || !Map.IsPassable(x, y)) return false;
+            var t = Map.TerrainAt(x, y);
+            return !mustDig || CanDig(t);
+        }
+        if (Good(p)) return p;
+        for (float r = 2; r <= 10; r += 2)
+            for (int a = 0; a < 12; a++)
+            {
+                var q = p + new Vector2(MathF.Cos(a * MathF.PI / 6), MathF.Sin(a * MathF.PI / 6)) * r;
+                if (Good(q)) return q;
+            }
+        return p;
+    }
 
     /// <summary>Lie low and hold fire unless the enemy comes very close.</summary>
     public void OrderHide(Team team) => SetStationaryOrder(team, TeamOrder.Hide, team.Center);
@@ -154,6 +213,39 @@ public sealed partial class Simulation
         }
         return result;
     }
+
+    /// <summary>
+    /// Where a man stands in his team's formation, turned to face a direction
+    /// (radians): the line runs across the way the team faces, the second row behind.
+    /// </summary>
+    public static Vector2 FormationOffset(int index, int count, float facing)
+    {
+        var o = FormationOffset(index, count);
+        var forward = new Vector2(MathF.Cos(facing), MathF.Sin(facing));
+        var across = new Vector2(-forward.Y, forward.X);
+        return across * o.X - forward * o.Y;
+    }
+
+    /// <summary>
+    /// A defensive line: one man every <see cref="FoxholeSpacing"/> metres across
+    /// the way the team faces, staggered a little forward and back so the holes
+    /// do not make a straight row an enemy could rake along. The leader stays a
+    /// few metres behind the middle.
+    /// </summary>
+    public static Vector2 LineOffset(int index, int count, float facing, bool leaderBehind)
+    {
+        var forward = new Vector2(MathF.Cos(facing), MathF.Sin(facing));
+        var across = new Vector2(-forward.Y, forward.X);
+        if (leaderBehind && index == 0 && count > 2) return -forward * 6f;
+        int k = leaderBehind && count > 2 ? index - 1 : index;
+        int m = leaderBehind && count > 2 ? count - 1 : count;
+        float x = (k - (m - 1) / 2f) * FoxholeSpacing;
+        float y = k % 2 == 0 ? 1f : -1f;
+        return across * x + forward * y;
+    }
+
+    /// <summary>Metres between foxholes in a team's line.</summary>
+    public const float FoxholeSpacing = 5f;
 
     public static Vector2 FormationOffset(int index, int count)
     {

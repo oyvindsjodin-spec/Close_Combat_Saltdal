@@ -290,7 +290,15 @@ public sealed partial class Simulation
     /// Dig in where the team stands, facing a point. Each man digs his own
     /// trench, which takes a minute and a half; then the team defends from them.
     /// </summary>
-    public void OrderDigIn(Team team, Vector2 facing) => SetStationaryOrder(team, TeamOrder.DigIn, facing);
+    /// <summary>
+    /// Dig in: the team spreads out into a line of foxholes about five metres
+    /// apart across the way it faces, and each man digs his own.
+    /// </summary>
+    public void OrderDigIn(Team team, Vector2 facing)
+    {
+        SetStationaryOrder(team, TeamOrder.DigIn, facing);
+        TakeUpLine(team, facing, mustDig: true);
+    }
 
     public static bool CanDig(TerrainType t) => t is TerrainType.Grass or TerrainType.Field or TerrainType.Forest or TerrainType.Snow;
 

@@ -82,6 +82,8 @@ public sealed class Soldier
     internal readonly Queue<Vector2> Path = new();
     public IEnumerable<Vector2> Waypoints => Path;
     public bool IsMoving => Path.Count > 0;
+    /// <summary>The way to face on reaching the end of the path (radians), or null to keep facing the way he walked.</summary>
+    internal float? FacingOnArrival;
 
     internal float FireCooldown;
     internal int BurstLeft;
