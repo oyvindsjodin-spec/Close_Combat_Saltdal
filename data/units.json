@@ -56,6 +56,15 @@
         { "weapon": "krag", "count": 4 }
       ]
     },
+    "norwegian_mg": {
+      "name": "Norwegian machine gun", "nation": "norwegian", "side": "allied", "cost": 55, "experience": 0.45,
+      "about": "A Colt M/29 heavy machine gun and its crew, from a Norwegian machine-gun company. Range 1000 m.",
+      "men": [
+        { "weapon": "krag", "leader": true, "experience": 0.5 },
+        { "weapon": "colt_m29", "experience": 0.5 },
+        { "weapon": "krag", "count": 2 }
+      ]
+    },
 
     "gruppe": {
       "name": "Gruppe", "nation": "german", "side": "german", "cost": 85, "experience": 0.6,
@@ -92,6 +101,11 @@
       "rounds": 8, "delay": 50, "interval": 2, "spread": 40, "reliability": 0.6,
       "about": "A troop of 203 Battery. The signal often fails to get through."
     },
+    "25pdr_open": {
+      "name": "25-pounders over open sights", "side": "allied", "costPerMission": 35, "explosive": "gun_25pdr",
+      "rounds": 6, "delay": 25, "interval": 2, "spread": 30, "reliability": 0.85,
+      "about": "Guns brought forward to fire straight at what they can see: quick and accurate."
+    },
     "mountain_guns": {
       "name": "Mountain guns", "side": "german", "costPerMission": 25, "explosive": "mountain_gun",
       "rounds": 6, "delay": 45, "interval": 2.5, "spread": 35, "reliability": 0.9,
@@ -101,6 +115,11 @@
       "name": "Ju 87 Stuka", "side": "german", "costPerMission": 50, "explosive": "bomb_250kg",
       "rounds": 1, "delay": 60, "interval": 0, "spread": 15, "reliability": 0.8, "aircraft": true,
       "about": "One dive-bomber, one 250 kg bomb."
+    },
+    "heinkel": {
+      "name": "Heinkel attack", "side": "german", "costPerMission": 45, "explosive": "bomb_50kg",
+      "rounds": 6, "delay": 60, "interval": 0.6, "spread": 70, "reliability": 0.85, "aircraft": true,
+      "about": "A flight of Heinkels: a string of small bombs and machine-gun fire across the target."
     }
   }
 }

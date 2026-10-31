@@ -28,10 +28,12 @@ public class CampaignTests
         c.Record(Fight(c));
         Assert.Equal("pothus", c.Current.Id);
         c.Record(Fight(c));
+        Assert.Equal("pothus_west", c.Current.Id);
+        c.Record(Fight(c));
         Assert.Equal("rognan", c.Current.Id);
         c.Record(Fight(c));
         Assert.True(c.IsOver);
-        Assert.Equal(3, c.Results.Count);
+        Assert.Equal(4, c.Results.Count);
     }
 
     [Fact]
@@ -65,12 +67,12 @@ public class CampaignTests
         Assert.All(rebuilt.MenExperience!, e => Assert.Equal(Campaign.ReplacementExperience, e));
 
         var pothus = Data.Find("pothus").Allied;
-        c.Record(Fight(c, pothus.Options.Single(o => o.Name == "1 Section").MenNames
-            .Concat(pothus.Options.Single(o => o.Name == "Platoon HQ").MenNames).ToArray()));
-        var rognan = c.Current.Allied;
-        Assert.DoesNotContain(rognan.Options, o => o.Name == "1 Section");
-        // The rearguard HQ is a different team and comes at full strength
-        Assert.Equal(4, rognan.Options.Single(o => o.Name == "Rearguard HQ").MenCount);
+        c.Record(Fight(c, pothus.Options.Single(o => o.Name == "No. 4 Coy (1)").MenNames
+            .Concat(pothus.Options.Single(o => o.Name == "Stockforce HQ").MenNames).ToArray()));
+        var west = c.Current.Allied;
+        Assert.DoesNotContain(west.Options, o => o.Name == "No. 4 Coy (1)");
+        // A headquarters that was wiped out is replaced, at full strength
+        Assert.Equal(4, west.Options.Single(o => o.Name == "Stockforce HQ").MenCount);
     }
 
     [Fact]
@@ -88,9 +90,9 @@ public class CampaignTests
     public void TheComputerSpendsPointsLeftOverOnReserves()
     {
         var german = Data.Find("pothus").German;
-        Assert.DoesNotContain("7. Gruppe", german.AiPicks());
+        Assert.DoesNotContain("8. Gruppe", german.AiPicks());
         var richer = german with { Budget = german.Budget + 85 };
-        Assert.Contains("7. Gruppe", richer.AiPicks());
+        Assert.Contains("8. Gruppe", richer.AiPicks());
         Assert.Null(richer.Problem(richer.AiPicks()));
     }
 

@@ -6,9 +6,9 @@
   "map": "pothus",
   "minutes": 60,
   "prepMinutes": 10,
-  "briefing": "Two days later and 25 km further north. At Pothus, where a side valley joins Saltdalselva, the Irish Guards and a Norwegian mortar team hold the line. The road bridge is already blown; the British hold the west bank, the ridge between the valleys and Pothus farm. Hold the flags for an hour; the bridge and the ridge count double.",
-  "alliedRole": "Defend. Three Irish Guards sections, platoon HQ and the Norwegian 81 mm mortar. The HQ can call a troop of 25-pounders twice, if the signal gets through.",
-  "germanRole": "Attack. Six squads with MG 34s, the Zugtrupp and a mortar. The Zugtrupp can call the mountain guns twice and one Stuka. The river can be waded at two gravel bars.",
+  "briefing": "Two days later and 25 km further north. Gubbins needs time to get his brigade into a last line at Finneid, and has told Major Stockwell to hold Pothus, where the side valley joins Saltdalselva. The girder bridge was blown in the small hours, too early and only partly. No. 1 Company of the Irish Guards holds the steep ridge between the rivers in front of the bridge, from trenches; No. 4 Company covers the bridge from the west bank with No. 3 Company behind it. A Norwegian machine-gun company with two mortars stands on the height west of the road, and a troop of 25-pounders is firing over open sights. The Independent Companies are in reserve. German cyclists meet the outposts at eight in the morning. Hold the flags for an hour; the bridge and the ridge count double.",
+  "alliedRole": "Defend. Irish Guards: two sections of No. 1 Company on the ridge and one at Pothus farm, two sections of No. 4 Company at the bridge, No. 3 Company behind them. Two Norwegian mortars and a Norwegian machine gun on the west bank, Independent Company men in reserve. Stockforce HQ can call the 25-pounders, which fire over open sights: quick and accurate.",
+  "germanRole": "Attack. Two cycle squads lead, with six squads, the Zugtrupp and a mortar behind them. The Zugtrupp can call the mountain guns twice and a flight of Heinkels. Storming the ridge head-on cost the Germans dearly: work round its flanks. The river can be waded at two gravel bars upstream.",
   "flags": [
     {
       "name": "Pothus bridge",
@@ -34,41 +34,102 @@
     "units": [
       {
         "type": "rifle_section",
-        "name": "1 Section",
+        "name": "No. 1 Coy (1)",
         "at": [0.45, 0.33],
+        "experience": 0.6,
         "men": ["Cpl Byrne", "LCpl Walsh", "Gdsm Doyle", "Gdsm Ryan", "Gdsm Kelly", "Gdsm Nolan", "Gdsm Quinn"]
       },
       {
         "type": "rifle_section",
-        "name": "2 Section",
+        "name": "No. 1 Coy (2)",
+        "at": [0.49, 0.29],
+        "experience": 0.6,
+        "men": ["Cpl Kinsella", "LCpl Hennessy", "Gdsm Cullen", "Gdsm Mooney", "Gdsm Tobin", "Gdsm Hartigan", "Gdsm Galvin"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "No. 1 Coy (3)",
+        "at": [0.66, 0.3],
+        "experience": 0.6,
+        "men": ["Cpl Duffy", "LCpl Keane", "Gdsm Brady", "Gdsm Murray", "Gdsm Foley", "Gdsm Healy", "Gdsm Byrne"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "No. 4 Coy (1)",
         "at": [0.42, 0.19],
+        "experience": 0.6,
         "men": ["Cpl Moran", "LCpl Flynn", "Gdsm Hayes", "Gdsm Lynch", "Gdsm Daly", "Gdsm Power", "Gdsm Casey"]
       },
       {
         "type": "rifle_section",
-        "name": "3 Section",
-        "at": [0.66, 0.3],
-        "men": ["Cpl Duffy", "LCpl Keane", "Gdsm Brady", "Gdsm Murray", "Gdsm Foley", "Gdsm Healy", "Gdsm Byrne"]
+        "name": "No. 4 Coy (2)",
+        "at": [0.38, 0.24],
+        "experience": 0.6,
+        "men": ["Cpl Whelan", "LCpl Corrigan", "Gdsm Dolan", "Gdsm Farrell", "Gdsm Geraghty", "Gdsm Hanlon", "Gdsm Lacey"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "No. 3 Coy",
+        "at": [0.34, 0.13],
+        "experience": 0.6,
+        "men": ["Cpl Mulligan", "LCpl Fahy", "Gdsm Behan", "Gdsm Carey", "Gdsm Devine", "Gdsm Egan", "Gdsm Garvey"]
       },
       {
         "type": "platoon_hq",
-        "name": "Platoon HQ",
-        "at": [0.36, 0.17],
+        "name": "Stockforce HQ",
+        "at": [0.26, 0.08],
         "required": true,
-        "men": ["Lt O'Neill", "Sgt Gallagher", "Gdsm Tierney", "Gdsm Rooney"]
+        "experience": 0.6,
+        "men": ["Maj Stockwell", "Sgt Gallagher", "Gdsm Tierney", "Gdsm Rooney"]
       },
       {
         "type": "norwegian_mortar",
-        "name": "Norw. mortars",
+        "name": "Norw. mortars (1)",
         "at": [0.27, 0.24],
         "men": ["Sersjant Hansen", "Korporal Olsen", "Soldat Johansen", "Soldat Pedersen"]
       },
       {
+        "type": "norwegian_mortar",
+        "name": "Norw. mortars (2)",
+        "at": [0.24, 0.2],
+        "men": ["Sersjant Larsen", "Korporal Andersen", "Soldat Kristiansen", "Soldat Karlsen"]
+      },
+      {
+        "type": "norwegian_mg",
+        "name": "Norw. machine gun",
+        "at": [0.36, 0.2],
+        "men": ["Sersjant Eriksen", "Korporal Berntsen", "Soldat Solberg", "Soldat Rød"]
+      },
+      {
         "type": "independent_section",
-        "name": "No. 1 Ind. Coy",
-        "at": [0.28, 0.16],
+        "name": "No. 3 Ind. Coy (1)",
+        "at": [0.3, 0.04],
+        "experience": 0.45,
+        "men": ["Sgt Cameron", "Pte Robertson", "Pte Stewart", "Pte Morrison"],
+        "default": false
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 2 Ind. Coy (1)",
+        "at": [0.21, 0.05],
+        "experience": 0.5,
+        "men": ["Sgt Evans", "Pte Hughes", "Pte Price", "Pte Rees", "Pte Owen", "Pte Pritchard"],
+        "default": false
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 2 Ind. Coy (2)",
+        "at": [0.17, 0.08],
+        "experience": 0.5,
         "default": false,
-        "men": ["Sgt Evans", "Pte Hughes", "Pte Price", "Pte Rees", "Pte Owen", "Pte Pritchard"]
+        "men": ["Cpl Jenkins", "Pte Morgan", "Pte Lloyd", "Pte Griffiths", "Pte Powell", "Pte Vaughan"]
+      },
+      {
+        "type": "norwegian_ski",
+        "name": "Norw. patrol",
+        "at": [0.15, 0.3],
+        "default": false,
+        "men": ["Sersjant Nilsen", "Korporal Strand", "Soldat Dahl", "Soldat Eide", "Soldat Berg"]
       },
       {
         "type": "mortar_3in",
@@ -80,12 +141,12 @@
     ],
     "support": [
       {
-        "type": "25pdr",
-        "name": "25-pounder troop",
-        "missions": 2
+        "type": "25pdr_open",
+        "name": "25-pounders, open sights",
+        "missions": 1
       },
       {
-        "type": "25pdr",
+        "type": "25pdr_open",
         "name": "25-pounders, extra mission",
         "missions": 1,
         "default": false
@@ -94,6 +155,18 @@
   },
   "german": {
     "units": [
+      {
+        "type": "gruppe",
+        "name": "Radfahrer (1)",
+        "at": [0.47, 0.6],
+        "men": ["Uffz. Brandner", "Gefr. Wieser", "Jg. Ainhauser", "Jg. Bacher", "Jg. Duregger", "Jg. Eichberger", "Jg. Feichtner", "Jg. Gamper", "Jg. Hirschbichler"]
+      },
+      {
+        "type": "gruppe",
+        "name": "Radfahrer (2)",
+        "at": [0.53, 0.63],
+        "men": ["Uffz. Lackner", "Gefr. Mösl", "Jg. Nindl", "Jg. Oberlechner", "Jg. Plank", "Jg. Rainer", "Jg. Schnöll", "Jg. Tiefenbacher", "Jg. Unterberger"]
+      },
       {
         "type": "gruppe",
         "name": "1. Gruppe",
@@ -147,19 +220,31 @@
         "type": "gruppe",
         "name": "7. Gruppe",
         "at": [0.4, 0.86],
-        "men": ["Uffz. Seidl", "Gefr. Riegler", "Jg. Auer", "Jg. Binder", "Jg. Dorfer", "Jg. Ennser", "Jg. Gschwandtner", "Jg. Hager", "Jg. Illmer"],
+        "men": ["Uffz. Seidl", "Gefr. Riegler", "Jg. Auer", "Jg. Binder", "Jg. Dorfer", "Jg. Ennser", "Jg. Gschwandtner", "Jg. Hager", "Jg. Illmer"]
+      },
+      {
+        "type": "gruppe",
+        "name": "8. Gruppe",
+        "at": [0.6, 0.9],
+        "men": ["Uffz. Stocker", "Gefr. Wallner", "Jg. Bichler", "Jg. Dengg", "Jg. Eisl", "Jg. Fellner", "Jg. Kogler", "Jg. Neuhauser", "Jg. Prenner"],
         "default": false
+      },
+      {
+        "type": "granatwerfer",
+        "name": "Granatwerfer (2)",
+        "at": [0.66, 0.9],
+        "men": ["Uffz. Zoidl", "Gefr. Hummer", "Jg. Klammer"]
       }
     ],
     "support": [
       {
         "type": "mountain_guns",
-        "name": "Mountain guns",
-        "missions": 2
+        "name": "Mountain battery",
+        "missions": 3
       },
       {
-        "type": "stuka",
-        "name": "Ju 87 Stuka",
+        "type": "heinkel",
+        "name": "Heinkel attack",
         "missions": 1
       },
       {
@@ -170,7 +255,7 @@
       },
       {
         "type": "stuka",
-        "name": "Second Stuka sortie",
+        "name": "Ju 87 Stuka",
         "missions": 1,
         "default": false
       }
