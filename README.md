@@ -4,8 +4,8 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 2d. Three battles from the fighting in Saltdal, each
-playable from either side:
+**Status:** Phase 3. Three battles from the fighting in Saltdal, each
+playable from either side on its own or one after another as an operation:
 
 | Battle | Map | What happens |
 | --- | --- | --- |
@@ -33,6 +33,24 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
    more off-map support, then press **Start battle**. The computer always
    brings the historical force.
 
+## The operation
+
+Below the battles in the menu, **The operation, 23 to 26 May** fights all
+three battles in order, as the British or as the Germans:
+
+- Men who come through a battle fight again if their team is in the next one,
+  each a little more experienced. The dead, the badly wounded and the captured
+  are gone. The same German company fights all three battles; the Irish Guards
+  sections and HQ fight at Pothus and again at Rognan.
+- Before each battle some losses are made good with green replacements: three
+  in four for the Germans, who kept feeding in fresh troops, one in four for
+  the British. A British team with nobody left is gone for good.
+- A team short of men costs fewer points, so losses leave points over for
+  reserves. The winner of a battle gets 15% more points for the next.
+- After each battle press **N** for the next one. The operation is saved after
+  every battle; **Continue the operation** in the menu picks it up again.
+- Whoever wins more of the three battles wins the operation.
+
 ## Controls
 
 | Action | Control |
@@ -44,8 +62,8 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 | Zoom | Mouse wheel |
 | Pause | Space (you can still give orders) |
 | Game speed | 1, 2 or 3 for normal, double and four times speed |
-| Call a ceasefire | C twice |
-| Fight again after the battle | R (same side) or M (back to the menu) |
+| Ask for a ceasefire | C twice. The enemy agrees once half the time has gone, or at once if you are behind on flags |
+| After the battle | R fight again (single battle), N next battle (operation), M back to the menu |
 | Show all soldiers (for testing) | F2 |
 
 | Order | What the team does |

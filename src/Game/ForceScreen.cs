@@ -67,10 +67,11 @@ public partial class ForceScreen : PanelContainer
     }
 
     /// <summary>Fills the list for one side of a battle, ticking the given picks (the historical force if null).</summary>
-    public void Show(Scenario scenario, Side side, IReadOnlyCollection<string>? picks)
+    public void Show(Scenario scenario, Side side, IReadOnlyCollection<string>? picks, string? heading = null)
     {
         _forces = scenario.Forces(side);
-        _title.Text = $"{scenario.Title}: choose the {(side == Side.Allied ? "British" : "German")} force";
+        _title.Text = (heading == null ? "" : heading + "\n") +
+                      $"{scenario.Title}: choose the {(side == Side.Allied ? "British" : "German")} force";
         foreach (var child in _list.GetChildren()) child.QueueFree();
         _boxes.Clear();
 

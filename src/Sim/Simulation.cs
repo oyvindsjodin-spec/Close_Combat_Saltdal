@@ -104,6 +104,24 @@ public sealed partial class Simulation
 
     public void CallCeasefire() => EndBattle("Ceasefire called");
 
+    /// <summary>
+    /// The player asks for a ceasefire. The enemy agrees only once half the
+    /// time has gone, or when the asking side is behind on flags; otherwise it
+    /// fights on. Returns why it refused, or null when the battle ended.
+    /// </summary>
+    public string? RequestCeasefire(Side asker)
+    {
+        int ours = Flags.Where(f => f.Owner == asker).Sum(f => f.Value);
+        int theirs = Flags.Where(f => f.Owner != null && f.Owner != asker).Sum(f => f.Value);
+        if (Time < TimeLimit / 2 && ours >= theirs)
+        {
+            string enemy = asker == Side.Allied ? "The Germans" : "The British";
+            return $"{enemy} refuse a ceasefire. They will agree after {(int)(TimeLimit / 2 / 60)} minutes, or if you are behind.";
+        }
+        CallCeasefire();
+        return null;
+    }
+
     void CheckForEnd()
     {
         if (Time >= TimeLimit)
