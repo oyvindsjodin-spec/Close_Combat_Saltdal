@@ -21,7 +21,27 @@ public static class MapLoader
 /// <summary>Reads the game data files (weapons, units, battles) through Godot, so it works in an exported game too.</summary>
 public static class DataLoader
 {
-    public static GameData Load(string folder = "res://data")
+    /// <summary>
+    /// Where the numbers are read from. The stand-alone game ships a copy of the
+    /// data folder beside the program, so it can be changed with a text editor;
+    /// without one it uses the copy built into the game.
+    /// </summary>
+    public static string Folder()
+    {
+        if (!OS.HasFeature("editor"))
+        {
+            var dir = OS.GetExecutablePath().GetBaseDir();
+            // Beside the .exe on Windows; beside the .app on a Mac (the program is inside it, three folders down)
+            foreach (var d in new[] { dir, $"{dir}/../../.." })
+                if (DirAccess.DirExistsAbsolute($"{d}/data/battles"))
+                    return ProjectSettings.GlobalizePath($"{d}/data").SimplifyPath();
+        }
+        return "res://data";
+    }
+
+    public static GameData Load() => Load(Folder());
+
+    public static GameData Load(string folder)
     {
         var battles = new System.Collections.Generic.List<(string, string)>();
         foreach (var file in DirAccess.GetFilesAt($"{folder}/battles"))

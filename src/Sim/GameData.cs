@@ -23,6 +23,8 @@ public sealed class GameData
     public IReadOnlyList<Scenario> Battles { get; }
     /// <summary>The battles of the operation: the historical ones, leaving out what-ifs.</summary>
     public IReadOnlyList<Scenario> OperationBattles { get; }
+    /// <summary>The practice battle behind Tutorial in the menu, if there is one.</summary>
+    public Scenario? Tutorial { get; }
 
     GameData(Dictionary<string, Explosive> explosives, Dictionary<string, Weapon> weapons,
         Dictionary<string, TeamType> teams, Dictionary<string, SupportType> support, List<Scenario> battles)
@@ -31,11 +33,12 @@ public sealed class GameData
         Weapons = weapons;
         TeamTypes = teams;
         SupportTypes = support;
-        Battles = battles;
-        OperationBattles = battles.Where(b => b.InOperation).ToList();
+        Tutorial = battles.FirstOrDefault(b => b.IsTutorial);
+        Battles = battles.Where(b => !b.IsTutorial).ToList();
+        OperationBattles = Battles.Where(b => b.InOperation).ToList();
     }
 
-    public Scenario Find(string id) => Battles.FirstOrDefault(b => b.Id == id)
+    public Scenario Find(string id) => Battles.FirstOrDefault(b => b.Id == id) ?? (Tutorial?.Id == id ? Tutorial : null)
         ?? throw new ArgumentException($"No battle called {id}");
 
     /// <summary>Reads a data folder from disk (for tests and tools; the game reads through Godot).</summary>
@@ -125,7 +128,7 @@ public sealed class GameData
         return new Scenario(b.Str("id"), (int)b.Num("order", 0), b.Str("title"), b.Str("map"), (int)b.Num("minutes"),
             b.Str("briefing"), b.Str("alliedRole"), b.Str("germanRole"), flags,
             ReadSide(Side.Allied, "allied"), ReadSide(Side.German, "german"), (int)b.Num("prepMinutes", 0),
-            b.Bool("operation", true));
+            b.Bool("operation", true) && !b.Bool("tutorial"), b.Bool("tutorial"));
     }
 
     static Node Parse(string file, string json)
@@ -291,7 +294,7 @@ public sealed record SideForces(Side Side, int Budget, Vector2? Face, IReadOnlyL
 /// <summary>A battle that can be picked from the menu, read from data/battles.</summary>
 public sealed record Scenario(string Id, int Order, string Title, string Map, int Minutes,
     string Briefing, string AlliedRole, string GermanRole, IReadOnlyList<FlagSpec> Flags,
-    SideForces Allied, SideForces German, int PrepMinutes = 0, bool InOperation = true)
+    SideForces Allied, SideForces German, int PrepMinutes = 0, bool InOperation = true, bool IsTutorial = false)
 {
     public SideForces Forces(Side side) => side == Side.Allied ? Allied : German;
 

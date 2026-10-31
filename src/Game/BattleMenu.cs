@@ -33,6 +33,9 @@ public partial class BattleMenu : PanelContainer
     Button? _continue;
 
     public event Action? SavedBattleLoaded;
+    public event Action? TutorialChosen;
+    /// <summary>Whether there is a practice battle to offer; set before the menu is added to the scene.</summary>
+    public bool HasTutorial { get; set; }
     /// <summary>What the battle saved with F5 is, such as "Pothus, 25 May 1940, 12:30 in", or null when there is none.</summary>
     public string? SavedBattle
     {
@@ -74,6 +77,14 @@ public partial class BattleMenu : PanelContainer
         _load.Pressed += () => SavedBattleLoaded?.Invoke();
         box.AddChild(_load);
         SavedBattle = _savedBattle;
+        if (HasTutorial)
+        {
+            var learn = new Button { Text = "New to the game? Learn the controls in a practice battle", CustomMinimumSize = new Vector2(0, 34) };
+            learn.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.22f, 0.27f, 0.22f)));
+            learn.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.30f, 0.37f, 0.30f)));
+            learn.Pressed += () => TutorialChosen?.Invoke();
+            box.AddChild(learn);
+        }
 
         // One button per battle, in the order they were fought
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };

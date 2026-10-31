@@ -51,6 +51,7 @@ public partial class Main : Node2D
     FireView _fire = null!;
     AimView _aim = null!;
     SoundView _sound = null!;
+    Tutorial _tutorial = null!;
     /// <summary>Picking a target for a Fire order: the aiming line follows the mouse.</summary>
     bool _aiming;
     /// <summary>Developer check (--follow): the camera keeps the selected team in view.</summary>
@@ -67,6 +68,8 @@ public partial class Main : Node2D
     ulong _ceasefireAskedAt;  // real time in ms, so it works while paused too
     ulong _seed = 1;
     float _saveAt = -1;
+    /// <summary>For the tutorial: whether the player has paused since the lesson began.</summary>
+    bool _wasPaused;
 
     public override void _Ready()
     {
@@ -179,6 +182,7 @@ public partial class Main : Node2D
 
     void ShowMenu()
     {
+        _tutorial.Stop();
         _endScreen.Visible = false;
         _panel.Visible = false;
         _hudBox.Visible = false;
@@ -229,6 +233,8 @@ public partial class Main : Node2D
     void ShowBattle(Side side)
     {
         PlayerSide = side;
+        if (_scenario.IsTutorial) _tutorial.Start(Lessons());
+        else _tutorial.Stop();
         _menu.Visible = false;
         _forceScreen.Visible = false;
         _panel.Visible = true;
@@ -285,6 +291,13 @@ public partial class Main : Node2D
         };
         ui.AddChild(_panel);
 
+        _tutorial = new Tutorial();
+        _tutorial.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
+        _tutorial.GrowHorizontal = Control.GrowDirection.Begin;
+        _tutorial.OffsetRight = -10;
+        _tutorial.OffsetTop = 10;
+        ui.AddChild(_tutorial);
+
         _orderMenu = new PopupMenu();
         _orderMenu.AddItem("Move", OrderMove);
         _orderMenu.AddItem("Move Fast", OrderMoveFast);
@@ -317,7 +330,7 @@ public partial class Main : Node2D
         margin.AddChild(_endText);
         _endScreen.AddChild(margin);
 
-        _menu = new BattleMenu { Battles = _data.Battles, HasSavedOperation = LoadOperation() is { IsOver: false } };
+        _menu = new BattleMenu { Battles = _data.Battles, HasTutorial = _data.Tutorial != null, HasSavedOperation = LoadOperation() is { IsOver: false } };
         _menu.SideChosen += side =>
         {
             _campaign = null;
@@ -332,6 +345,7 @@ public partial class Main : Node2D
         _menu.BattleChosen += ChooseBattle;
         _menu.SavedBattle = SavedBattleName();
         _menu.SavedBattleLoaded += LoadBattle;
+        _menu.TutorialChosen += StartTutorial;
         center.AddChild(_menu);
 
         _forceScreen = new ForceScreen { Visible = false };
@@ -441,6 +455,7 @@ public partial class Main : Node2D
             {
                 case Key.Space:
                     _paused = !_paused;
+                    if (_paused) _wasPaused = true;
                     break;
                 case Key.Enter or Key.KpEnter when _sim.InPrep:
                     _battle.EndPrep();
@@ -687,6 +702,80 @@ public partial class Main : Node2D
             GD.PushWarning($"Could not read the saved operation: {e.Message}");
             return null;
         }
+    }
+
+    // ---------------------------------------------------------------- the tutorial
+
+    void StartTutorial()
+    {
+        if (_data.Tutorial == null) return;
+        _campaign = null;
+        _scenario = _data.Tutorial;
+        _picks = null;
+        StartBattle(Side.Allied);
+    }
+
+    bool Gave(string kind) => _battle.Commands.Any(c => c.Kind == kind);
+
+    /// <summary>The lessons, one control at a time, in the order a battle needs them.</summary>
+    IReadOnlyList<Lesson> Lessons()
+    {
+        var look = Vector2.Zero;
+        float zoom = 1;
+        int moves = 0, digs = 0, fires = 0;
+        int Count(string kind) => _battle.Commands.Count(c => c.Kind == kind);
+        return new List<Lesson>
+        {
+            new("Your men",
+                "Two rifle sections, the Platoon HQ and a mortar hold the hut. Two German squads will come up the road " +
+                "from the south. Select 1 Section: left-click one of its soldiers, or its card in the bar at the bottom. " +
+                "Tab steps through your teams.",
+                () => _selected != null),
+            new("Look around",
+                "Move the view with W A S D or the arrow keys, or drag with the middle mouse button. The mouse wheel " +
+                "zooms. Click the mini-map at the bottom right to jump to a place.",
+                () => _camera.Position.DistanceTo(look) > 250 || Mathf.Abs(_camera.Zoom.X - zoom) > 0.1f,
+                () => (look, zoom) = (_camera.Position, _camera.Zoom.X)),
+            new("Give an order",
+                "With a team selected, right-click on the map where it should go and pick Move. Move Fast runs and " +
+                "does not stop to shoot; Sneak creeps, slowly and hard to see.",
+                () => Count("move") > moves,
+                () => moves = Count("move")),
+            new("Pause",
+                "Press Space to pause. You can still look around and give orders while the game is paused. " +
+                "Press Space again to carry on.",
+                () => _wasPaused && !_paused,
+                () => _wasPaused = false),
+            new("Dig in",
+                "Select a section, right-click a little to the south of it, towards the road, and pick Dig In. " +
+                "Each man digs a trench where he stands, facing that way. It takes about a minute and a half, " +
+                "and a man in a trench is very hard to hit.",
+                () => Count("dig") > digs,
+                () => digs = Count("dig")),
+            new("Faster",
+                "The quiet before the attack is the time to get ready. Press 2 for double speed or 3 for four times, " +
+                "and 1 for normal speed again.",
+                () => _speed > 1),
+            new("Start the attack",
+                "The clock at the top left counts down to the attack. When your men are ready, press Enter to " +
+                "start it now.",
+                () => !_sim.InPrep),
+            new("Fire",
+                "Your men fire by themselves at Germans they can see. To make a team fire at a spot, select it and " +
+                "press F. A line runs to the mouse: pale where your men can see, red beyond where the view is " +
+                "blocked. Left-click to fire, right-click to cancel.",
+                () => Count("fire") > fires,
+                () => fires = Count("fire")),
+            new("Call the guns",
+                "Select the Platoon HQ, right-click on the road where the Germans are coming, and pick the 25-pounders. " +
+                "The HQ must be able to see the spot. The shells land about a minute later.",
+                () => _sim.Support.Any(a => a.Side == Side.Allied && a.MissionsLeft == 0)),
+            new("Hold the hut",
+                "Keep the flag at the hut until the time runs out or the Germans give up. A coloured dot over a man " +
+                "means he is shaken: yellow pinned, red panicked. F5 saves the battle; C twice asks for a ceasefire. " +
+                "Good luck.",
+                null),
+        };
     }
 
     // ---------------------------------------------------------------- saving a battle in progress

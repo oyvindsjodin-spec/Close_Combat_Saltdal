@@ -52,4 +52,14 @@ public class SavedBattleTests
         }
         Assert.Equal(Snapshot(played.Sim), Snapshot(sim));
     }
+
+    [Fact]
+    public void ThePracticeBattleIsKeptApart()
+    {
+        var data = ScenarioTests.Data;
+        Assert.NotNull(data.Tutorial);
+        Assert.DoesNotContain(data.Battles, b => b.IsTutorial);
+        Assert.DoesNotContain(data.OperationBattles, b => b.IsTutorial);
+        Assert.Same(data.Tutorial, data.Find("tutorial"));
+    }
 }

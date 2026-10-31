@@ -1,0 +1,87 @@
+{
+  "_help": "The practice battle behind Tutorial in the menu. The lessons themselves are in src/Game/Tutorial.cs.",
+  "id": "tutorial",
+  "order": 0,
+  "tutorial": true,
+  "operation": false,
+  "title": "Practice at the hut",
+  "map": "viskiskoia",
+  "minutes": 20,
+  "prepMinutes": 20,
+  "briefing": "A practice fight to learn the controls, on the ground at Viskiskoia. A small British platoon holds the hut on the east bank; two German squads will come up the road from the south. The attack starts when you are ready.",
+  "alliedRole": "Defend the hut with two rifle sections, Platoon HQ and a mortar. The HQ can call the 25-pounders once.",
+  "germanRole": "Two squads attack.",
+  "flags": [
+    {
+      "name": "The hut",
+      "at": [0.51, 0.42]
+    }
+  ],
+  "allied": {
+    "face": [100, 200],
+    "units": [
+      {
+        "type": "rifle_section",
+        "name": "1 Section",
+        "at": [0.48, 0.44],
+        "experience": 0.6,
+        "men": ["Cpl Grant", "LCpl Reid", "Gdsm Hunter", "Gdsm Watt", "Gdsm Baird", "Gdsm Kerr", "Gdsm Muir"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "2 Section",
+        "at": [0.55, 0.43],
+        "experience": 0.6,
+        "men": ["Cpl Duncan", "LCpl Boyd", "Gdsm Hay", "Gdsm Ogilvie", "Gdsm Craig", "Gdsm Fyfe", "Gdsm Lindsay"]
+      },
+      {
+        "type": "platoon_hq",
+        "name": "Platoon HQ",
+        "at": [0.51, 0.39],
+        "required": true,
+        "experience": 0.6,
+        "men": ["Lt Hamilton", "Sgt Gibb", "Gdsm Rae"]
+      },
+      {
+        "type": "mortar_3in",
+        "name": "3-inch mortar",
+        "at": [0.49, 0.36],
+        "experience": 0.6,
+        "men": ["Sgt Bruce", "Gdsm Christie", "Gdsm Ure"]
+      }
+    ],
+    "support": [
+      {
+        "type": "25pdr",
+        "name": "25-pounders, one mission",
+        "missions": 1
+      }
+    ]
+  },
+  "german": {
+    "units": [
+      {
+        "type": "gruppe",
+        "name": "1. Gruppe",
+        "at": [0.6, 0.88],
+        "experience": 0.35,
+        "men": ["Uffz. Huber", "Gefr. Mayr", "Jg. Gruber", "Jg. Hofer", "Jg. Wimmer", "Jg. Brandl", "Jg. Lechner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "2. Gruppe",
+        "at": [0.68, 0.9],
+        "experience": 0.35,
+        "men": ["Uffz. Pichler", "Gefr. Aigner", "Jg. Reiter", "Jg. Fuchs", "Jg. Bauer", "Jg. Egger", "Jg. Haas"]
+      },
+      {
+        "type": "zugtrupp",
+        "name": "Zugtrupp",
+        "at": [0.64, 0.93],
+        "required": true,
+        "experience": 0.35,
+        "men": ["Lt. Kranz", "Ofw. Riedl"]
+      }
+    ]
+  }
+}

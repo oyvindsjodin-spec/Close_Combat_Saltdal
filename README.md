@@ -4,8 +4,10 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 3. Three battles from the fighting in Saltdal, each
-playable from either side on its own or one after another as an operation:
+**Status:** Phase 4. Four battles from the fighting in Saltdal and one what-if,
+each playable from either side on its own, or one after another as an operation.
+The game has sound, animated soldiers, saving mid-battle and a tutorial, and
+runs on its own on Windows and Mac without Godot.
 
 | Battle | Map | What happens |
 | --- | --- | --- |
@@ -29,7 +31,10 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 2. Pick the `project.godot` file in this folder, then **Import & Edit**.
 3. The first time, click **Build** (the hammer icon, top right) and wait for it to finish.
 4. Press **F5**, or the play button (top right), to run the game.
-5. Pick a battle and a side in the menu.
+5. Pick a battle and a side in the menu. New to the game? The button at the
+   top of the menu starts a short practice battle at Viskiskoia that teaches
+   the controls one at a time, in a box at the top right. Each lesson moves on
+   once you have done what it asks; **Skip** moves on anyway.
 6. Choose your forces. The historical force is ticked to begin with; your
    budget is what it cost. Untick a team to free points for a reserve team or
    more off-map support, then press **Start battle**. The computer always
