@@ -39,8 +39,9 @@
       0.43,
       0.58
     ],
-    "street": 12,
-    "density": 0.55
+    "street": 16,
+    "density": 0.6,
+    "layout": "village"
   },
   "farms": [
     [
