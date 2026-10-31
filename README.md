@@ -96,9 +96,9 @@ four historical battles in order, as the British or as the Germans:
 | Move Fast | Runs to the point without stopping to shoot |
 | Sneak | Creeps, crouched and hard to spot, slowly |
 | Fire | Takes aim (see above), then shoots at enemies near the point, or sprays the area to keep heads down |
-| Defend | Lies down facing the point and fires at anything in range |
+| Defend | The men spread into a line across the way they face, about 5 m apart with the leader a little behind, lie down facing the point and fire at anything in range. Men in a house or in trenches stay where they are |
 | Hide | Lies low and holds fire unless the enemy gets very close |
-| Dig In | Each man digs a trench where he stands, facing the point. Takes about a minute and a half on grass, fields, forest or snow (not on rock, roads or in houses); then the team defends from the trenches |
+| Dig In | The team spreads into a line of foxholes about 5 m apart across the way it faces, staggered a little so the holes are not in a straight row, and each man digs his own facing the point. Takes about a minute and a half on grass, fields, forest or snow (not on rock, roads or in houses); then the team defends from the trenches |
 | Stop | Halts where it is |
 | Call 25-pounders, mountain guns or Stuka | HQ teams only (Platoon HQ, Zugtrupp): the strike lands about a minute later. The HQ must be able to see the spot, and each has only one or two missions |
 
@@ -149,12 +149,25 @@ men have spotted them.
 
 ## Sound and saving
 
-The sounds are made by the game itself (`tools/make_sounds.py` builds them
-from noise and tones), so nothing is recorded or borrowed. You hear the fighting
-from where it happens: far-off firing is quieter and comes from one side.
-Rifles crack, machine guns rattle, mortar bombs leave the tube with a hollow
-thump, and a shell whistles in for a second before it lands. Aircraft drone
-overhead, burning houses crackle and spades bite into the earth.
+The weapon sounds are made by the game itself (`tools/make_sounds.py` builds
+them from noise and tones), so nothing is recorded or borrowed. You hear the
+fighting from where it happens: far-off firing is quieter and comes from one
+side, and every shot and blast echoes back off the valley sides. Each weapon of
+May 1940 has its own sound: the quick bolt of the Lee-Enfield, the long smooth
+Krag and the heavy Mauser; the slow, even Bren, the Norwegian Colt and the
+tearing MG 34; the MP 40's dull pop. Misses whine off stones, mortar bombs leave
+the tube with a hollow thump and whoosh in, shells whistle and the guns are
+heard booming far behind the hills first, and bombs scream down. A Stuka's siren
+wails as it dives. Burning houses crackle and spades bite into the earth.
+
+The soldiers talk, in English, Norwegian or German. Your men answer each order
+("At the double!", "Fort, fort!", "Marsch, marsch!"), call out the enemy, warn
+of shells and aircraft, shout when pinned down or running, cry out when hit
+("Stretcher bearer!", "Sanitet!", "Sanitäter!") and report a man killed. Enemy
+soldiers you can see are heard when hit, breaking or giving up. The voices are
+made with free text-to-speech voices by `tools/make_voices.py`; the lines are
+listed there and can be changed. Where they come from and their licences are
+in `assets/voices/LICENSES.md`.
 
 A saved battle holds how the battle began and every order you gave. Loading it
 plays the battle through again from the start, very quickly, so it comes out

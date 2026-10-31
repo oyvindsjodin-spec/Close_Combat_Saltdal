@@ -1,0 +1,944 @@
+{
+ "_help": "Made by tools/make_voices.py. For each nation, a list of men; for each man, what he can say when something happens.",
+ "british": [
+  {
+   "ack_move": [
+    "res://assets/voices/british/ack_move_1_man1.ogg",
+    "res://assets/voices/british/ack_move_2_man1.ogg",
+    "res://assets/voices/british/ack_move_3_man1.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/british/ack_fast_1_man1.ogg",
+    "res://assets/voices/british/ack_fast_2_man1.ogg",
+    "res://assets/voices/british/ack_fast_3_man1.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/british/ack_sneak_1_man1.ogg",
+    "res://assets/voices/british/ack_sneak_2_man1.ogg",
+    "res://assets/voices/british/ack_sneak_3_man1.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/british/ack_fire_1_man1.ogg",
+    "res://assets/voices/british/ack_fire_2_man1.ogg",
+    "res://assets/voices/british/ack_fire_3_man1.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/british/ack_defend_1_man1.ogg",
+    "res://assets/voices/british/ack_defend_2_man1.ogg",
+    "res://assets/voices/british/ack_defend_3_man1.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/british/ack_hide_1_man1.ogg",
+    "res://assets/voices/british/ack_hide_2_man1.ogg",
+    "res://assets/voices/british/ack_hide_3_man1.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/british/ack_dig_1_man1.ogg",
+    "res://assets/voices/british/ack_dig_2_man1.ogg",
+    "res://assets/voices/british/ack_dig_3_man1.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/british/ack_stop_1_man1.ogg",
+    "res://assets/voices/british/ack_stop_2_man1.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/british/contact_1_man1.ogg",
+    "res://assets/voices/british/contact_2_man1.ogg",
+    "res://assets/voices/british/contact_3_man1.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/british/incoming_1_man1.ogg",
+    "res://assets/voices/british/incoming_2_man1.ogg",
+    "res://assets/voices/british/incoming_3_man1.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/british/aircraft_1_man1.ogg",
+    "res://assets/voices/british/aircraft_2_man1.ogg",
+    "res://assets/voices/british/aircraft_3_man1.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/british/pinned_1_man1.ogg",
+    "res://assets/voices/british/pinned_2_man1.ogg",
+    "res://assets/voices/british/pinned_3_man1.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/british/panic_1_man1.ogg",
+    "res://assets/voices/british/panic_2_man1.ogg",
+    "res://assets/voices/british/panic_3_man1.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/british/wounded_1_man1.ogg",
+    "res://assets/voices/british/wounded_2_man1.ogg",
+    "res://assets/voices/british/wounded_3_man1.ogg",
+    "res://assets/voices/british/wounded_4_man1.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/british/man_down_1_man1.ogg",
+    "res://assets/voices/british/man_down_2_man1.ogg",
+    "res://assets/voices/british/man_down_3_man1.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/british/no_ammo_1_man1.ogg",
+    "res://assets/voices/british/no_ammo_2_man1.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/british/surrender_1_man1.ogg",
+    "res://assets/voices/british/surrender_2_man1.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/british/ack_move_1_man2.ogg",
+    "res://assets/voices/british/ack_move_2_man2.ogg",
+    "res://assets/voices/british/ack_move_3_man2.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/british/ack_fast_1_man2.ogg",
+    "res://assets/voices/british/ack_fast_2_man2.ogg",
+    "res://assets/voices/british/ack_fast_3_man2.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/british/ack_sneak_1_man2.ogg",
+    "res://assets/voices/british/ack_sneak_2_man2.ogg",
+    "res://assets/voices/british/ack_sneak_3_man2.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/british/ack_fire_1_man2.ogg",
+    "res://assets/voices/british/ack_fire_2_man2.ogg",
+    "res://assets/voices/british/ack_fire_3_man2.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/british/ack_defend_1_man2.ogg",
+    "res://assets/voices/british/ack_defend_2_man2.ogg",
+    "res://assets/voices/british/ack_defend_3_man2.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/british/ack_hide_1_man2.ogg",
+    "res://assets/voices/british/ack_hide_2_man2.ogg",
+    "res://assets/voices/british/ack_hide_3_man2.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/british/ack_dig_1_man2.ogg",
+    "res://assets/voices/british/ack_dig_2_man2.ogg",
+    "res://assets/voices/british/ack_dig_3_man2.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/british/ack_stop_1_man2.ogg",
+    "res://assets/voices/british/ack_stop_2_man2.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/british/contact_1_man2.ogg",
+    "res://assets/voices/british/contact_2_man2.ogg",
+    "res://assets/voices/british/contact_3_man2.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/british/incoming_1_man2.ogg",
+    "res://assets/voices/british/incoming_2_man2.ogg",
+    "res://assets/voices/british/incoming_3_man2.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/british/aircraft_1_man2.ogg",
+    "res://assets/voices/british/aircraft_2_man2.ogg",
+    "res://assets/voices/british/aircraft_3_man2.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/british/pinned_1_man2.ogg",
+    "res://assets/voices/british/pinned_2_man2.ogg",
+    "res://assets/voices/british/pinned_3_man2.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/british/panic_1_man2.ogg",
+    "res://assets/voices/british/panic_2_man2.ogg",
+    "res://assets/voices/british/panic_3_man2.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/british/wounded_1_man2.ogg",
+    "res://assets/voices/british/wounded_2_man2.ogg",
+    "res://assets/voices/british/wounded_3_man2.ogg",
+    "res://assets/voices/british/wounded_4_man2.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/british/man_down_1_man2.ogg",
+    "res://assets/voices/british/man_down_2_man2.ogg",
+    "res://assets/voices/british/man_down_3_man2.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/british/no_ammo_1_man2.ogg",
+    "res://assets/voices/british/no_ammo_2_man2.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/british/surrender_1_man2.ogg",
+    "res://assets/voices/british/surrender_2_man2.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/british/ack_move_1_man3.ogg",
+    "res://assets/voices/british/ack_move_2_man3.ogg",
+    "res://assets/voices/british/ack_move_3_man3.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/british/ack_fast_1_man3.ogg",
+    "res://assets/voices/british/ack_fast_2_man3.ogg",
+    "res://assets/voices/british/ack_fast_3_man3.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/british/ack_sneak_1_man3.ogg",
+    "res://assets/voices/british/ack_sneak_2_man3.ogg",
+    "res://assets/voices/british/ack_sneak_3_man3.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/british/ack_fire_1_man3.ogg",
+    "res://assets/voices/british/ack_fire_2_man3.ogg",
+    "res://assets/voices/british/ack_fire_3_man3.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/british/ack_defend_1_man3.ogg",
+    "res://assets/voices/british/ack_defend_2_man3.ogg",
+    "res://assets/voices/british/ack_defend_3_man3.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/british/ack_hide_1_man3.ogg",
+    "res://assets/voices/british/ack_hide_2_man3.ogg",
+    "res://assets/voices/british/ack_hide_3_man3.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/british/ack_dig_1_man3.ogg",
+    "res://assets/voices/british/ack_dig_2_man3.ogg",
+    "res://assets/voices/british/ack_dig_3_man3.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/british/ack_stop_1_man3.ogg",
+    "res://assets/voices/british/ack_stop_2_man3.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/british/contact_1_man3.ogg",
+    "res://assets/voices/british/contact_2_man3.ogg",
+    "res://assets/voices/british/contact_3_man3.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/british/incoming_1_man3.ogg",
+    "res://assets/voices/british/incoming_2_man3.ogg",
+    "res://assets/voices/british/incoming_3_man3.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/british/aircraft_1_man3.ogg",
+    "res://assets/voices/british/aircraft_2_man3.ogg",
+    "res://assets/voices/british/aircraft_3_man3.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/british/pinned_1_man3.ogg",
+    "res://assets/voices/british/pinned_2_man3.ogg",
+    "res://assets/voices/british/pinned_3_man3.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/british/panic_1_man3.ogg",
+    "res://assets/voices/british/panic_2_man3.ogg",
+    "res://assets/voices/british/panic_3_man3.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/british/wounded_1_man3.ogg",
+    "res://assets/voices/british/wounded_2_man3.ogg",
+    "res://assets/voices/british/wounded_3_man3.ogg",
+    "res://assets/voices/british/wounded_4_man3.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/british/man_down_1_man3.ogg",
+    "res://assets/voices/british/man_down_2_man3.ogg",
+    "res://assets/voices/british/man_down_3_man3.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/british/no_ammo_1_man3.ogg",
+    "res://assets/voices/british/no_ammo_2_man3.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/british/surrender_1_man3.ogg",
+    "res://assets/voices/british/surrender_2_man3.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/british/ack_move_1_man4.ogg",
+    "res://assets/voices/british/ack_move_2_man4.ogg",
+    "res://assets/voices/british/ack_move_3_man4.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/british/ack_fast_1_man4.ogg",
+    "res://assets/voices/british/ack_fast_2_man4.ogg",
+    "res://assets/voices/british/ack_fast_3_man4.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/british/ack_sneak_1_man4.ogg",
+    "res://assets/voices/british/ack_sneak_2_man4.ogg",
+    "res://assets/voices/british/ack_sneak_3_man4.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/british/ack_fire_1_man4.ogg",
+    "res://assets/voices/british/ack_fire_2_man4.ogg",
+    "res://assets/voices/british/ack_fire_3_man4.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/british/ack_defend_1_man4.ogg",
+    "res://assets/voices/british/ack_defend_2_man4.ogg",
+    "res://assets/voices/british/ack_defend_3_man4.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/british/ack_hide_1_man4.ogg",
+    "res://assets/voices/british/ack_hide_2_man4.ogg",
+    "res://assets/voices/british/ack_hide_3_man4.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/british/ack_dig_1_man4.ogg",
+    "res://assets/voices/british/ack_dig_2_man4.ogg",
+    "res://assets/voices/british/ack_dig_3_man4.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/british/ack_stop_1_man4.ogg",
+    "res://assets/voices/british/ack_stop_2_man4.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/british/contact_1_man4.ogg",
+    "res://assets/voices/british/contact_2_man4.ogg",
+    "res://assets/voices/british/contact_3_man4.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/british/incoming_1_man4.ogg",
+    "res://assets/voices/british/incoming_2_man4.ogg",
+    "res://assets/voices/british/incoming_3_man4.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/british/aircraft_1_man4.ogg",
+    "res://assets/voices/british/aircraft_2_man4.ogg",
+    "res://assets/voices/british/aircraft_3_man4.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/british/pinned_1_man4.ogg",
+    "res://assets/voices/british/pinned_2_man4.ogg",
+    "res://assets/voices/british/pinned_3_man4.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/british/panic_1_man4.ogg",
+    "res://assets/voices/british/panic_2_man4.ogg",
+    "res://assets/voices/british/panic_3_man4.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/british/wounded_1_man4.ogg",
+    "res://assets/voices/british/wounded_2_man4.ogg",
+    "res://assets/voices/british/wounded_3_man4.ogg",
+    "res://assets/voices/british/wounded_4_man4.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/british/man_down_1_man4.ogg",
+    "res://assets/voices/british/man_down_2_man4.ogg",
+    "res://assets/voices/british/man_down_3_man4.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/british/no_ammo_1_man4.ogg",
+    "res://assets/voices/british/no_ammo_2_man4.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/british/surrender_1_man4.ogg",
+    "res://assets/voices/british/surrender_2_man4.ogg"
+   ]
+  }
+ ],
+ "norwegian": [
+  {
+   "ack_move": [
+    "res://assets/voices/norwegian/ack_move_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_move_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_move_3_man1.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/norwegian/ack_fast_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_fast_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_fast_3_man1.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/norwegian/ack_sneak_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_sneak_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_sneak_3_man1.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/norwegian/ack_fire_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_fire_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_fire_3_man1.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/norwegian/ack_defend_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_defend_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_defend_3_man1.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/norwegian/ack_hide_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_hide_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_hide_3_man1.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/norwegian/ack_dig_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_dig_2_man1.ogg",
+    "res://assets/voices/norwegian/ack_dig_3_man1.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/norwegian/ack_stop_1_man1.ogg",
+    "res://assets/voices/norwegian/ack_stop_2_man1.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/norwegian/contact_1_man1.ogg",
+    "res://assets/voices/norwegian/contact_2_man1.ogg",
+    "res://assets/voices/norwegian/contact_3_man1.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/norwegian/incoming_1_man1.ogg",
+    "res://assets/voices/norwegian/incoming_2_man1.ogg",
+    "res://assets/voices/norwegian/incoming_3_man1.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/norwegian/aircraft_1_man1.ogg",
+    "res://assets/voices/norwegian/aircraft_2_man1.ogg",
+    "res://assets/voices/norwegian/aircraft_3_man1.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/norwegian/pinned_1_man1.ogg",
+    "res://assets/voices/norwegian/pinned_2_man1.ogg",
+    "res://assets/voices/norwegian/pinned_3_man1.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/norwegian/panic_1_man1.ogg",
+    "res://assets/voices/norwegian/panic_2_man1.ogg",
+    "res://assets/voices/norwegian/panic_3_man1.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/norwegian/wounded_1_man1.ogg",
+    "res://assets/voices/norwegian/wounded_2_man1.ogg",
+    "res://assets/voices/norwegian/wounded_3_man1.ogg",
+    "res://assets/voices/norwegian/wounded_4_man1.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/norwegian/man_down_1_man1.ogg",
+    "res://assets/voices/norwegian/man_down_2_man1.ogg",
+    "res://assets/voices/norwegian/man_down_3_man1.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/norwegian/no_ammo_1_man1.ogg",
+    "res://assets/voices/norwegian/no_ammo_2_man1.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/norwegian/surrender_1_man1.ogg",
+    "res://assets/voices/norwegian/surrender_2_man1.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/norwegian/ack_move_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_move_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_move_3_man2.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/norwegian/ack_fast_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_fast_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_fast_3_man2.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/norwegian/ack_sneak_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_sneak_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_sneak_3_man2.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/norwegian/ack_fire_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_fire_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_fire_3_man2.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/norwegian/ack_defend_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_defend_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_defend_3_man2.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/norwegian/ack_hide_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_hide_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_hide_3_man2.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/norwegian/ack_dig_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_dig_2_man2.ogg",
+    "res://assets/voices/norwegian/ack_dig_3_man2.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/norwegian/ack_stop_1_man2.ogg",
+    "res://assets/voices/norwegian/ack_stop_2_man2.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/norwegian/contact_1_man2.ogg",
+    "res://assets/voices/norwegian/contact_2_man2.ogg",
+    "res://assets/voices/norwegian/contact_3_man2.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/norwegian/incoming_1_man2.ogg",
+    "res://assets/voices/norwegian/incoming_2_man2.ogg",
+    "res://assets/voices/norwegian/incoming_3_man2.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/norwegian/aircraft_1_man2.ogg",
+    "res://assets/voices/norwegian/aircraft_2_man2.ogg",
+    "res://assets/voices/norwegian/aircraft_3_man2.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/norwegian/pinned_1_man2.ogg",
+    "res://assets/voices/norwegian/pinned_2_man2.ogg",
+    "res://assets/voices/norwegian/pinned_3_man2.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/norwegian/panic_1_man2.ogg",
+    "res://assets/voices/norwegian/panic_2_man2.ogg",
+    "res://assets/voices/norwegian/panic_3_man2.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/norwegian/wounded_1_man2.ogg",
+    "res://assets/voices/norwegian/wounded_2_man2.ogg",
+    "res://assets/voices/norwegian/wounded_3_man2.ogg",
+    "res://assets/voices/norwegian/wounded_4_man2.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/norwegian/man_down_1_man2.ogg",
+    "res://assets/voices/norwegian/man_down_2_man2.ogg",
+    "res://assets/voices/norwegian/man_down_3_man2.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/norwegian/no_ammo_1_man2.ogg",
+    "res://assets/voices/norwegian/no_ammo_2_man2.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/norwegian/surrender_1_man2.ogg",
+    "res://assets/voices/norwegian/surrender_2_man2.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/norwegian/ack_move_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_move_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_move_3_man3.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/norwegian/ack_fast_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_fast_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_fast_3_man3.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/norwegian/ack_sneak_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_sneak_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_sneak_3_man3.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/norwegian/ack_fire_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_fire_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_fire_3_man3.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/norwegian/ack_defend_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_defend_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_defend_3_man3.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/norwegian/ack_hide_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_hide_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_hide_3_man3.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/norwegian/ack_dig_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_dig_2_man3.ogg",
+    "res://assets/voices/norwegian/ack_dig_3_man3.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/norwegian/ack_stop_1_man3.ogg",
+    "res://assets/voices/norwegian/ack_stop_2_man3.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/norwegian/contact_1_man3.ogg",
+    "res://assets/voices/norwegian/contact_2_man3.ogg",
+    "res://assets/voices/norwegian/contact_3_man3.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/norwegian/incoming_1_man3.ogg",
+    "res://assets/voices/norwegian/incoming_2_man3.ogg",
+    "res://assets/voices/norwegian/incoming_3_man3.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/norwegian/aircraft_1_man3.ogg",
+    "res://assets/voices/norwegian/aircraft_2_man3.ogg",
+    "res://assets/voices/norwegian/aircraft_3_man3.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/norwegian/pinned_1_man3.ogg",
+    "res://assets/voices/norwegian/pinned_2_man3.ogg",
+    "res://assets/voices/norwegian/pinned_3_man3.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/norwegian/panic_1_man3.ogg",
+    "res://assets/voices/norwegian/panic_2_man3.ogg",
+    "res://assets/voices/norwegian/panic_3_man3.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/norwegian/wounded_1_man3.ogg",
+    "res://assets/voices/norwegian/wounded_2_man3.ogg",
+    "res://assets/voices/norwegian/wounded_3_man3.ogg",
+    "res://assets/voices/norwegian/wounded_4_man3.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/norwegian/man_down_1_man3.ogg",
+    "res://assets/voices/norwegian/man_down_2_man3.ogg",
+    "res://assets/voices/norwegian/man_down_3_man3.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/norwegian/no_ammo_1_man3.ogg",
+    "res://assets/voices/norwegian/no_ammo_2_man3.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/norwegian/surrender_1_man3.ogg",
+    "res://assets/voices/norwegian/surrender_2_man3.ogg"
+   ]
+  }
+ ],
+ "german": [
+  {
+   "ack_move": [
+    "res://assets/voices/german/ack_move_1_man1.ogg",
+    "res://assets/voices/german/ack_move_2_man1.ogg",
+    "res://assets/voices/german/ack_move_3_man1.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/german/ack_fast_1_man1.ogg",
+    "res://assets/voices/german/ack_fast_2_man1.ogg",
+    "res://assets/voices/german/ack_fast_3_man1.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/german/ack_sneak_1_man1.ogg",
+    "res://assets/voices/german/ack_sneak_2_man1.ogg",
+    "res://assets/voices/german/ack_sneak_3_man1.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/german/ack_fire_1_man1.ogg",
+    "res://assets/voices/german/ack_fire_2_man1.ogg",
+    "res://assets/voices/german/ack_fire_3_man1.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/german/ack_defend_1_man1.ogg",
+    "res://assets/voices/german/ack_defend_2_man1.ogg",
+    "res://assets/voices/german/ack_defend_3_man1.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/german/ack_hide_1_man1.ogg",
+    "res://assets/voices/german/ack_hide_2_man1.ogg",
+    "res://assets/voices/german/ack_hide_3_man1.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/german/ack_dig_1_man1.ogg",
+    "res://assets/voices/german/ack_dig_2_man1.ogg",
+    "res://assets/voices/german/ack_dig_3_man1.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/german/ack_stop_1_man1.ogg",
+    "res://assets/voices/german/ack_stop_2_man1.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/german/contact_1_man1.ogg",
+    "res://assets/voices/german/contact_2_man1.ogg",
+    "res://assets/voices/german/contact_3_man1.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/german/incoming_1_man1.ogg",
+    "res://assets/voices/german/incoming_2_man1.ogg",
+    "res://assets/voices/german/incoming_3_man1.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/german/aircraft_1_man1.ogg",
+    "res://assets/voices/german/aircraft_2_man1.ogg",
+    "res://assets/voices/german/aircraft_3_man1.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/german/pinned_1_man1.ogg",
+    "res://assets/voices/german/pinned_2_man1.ogg",
+    "res://assets/voices/german/pinned_3_man1.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/german/panic_1_man1.ogg",
+    "res://assets/voices/german/panic_2_man1.ogg",
+    "res://assets/voices/german/panic_3_man1.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/german/wounded_1_man1.ogg",
+    "res://assets/voices/german/wounded_2_man1.ogg",
+    "res://assets/voices/german/wounded_3_man1.ogg",
+    "res://assets/voices/german/wounded_4_man1.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/german/man_down_1_man1.ogg",
+    "res://assets/voices/german/man_down_2_man1.ogg",
+    "res://assets/voices/german/man_down_3_man1.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/german/no_ammo_1_man1.ogg",
+    "res://assets/voices/german/no_ammo_2_man1.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/german/surrender_1_man1.ogg",
+    "res://assets/voices/german/surrender_2_man1.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/german/ack_move_1_man2.ogg",
+    "res://assets/voices/german/ack_move_2_man2.ogg",
+    "res://assets/voices/german/ack_move_3_man2.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/german/ack_fast_1_man2.ogg",
+    "res://assets/voices/german/ack_fast_2_man2.ogg",
+    "res://assets/voices/german/ack_fast_3_man2.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/german/ack_sneak_1_man2.ogg",
+    "res://assets/voices/german/ack_sneak_2_man2.ogg",
+    "res://assets/voices/german/ack_sneak_3_man2.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/german/ack_fire_1_man2.ogg",
+    "res://assets/voices/german/ack_fire_2_man2.ogg",
+    "res://assets/voices/german/ack_fire_3_man2.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/german/ack_defend_1_man2.ogg",
+    "res://assets/voices/german/ack_defend_2_man2.ogg",
+    "res://assets/voices/german/ack_defend_3_man2.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/german/ack_hide_1_man2.ogg",
+    "res://assets/voices/german/ack_hide_2_man2.ogg",
+    "res://assets/voices/german/ack_hide_3_man2.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/german/ack_dig_1_man2.ogg",
+    "res://assets/voices/german/ack_dig_2_man2.ogg",
+    "res://assets/voices/german/ack_dig_3_man2.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/german/ack_stop_1_man2.ogg",
+    "res://assets/voices/german/ack_stop_2_man2.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/german/contact_1_man2.ogg",
+    "res://assets/voices/german/contact_2_man2.ogg",
+    "res://assets/voices/german/contact_3_man2.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/german/incoming_1_man2.ogg",
+    "res://assets/voices/german/incoming_2_man2.ogg",
+    "res://assets/voices/german/incoming_3_man2.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/german/aircraft_1_man2.ogg",
+    "res://assets/voices/german/aircraft_2_man2.ogg",
+    "res://assets/voices/german/aircraft_3_man2.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/german/pinned_1_man2.ogg",
+    "res://assets/voices/german/pinned_2_man2.ogg",
+    "res://assets/voices/german/pinned_3_man2.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/german/panic_1_man2.ogg",
+    "res://assets/voices/german/panic_2_man2.ogg",
+    "res://assets/voices/german/panic_3_man2.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/german/wounded_1_man2.ogg",
+    "res://assets/voices/german/wounded_2_man2.ogg",
+    "res://assets/voices/german/wounded_3_man2.ogg",
+    "res://assets/voices/german/wounded_4_man2.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/german/man_down_1_man2.ogg",
+    "res://assets/voices/german/man_down_2_man2.ogg",
+    "res://assets/voices/german/man_down_3_man2.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/german/no_ammo_1_man2.ogg",
+    "res://assets/voices/german/no_ammo_2_man2.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/german/surrender_1_man2.ogg",
+    "res://assets/voices/german/surrender_2_man2.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/german/ack_move_1_man3.ogg",
+    "res://assets/voices/german/ack_move_2_man3.ogg",
+    "res://assets/voices/german/ack_move_3_man3.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/german/ack_fast_1_man3.ogg",
+    "res://assets/voices/german/ack_fast_2_man3.ogg",
+    "res://assets/voices/german/ack_fast_3_man3.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/german/ack_sneak_1_man3.ogg",
+    "res://assets/voices/german/ack_sneak_2_man3.ogg",
+    "res://assets/voices/german/ack_sneak_3_man3.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/german/ack_fire_1_man3.ogg",
+    "res://assets/voices/german/ack_fire_2_man3.ogg",
+    "res://assets/voices/german/ack_fire_3_man3.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/german/ack_defend_1_man3.ogg",
+    "res://assets/voices/german/ack_defend_2_man3.ogg",
+    "res://assets/voices/german/ack_defend_3_man3.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/german/ack_hide_1_man3.ogg",
+    "res://assets/voices/german/ack_hide_2_man3.ogg",
+    "res://assets/voices/german/ack_hide_3_man3.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/german/ack_dig_1_man3.ogg",
+    "res://assets/voices/german/ack_dig_2_man3.ogg",
+    "res://assets/voices/german/ack_dig_3_man3.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/german/ack_stop_1_man3.ogg",
+    "res://assets/voices/german/ack_stop_2_man3.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/german/contact_1_man3.ogg",
+    "res://assets/voices/german/contact_2_man3.ogg",
+    "res://assets/voices/german/contact_3_man3.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/german/incoming_1_man3.ogg",
+    "res://assets/voices/german/incoming_2_man3.ogg",
+    "res://assets/voices/german/incoming_3_man3.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/german/aircraft_1_man3.ogg",
+    "res://assets/voices/german/aircraft_2_man3.ogg",
+    "res://assets/voices/german/aircraft_3_man3.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/german/pinned_1_man3.ogg",
+    "res://assets/voices/german/pinned_2_man3.ogg",
+    "res://assets/voices/german/pinned_3_man3.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/german/panic_1_man3.ogg",
+    "res://assets/voices/german/panic_2_man3.ogg",
+    "res://assets/voices/german/panic_3_man3.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/german/wounded_1_man3.ogg",
+    "res://assets/voices/german/wounded_2_man3.ogg",
+    "res://assets/voices/german/wounded_3_man3.ogg",
+    "res://assets/voices/german/wounded_4_man3.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/german/man_down_1_man3.ogg",
+    "res://assets/voices/german/man_down_2_man3.ogg",
+    "res://assets/voices/german/man_down_3_man3.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/german/no_ammo_1_man3.ogg",
+    "res://assets/voices/german/no_ammo_2_man3.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/german/surrender_1_man3.ogg",
+    "res://assets/voices/german/surrender_2_man3.ogg"
+   ]
+  },
+  {
+   "ack_move": [
+    "res://assets/voices/german/ack_move_1_man4.ogg",
+    "res://assets/voices/german/ack_move_2_man4.ogg",
+    "res://assets/voices/german/ack_move_3_man4.ogg"
+   ],
+   "ack_fast": [
+    "res://assets/voices/german/ack_fast_1_man4.ogg",
+    "res://assets/voices/german/ack_fast_2_man4.ogg",
+    "res://assets/voices/german/ack_fast_3_man4.ogg"
+   ],
+   "ack_sneak": [
+    "res://assets/voices/german/ack_sneak_1_man4.ogg",
+    "res://assets/voices/german/ack_sneak_2_man4.ogg",
+    "res://assets/voices/german/ack_sneak_3_man4.ogg"
+   ],
+   "ack_fire": [
+    "res://assets/voices/german/ack_fire_1_man4.ogg",
+    "res://assets/voices/german/ack_fire_2_man4.ogg",
+    "res://assets/voices/german/ack_fire_3_man4.ogg"
+   ],
+   "ack_defend": [
+    "res://assets/voices/german/ack_defend_1_man4.ogg",
+    "res://assets/voices/german/ack_defend_2_man4.ogg",
+    "res://assets/voices/german/ack_defend_3_man4.ogg"
+   ],
+   "ack_hide": [
+    "res://assets/voices/german/ack_hide_1_man4.ogg",
+    "res://assets/voices/german/ack_hide_2_man4.ogg",
+    "res://assets/voices/german/ack_hide_3_man4.ogg"
+   ],
+   "ack_dig": [
+    "res://assets/voices/german/ack_dig_1_man4.ogg",
+    "res://assets/voices/german/ack_dig_2_man4.ogg",
+    "res://assets/voices/german/ack_dig_3_man4.ogg"
+   ],
+   "ack_stop": [
+    "res://assets/voices/german/ack_stop_1_man4.ogg",
+    "res://assets/voices/german/ack_stop_2_man4.ogg"
+   ],
+   "contact": [
+    "res://assets/voices/german/contact_1_man4.ogg",
+    "res://assets/voices/german/contact_2_man4.ogg",
+    "res://assets/voices/german/contact_3_man4.ogg"
+   ],
+   "incoming": [
+    "res://assets/voices/german/incoming_1_man4.ogg",
+    "res://assets/voices/german/incoming_2_man4.ogg",
+    "res://assets/voices/german/incoming_3_man4.ogg"
+   ],
+   "aircraft": [
+    "res://assets/voices/german/aircraft_1_man4.ogg",
+    "res://assets/voices/german/aircraft_2_man4.ogg",
+    "res://assets/voices/german/aircraft_3_man4.ogg"
+   ],
+   "pinned": [
+    "res://assets/voices/german/pinned_1_man4.ogg",
+    "res://assets/voices/german/pinned_2_man4.ogg",
+    "res://assets/voices/german/pinned_3_man4.ogg"
+   ],
+   "panic": [
+    "res://assets/voices/german/panic_1_man4.ogg",
+    "res://assets/voices/german/panic_2_man4.ogg",
+    "res://assets/voices/german/panic_3_man4.ogg"
+   ],
+   "wounded": [
+    "res://assets/voices/german/wounded_1_man4.ogg",
+    "res://assets/voices/german/wounded_2_man4.ogg",
+    "res://assets/voices/german/wounded_3_man4.ogg",
+    "res://assets/voices/german/wounded_4_man4.ogg"
+   ],
+   "man_down": [
+    "res://assets/voices/german/man_down_1_man4.ogg",
+    "res://assets/voices/german/man_down_2_man4.ogg",
+    "res://assets/voices/german/man_down_3_man4.ogg"
+   ],
+   "no_ammo": [
+    "res://assets/voices/german/no_ammo_1_man4.ogg",
+    "res://assets/voices/german/no_ammo_2_man4.ogg"
+   ],
+   "surrender": [
+    "res://assets/voices/german/surrender_1_man4.ogg",
+    "res://assets/voices/german/surrender_2_man4.ogg"
+   ]
+  }
+ ]
+}

@@ -144,6 +144,69 @@ def paint_path(t, path, kind, width=1, keep=()):
                     t[rr, cc] = kind
 
 
+def place_grid_houses(t, ra, ca, rb, cb, step, density, rng):
+    """Houses scattered over the blocks between a grid of streets."""
+    for br in range(ra + 2, rb - 3, step):
+        for bc in range(ca + 2, cb - 3, step):
+            for hr0 in range(br + 1, br + step - 4, 5):
+                for hc0 in range(bc + 1, bc + step - 4, 5):
+                    if rng.random() > density:
+                        continue
+                    hr, hc = int(rng.integers(3, 5)), int(rng.integers(3, 5))
+                    area = t[hr0:hr0 + hr, hc0:hc0 + hc]
+                    if area.size and not np.isin(area, [WATER, ROAD, BRIDGE, WRECK]).any():
+                        t[hr0:hr0 + hr, hc0:hc0 + hc] = BUILDING
+
+
+def place_village_houses(t, ra, ca, rb, cb, step, density, rng):
+    """Houses in a row along each street, close to the road as in Rognan in
+    1940: two-storey wooden houses facing the street, gardens behind them,
+    and here and there a shed or outhouse in the back yard."""
+    rows, cols = t.shape
+    taken = np.zeros(t.shape, bool)
+
+    def free(r, c, hr, hc):
+        if r < 1 or c < 1 or r + hr >= rows - 1 or c + hc >= cols - 1:
+            return False
+        if taken[r - 1:r + hr + 1, c - 1:c + hc + 1].any():
+            return False
+        return not np.isin(t[r:r + hr, c:c + hc], [WATER, ROAD, BRIDGE, WRECK, BUILDING, FORD]).any()
+
+    def put(r, c, hr, hc):
+        t[r:r + hr, c:c + hc] = BUILDING
+        taken[r:r + hr, c:c + hc] = True
+
+    road = t == ROAD
+    # Walk along every road edge in the town and set houses back one cell from it
+    for r in range(ra, rb):
+        for c in range(ca, cb):
+            if road[r, c] or rng.random() > density * 0.5:
+                continue
+            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                rr, cc = r + dr, c + dc
+                if not (0 <= rr < rows and 0 <= cc < cols and road[rr, cc]):
+                    continue
+                # House front along the street: wide side to the road
+                wide, deep = int(rng.integers(3, 6)), int(rng.integers(2, 4))
+                if dr:   # road to the north or south: house runs east-west
+                    hr, hc = deep, wide
+                    r0 = r + 1 if dr < 0 else r - deep
+                    c0 = c - wide // 2
+                else:
+                    hr, hc = wide, deep
+                    r0 = r - wide // 2
+                    c0 = c + 1 if dc < 0 else c - deep
+                if free(r0, c0, hr, hc):
+                    put(r0, c0, hr, hc)
+                    # A shed or outhouse behind
+                    if rng.random() < 0.35:
+                        sr = r0 + (hr + 2 if dr < 0 else -4) if dr else r0 + int(rng.integers(0, 2))
+                        sc = c0 + (hc + 2 if dc < 0 else -4) if dc else c0 + int(rng.integers(0, 2))
+                        if free(sr, sc, 2, 2):
+                            put(sr, sc, 2, 2)
+                break
+
+
 def build(recipe_path):
     with open(recipe_path) as f:
         R = json.load(f)
@@ -274,30 +337,41 @@ def build(recipe_path):
                     if t[r, c] not in (BUILDING, BRIDGE, WRECK, WATER):
                         t[r, c] = ROAD
 
-    # A town: a grid of streets with houses in the blocks
+    # A town: a grid of streets with houses in the blocks, or streets from the recipe
     town = R.get("town")
     if town:
         (ra, ca), (rb, cb) = cell(town["rect"][:2], rows, cols), cell(town["rect"][2:], rows, cols)
         step = town.get("street", 12)
         density = town.get("density", 0.7)
+        streets = town.get("streets")
         for r in range(ra, rb):
             for c in range(ca, cb):
-                if river_mask[r, c] or t[r, c] in (BRIDGE, WRECK):
+                if river_mask[r, c] or t[r, c] in (BRIDGE, WRECK, WATER):
                     continue
-                if (r - ra) % step in (0, 1) or (c - ca) % step in (0, 1):
+                if not streets and ((r - ra) % step in (0, 1) or (c - ca) % step in (0, 1)):
                     t[r, c] = ROAD
                 elif t[r, c] not in (ROAD,):
                     t[r, c] = GRASS
-        for br in range(ra + 2, rb - 3, step):
-            for bc in range(ca + 2, cb - 3, step):
-                for hr0 in range(br + 1, br + step - 4, 5):
-                    for hc0 in range(bc + 1, bc + step - 4, 5):
-                        if rng.random() > density:
-                            continue
-                        hr, hc = int(rng.integers(3, 5)), int(rng.integers(3, 5))
-                        area = t[hr0:hr0 + hr, hc0:hc0 + hc]
-                        if area.size and not np.isin(area, [WATER, ROAD, BRIDGE, WRECK]).any():
-                            t[hr0:hr0 + hr, hc0:hc0 + hc] = BUILDING
+        # Streets drawn from the recipe (as on an old map) instead of a grid
+        for line in streets or []:
+            for a, b in zip(line, line[1:]):
+                (r0, c0), (r1, c1) = cell(a, rows, cols), cell(b, rows, cols)
+                n = max(abs(r1 - r0), abs(c1 - c0), 1)
+                for i in range(n + 1):
+                    r, c = round(r0 + (r1 - r0) * i / n), round(c0 + (c1 - c0) * i / n)
+                    for dr in (0, 1):
+                        for dc in (0, 1):
+                            rr, cc = r + dr, c + dc
+                            if 0 <= rr < rows and 0 <= cc < cols and t[rr, cc] not in (WATER, BRIDGE, WRECK):
+                                t[rr, cc] = ROAD
+        # Single buildings named in the recipe, such as a church
+        for bd in town.get("buildings", []):
+            r0, c0 = cell(bd[:2], rows, cols)
+            t[r0:r0 + bd[2], c0:c0 + bd[3]] = BUILDING
+        if town.get("layout") == "village":
+            place_village_houses(t, ra, ca, rb, cb, step, density, rng)
+        else:
+            place_grid_houses(t, ra, ca, rb, cb, step, density, rng)
 
     # Fords over gravel bars
     for fd in R.get("fords", []):

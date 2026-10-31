@@ -56,16 +56,23 @@ public class CombatTests
     [Fact]
     public void FireCausesStressAndCasualties()
     {
-        var sim = new Simulation(Field(), seed: 7);
-        var shooters = sim.SpawnTeam("Brens", Side.Allied, new Vector2(120, 40), new[] { "a", "b", "c", "d" }, Weapon.Bren);
-        var targets = sim.SpawnTeam("Targets", Side.German, new Vector2(120, 140), new[] { "e", "f", "g", "h", "i", "j" });
-        sim.OrderDefend(shooters, targets.Center);
-        sim.OrderDefend(targets, shooters.Center);
-        foreach (var s in targets.Soldiers) s.Ammo = 0; // they cannot shoot back
-        for (int i = 0; i < 600; i++) sim.Tick();
-        Assert.Contains(sim.RecentShots, s => s.Side == Side.Allied);
-        Assert.True(targets.Soldiers.Count(s => !s.CanAct) >= 2, "an unanswered MG at 100 m should hurt");
-        Assert.All(shooters.Soldiers, s => Assert.Equal(Health.Healthy, s.Health));
+        // Over several fights, so one lucky or unlucky one does not decide it
+        int down = 0;
+        for (ulong seed = 1; seed <= 8; seed++)
+        {
+            var sim = new Simulation(Field(), seed);
+            var shooters = sim.SpawnTeam("Brens", Side.Allied, new Vector2(120, 40), new[] { "a", "b", "c", "d" }, Weapon.Bren);
+            var targets = sim.SpawnTeam("Targets", Side.German, new Vector2(120, 140), new[] { "e", "f", "g", "h", "i", "j" });
+            sim.OrderDefend(shooters, targets.Center);
+            sim.OrderDefend(targets, shooters.Center);
+            foreach (var s in targets.Soldiers) s.Ammo = 0; // they cannot shoot back
+            for (int i = 0; i < 600; i++) sim.Tick();
+            Assert.Contains(sim.RecentShots, s => s.Side == Side.Allied);
+            Assert.All(shooters.Soldiers, s => Assert.Equal(Health.Healthy, s.Health));
+            down += targets.Soldiers.Count(s => !s.CanAct);
+        }
+        // An unanswered MG at 100 m should put two of six men out of the fight in a minute, on average
+        Assert.True(down >= 12, $"an unanswered MG at 100 m should hurt ({down} down in 8 fights)");
     }
 
     [Theory]

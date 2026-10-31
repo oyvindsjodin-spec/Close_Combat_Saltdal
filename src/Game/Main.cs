@@ -51,6 +51,7 @@ public partial class Main : Node2D
     FireView _fire = null!;
     AimView _aim = null!;
     SoundView _sound = null!;
+    VoiceView _voices = null!;
     Tutorial _tutorial = null!;
     /// <summary>Picking a target for a Fire order: the aiming line follows the mouse.</summary>
     bool _aiming;
@@ -104,6 +105,8 @@ public partial class Main : Node2D
         AddChild(_aim);
         _sound = new SoundView();
         AddChild(_sound);
+        _voices = new VoiceView();
+        AddChild(_voices);
 
         _camera = new CameraRig();
         AddChild(_camera);
@@ -244,6 +247,9 @@ public partial class Main : Node2D
         _units.PlayerSide = side;
         _groundworks.Sim = _fire.Sim = _aim.Sim = _sim;
         _sound.Sim = _sim;
+        _voices.Sim = _sim;
+        _voices.Battle = _battle;
+        _voices.PlayerSide = side;
         _aiming = false;
         _selected = null;
         _accumulator = 0;
