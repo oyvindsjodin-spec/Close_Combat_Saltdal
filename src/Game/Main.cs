@@ -27,6 +27,12 @@ public partial class Main : Node2D
     /// <summary>The forces the player chose for this battle and side, kept for "fight again".</summary>
     List<string>? _picks;
     ForceScreen _forceScreen = null!;
+    /// <summary>The operation being fought, or null for a single battle.</summary>
+    Campaign? _campaign;
+    bool _recorded;
+    bool _operationDemo;
+    double _demoWait;
+    const string OperationSave = "user://operation.json";
     string? _loadedMap;
     Simulation? _simOrNull;
     Simulation _sim => _simOrNull!;
@@ -34,6 +40,7 @@ public partial class Main : Node2D
     UnitsView _units = null!;
     CameraRig _camera = null!;
     Label _hud = null!;
+    PanelContainer _hudBox = null!;
     Label _log = null!;
     PopupMenu _orderMenu = null!;
     CommandBar _panel = null!;
@@ -91,6 +98,14 @@ public partial class Main : Node2D
         if (args.Contains("--german")) StartBattle(Side.German);
         else if (args.Contains("--british")) StartBattle(Side.Allied);
         else if (args.Contains("--forces")) ChooseForces(Side.Allied);
+        else if (args.Contains("--operation-demo"))
+        {
+            // Developer check: run the operation through, each battle ended by a ceasefire after a few seconds
+            _operationDemo = true;
+            StartOperation(Side.Allied);
+            StartBattle(PlayerSide);
+        }
+        else if (args.Contains("--operation")) StartOperation(Side.German);
         else ShowMenu();
         foreach (var a in args)
             if (a.StartsWith("--zoom=") && _simOrNull != null)
@@ -104,6 +119,7 @@ public partial class Main : Node2D
     {
         _endScreen.Visible = false;
         _panel.Visible = false;
+        _hudBox.Visible = false;
         _forceScreen.Visible = false;
         _menu.Visible = true;
     }
@@ -132,7 +148,10 @@ public partial class Main : Node2D
         PlayerSide = side;
         _menu.Visible = false;
         _panel.Visible = false;
-        _forceScreen.Show(_scenario, side, _picks);
+        _hudBox.Visible = false;
+        string? heading = _campaign == null ? null
+            : $"The operation, battle {_campaign.Index + 1} of {_data.Battles.Count}";
+        _forceScreen.Show(_scenario, side, _picks, heading);
     }
 
     void StartBattle(Side side)
@@ -143,6 +162,8 @@ public partial class Main : Node2D
         _forceScreen.Visible = false;
         _panel.Visible = true;
         _paused = false;
+        _recorded = false;
+        _hudBox.Visible = true;
         _simOrNull = _scenario.Build(_map, _seed++, side, _picks);
         _units.Sim = _sim;
         _units.PlayerSide = side;
@@ -162,7 +183,8 @@ public partial class Main : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var hudBox = new PanelContainer { Position = new Vector2(8, 8), MouseFilter = Control.MouseFilterEnum.Ignore };
+        var hudBox = new PanelContainer { Position = new Vector2(8, 8), MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        _hudBox = hudBox;
         hudBox.AddThemeStyleboxOverride("panel", CommandBar.Look.PanelStyle(0.88f));
         _hud = new Label();
         _hud.AddThemeFontSizeOverride("font_size", 14);
@@ -221,8 +243,18 @@ public partial class Main : Node2D
         margin.AddChild(_endText);
         _endScreen.AddChild(margin);
 
-        _menu = new BattleMenu { Battles = _data.Battles };
-        _menu.SideChosen += ChooseForces;
+        _menu = new BattleMenu { Battles = _data.Battles, HasSavedOperation = LoadOperation() is { IsOver: false } };
+        _menu.SideChosen += side =>
+        {
+            _campaign = null;
+            ChooseForces(side);
+        };
+        _menu.OperationStarted += StartOperation;
+        _menu.OperationContinued += () =>
+        {
+            _campaign = LoadOperation();
+            if (_campaign != null) NextOperationBattle();
+        };
         _menu.BattleChosen += ChooseBattle;
         center.AddChild(_menu);
 
@@ -238,7 +270,8 @@ public partial class Main : Node2D
 
     public override void _Process(double delta)
     {
-        if (_simOrNull == null) return;
+        // Between battles (menu or choosing forces) the last battle stays drawn but nothing happens
+        if (_simOrNull == null || _menu.Visible || _forceScreen.Visible) return;
         if (!_paused && !_sim.IsOver)
         {
             _accumulator += delta * _speed;
@@ -261,8 +294,24 @@ public partial class Main : Node2D
         _panel.Refresh(_selected, new Rect2(_camera.GetScreenCenterPosition() - viewSize / 2, viewSize), _units.RevealAll);
         UpdateHud();
         UpdateLog();
+        if (_sim.IsOver && _campaign != null && !_recorded)
+        {
+            _campaign.Record(_sim);
+            _recorded = true;
+            SaveOperation();
+        }
         if (_sim.IsOver && !_endScreen.Visible)
             ShowEndScreen();
+        if (_operationDemo)
+        {
+            if (!_sim.IsOver && _sim.Time > 5) _sim.CallCeasefire();
+            else if (_sim.IsOver && _campaign is { IsOver: false } && (_demoWait += delta) > 1)
+            {
+                _demoWait = 0;
+                NextOperationBattle();
+                StartBattle(PlayerSide);
+            }
+        }
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -296,10 +345,17 @@ public partial class Main : Node2D
                     break;
                 case Key.C:
                     // Press C twice to call a ceasefire, so it cannot happen by accident
-                    if (CeasefireAsked) _sim.CallCeasefire();
+                    if (CeasefireAsked)
+                    {
+                        _ceasefireAskedAt = 0;
+                        if (_sim.RequestCeasefire(PlayerSide) is { } refusal) _sim.Log(PlayerSide, refusal);
+                    }
                     else _ceasefireAskedAt = Time.GetTicksMsec();
                     break;
-                case Key.R when _sim.IsOver:
+                case Key.N when _sim.IsOver && _campaign is { IsOver: false }:
+                    NextOperationBattle();
+                    break;
+                case Key.R when _sim.IsOver && _campaign == null:
                     StartBattle(PlayerSide);
                     break;
                 case Key.M when _sim.IsOver:
@@ -423,6 +479,71 @@ public partial class Main : Node2D
         _log.Text = string.Join("\n", lines);
     }
 
+    // ---------------------------------------------------------------- the operation
+
+    void StartOperation(Side side)
+    {
+        _campaign = new Campaign(_data, side);
+        SaveOperation();
+        NextOperationBattle();
+    }
+
+    /// <summary>Choose forces for the next battle of the operation, as the last one left them.</summary>
+    void NextOperationBattle()
+    {
+        if (_campaign == null || _campaign.IsOver) return;
+        _endScreen.Visible = false;
+        _scenario = _campaign.Current;
+        _picks = null;
+        LoadMap(_scenario.Map);
+        PlayerSide = _campaign.PlayerSide;
+        ChooseForces(PlayerSide);
+    }
+
+    string OperationSummary()
+    {
+        var c = _campaign!;
+        var lines = c.Results.Select((b, i) =>
+            $"{i + 1}. {b.Title}: {(b.Winner == null ? "draw" : View.SideName(b.Winner.Value) + " victory")}");
+        string text = "The operation so far:\n" + string.Join("\n", lines) + "\n\n";
+        if (!c.IsOver)
+            return text + "Men who came through fight again in the next battle, a little more experienced.\n" +
+                   "N: next battle    M: back to the menu (the operation is saved)";
+        string verdict = c.Winner == null ? "The operation ends in a draw."
+            : c.Winner == Side.Allied ? "British victory: the brigade got away across the fjord in good order."
+            : "German victory: the road to Bodø lies open.";
+        return text + verdict + (c.Winner == null ? "" : c.Winner == PlayerSide ? " You won the operation." : " You lost the operation.") +
+               "\n\nM: back to the menu";
+    }
+
+    void SaveOperation()
+    {
+        if (_campaign == null) return;
+        if (_campaign.IsOver)
+        {
+            DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(OperationSave));
+            _menu.HasSavedOperation = false;
+            return;
+        }
+        using var f = FileAccess.Open(OperationSave, FileAccess.ModeFlags.Write);
+        f?.StoreString(_campaign.Save());
+        _menu.HasSavedOperation = true;
+    }
+
+    Campaign? LoadOperation()
+    {
+        if (!FileAccess.FileExists(OperationSave)) return null;
+        try
+        {
+            return Campaign.Load(_data, FileAccess.GetFileAsString(OperationSave));
+        }
+        catch (System.Exception e)
+        {
+            GD.PushWarning($"Could not read the saved operation: {e.Message}");
+            return null;
+        }
+    }
+
     void ShowEndScreen()
     {
         var r = _sim.Result!;
@@ -434,7 +555,7 @@ public partial class Main : Node2D
             $"{r.Reason}\n\n{verdict}\n" +
             $"Flags held: British {r.AlliedFlagValue}, German {r.GermanFlagValue}\n\n" +
             $"{Line("British", r.AlliedLosses)}\n{Line("German", r.GermanLosses)}\n\n" +
-            "R: fight again    M: back to the menu";
+            (_campaign == null ? "R: fight again    M: back to the menu" : OperationSummary());
         _endScreen.Visible = true;
     }
 }

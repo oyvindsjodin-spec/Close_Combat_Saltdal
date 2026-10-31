@@ -233,8 +233,9 @@ public sealed record FlagSpec(string Name, Vector2 At, int Value, Side Owner);
 /// One thing a side can bring to a battle: a team at its starting place, or
 /// some missions of off-map support.
 /// </summary>
+/// <param name="MenExperience">Each man's own experience, for men carried over from an earlier battle.</param>
 public sealed record ForceOption(string Name, TeamType? Team, SupportType? Support, int Missions, Vector2 At,
-    float? Experience, string[] MenNames, int MenCount, bool Default, bool Required)
+    float? Experience, string[] MenNames, int MenCount, bool Default, bool Required, float[]? MenExperience = null)
 {
     public bool IsSupport => Support != null;
 
@@ -252,6 +253,23 @@ public sealed record ForceOption(string Name, TeamType? Team, SupportType? Suppo
 public sealed record SideForces(Side Side, int Budget, Vector2? Face, IReadOnlyList<ForceOption> Options)
 {
     public IReadOnlyList<string> DefaultPicks => Options.Where(o => o.Default).Select(o => o.Name).ToList();
+
+    /// <summary>
+    /// What the computer brings: the historical force, then reserves in the
+    /// order listed while points remain (only after earlier losses leave some over).
+    /// </summary>
+    public IReadOnlyList<string> AiPicks()
+    {
+        var picks = DefaultPicks.ToList();
+        int left = Budget - CostOf(picks);
+        foreach (var o in Options.Where(o => !o.Default && !o.IsSupport))
+            if (o.Cost <= left)
+            {
+                picks.Add(o.Name);
+                left -= o.Cost;
+            }
+        return picks;
+    }
 
     public int CostOf(IEnumerable<string> picks) => Options.Where(o => picks.Contains(o.Name)).Sum(o => o.Cost);
 
@@ -294,7 +312,8 @@ public sealed record Scenario(string Id, int Order, string Title, string Map, in
 
         foreach (var forces in new[] { Allied, German })
         {
-            var picks = forces.Side == playerSide && playerPicks != null ? playerPicks : forces.DefaultPicks;
+            var picks = forces.Side == playerSide && playerPicks != null ? playerPicks
+                : forces.Side == playerSide ? forces.DefaultPicks : forces.AiPicks();
             foreach (var o in forces.Options.Where(o => picks.Contains(o.Name)))
             {
                 if (o.Support != null)
@@ -313,7 +332,7 @@ public sealed record Scenario(string Id, int Order, string Title, string Map, in
                 {
                     var spec = type.Men[i];
                     string name = i < o.MenNames.Length ? o.MenNames[i] : $"{type.Name} {i + 1}";
-                    float exp = spec.Experience ?? o.Experience ?? type.Experience;
+                    float exp = o.MenExperience?[i] ?? spec.Experience ?? o.Experience ?? type.Experience;
                     sim.AddSoldier(team, name, at + Simulation.FormationOffset(i, o.MenCount), spec.Weapon, spec.Leader, exp);
                 }
                 if (forces.Face is { } face)

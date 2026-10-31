@@ -16,6 +16,22 @@ public partial class BattleMenu : PanelContainer
     /// <summary>The battles to offer; set before the menu is added to the scene.</summary>
     public IReadOnlyList<Scenario> Battles { get; set; } = Array.Empty<Scenario>();
 
+    public event Action<Side>? OperationStarted;
+    public event Action? OperationContinued;
+
+    /// <summary>Whether an unfinished operation is saved, so it can be continued.</summary>
+    public bool HasSavedOperation
+    {
+        get => _hasSaved;
+        set
+        {
+            _hasSaved = value;
+            if (_continue != null) _continue.Visible = value;
+        }
+    }
+    bool _hasSaved;
+    Button? _continue;
+
     readonly List<Button> _battleButtons = new();
     Label _title = null!, _briefing = null!, _alliedText = null!, _germanText = null!;
 
@@ -59,6 +75,32 @@ public partial class BattleMenu : PanelContainer
         box.AddChild(new HSeparator());
         box.AddChild(Choice(Side.Allied, "Command the British", out _alliedText));
         box.AddChild(Choice(Side.German, "Command the Gebirgsjäger", out _germanText));
+
+        // The whole operation: all the battles in order, losses carried over
+        box.AddChild(new HSeparator());
+        var op = new Label { Text = "The operation, 23 to 26 May", HorizontalAlignment = HorizontalAlignment.Center };
+        op.AddThemeFontSizeOverride("font_size", 22);
+        box.AddChild(op);
+        box.AddChild(Text("Fight the three battles in order, from Viskiskoia to Rognan. Men who come through " +
+                          "fight again in the next battle, a little more experienced; the dead and badly wounded do not. " +
+                          "The winner of each battle gets more points for the next.", 14));
+        var opRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        opRow.AddThemeConstantOverride("separation", 8);
+        box.AddChild(opRow);
+        foreach (var (side, label) in new[] { (Side.Allied, "As the British"), (Side.German, "As the Germans") })
+        {
+            var b = new Button { Text = label, CustomMinimumSize = new Vector2(200, 36) };
+            var color = View.SideColor(side);
+            b.AddThemeStyleboxOverride("normal", ButtonStyle(color.Darkened(0.55f)));
+            b.AddThemeStyleboxOverride("hover", ButtonStyle(color.Darkened(0.35f)));
+            b.Pressed += () => OperationStarted?.Invoke(side);
+            opRow.AddChild(b);
+        }
+        _continue = new Button { Text = "Continue the operation", CustomMinimumSize = new Vector2(220, 36), Visible = _hasSaved };
+        _continue.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.36f, 0.37f, 0.30f)));
+        _continue.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.46f, 0.47f, 0.38f)));
+        _continue.Pressed += () => OperationContinued?.Invoke();
+        opRow.AddChild(_continue);
 
         if (Battles.Count > 0) Select(Battles.FirstOrDefault(b => b.Id == "pothus") ?? Battles[0]);
     }
