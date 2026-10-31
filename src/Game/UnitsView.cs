@@ -209,7 +209,7 @@ public partial class UnitsView : Node2D
 
         public static Uniform For(Soldier s) =>
             s.Side == Side.German ? German
-            : s.Weapon == Weapon.Krag || s.Weapon == Weapon.Mortar81Norwegian ? Norwegian
+            : s.Team.Nation == "norwegian" ? Norwegian
             : British;
 
         public Uniform Dimmed(float amount) => new(Cloth.Darkened(amount), Kit.Darkened(amount), Helmet.Darkened(amount), WideBrim);

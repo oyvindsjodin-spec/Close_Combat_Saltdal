@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Saltdal.Sim;
 using Side = Saltdal.Sim.Side;
@@ -11,6 +12,9 @@ public partial class BattleMenu : PanelContainer
 {
     public event Action<Side>? SideChosen;
     public event Action<Scenario>? BattleChosen;
+
+    /// <summary>The battles to offer; set before the menu is added to the scene.</summary>
+    public IReadOnlyList<Scenario> Battles { get; set; } = Array.Empty<Scenario>();
 
     readonly List<Button> _battleButtons = new();
     Label _title = null!, _briefing = null!, _alliedText = null!, _germanText = null!;
@@ -35,7 +39,7 @@ public partial class BattleMenu : PanelContainer
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 8);
         box.AddChild(row);
-        foreach (var sc in Scenarios.All)
+        foreach (var sc in Battles)
         {
             var b = new Button { Text = sc.Title, ToggleMode = true, CustomMinimumSize = new Vector2(200, 34) };
             b.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.18f, 0.19f, 0.17f)));
@@ -56,13 +60,13 @@ public partial class BattleMenu : PanelContainer
         box.AddChild(Choice(Side.Allied, "Command the British", out _alliedText));
         box.AddChild(Choice(Side.German, "Command the Gebirgsjäger", out _germanText));
 
-        Select(Scenarios.Find("pothus"));
+        if (Battles.Count > 0) Select(Battles.FirstOrDefault(b => b.Id == "pothus") ?? Battles[0]);
     }
 
     void Select(Scenario sc)
     {
         for (int i = 0; i < _battleButtons.Count; i++)
-            _battleButtons[i].SetPressedNoSignal(Scenarios.All[i] == sc);
+            _battleButtons[i].SetPressedNoSignal(Battles[i] == sc);
         _title.Text = sc.Title;
         _briefing.Text = sc.Briefing;
         _alliedText.Text = sc.AlliedRole;

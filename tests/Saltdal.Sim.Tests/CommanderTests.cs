@@ -52,10 +52,11 @@ public class CommanderTests
     [Fact]
     public void PothusGivesTheComputerTheSideThePlayerDidNotPick()
     {
+        var Pothus = ScenarioTests.Data.Find("pothus");
         var map = Field();
-        Assert.IsType<AttackAI>(Assert.Single(Scenarios.PothusDayOne(map, 1, Side.Allied).Commanders));
-        Assert.IsType<DefendAI>(Assert.Single(Scenarios.PothusDayOne(map, 1, Side.German).Commanders));
-        Assert.Equal(2, Scenarios.PothusDayOne(map, 1, null).Commanders.Count);
-        Assert.Contains(Scenarios.PothusDayOne(map, 1).Teams, t => t.Side == Side.German && t.IsHeadquarters);
+        Assert.IsType<AttackAI>(Assert.Single(Pothus.Build(map, 1, Side.Allied).Commanders));
+        Assert.IsType<DefendAI>(Assert.Single(Pothus.Build(map, 1, Side.German).Commanders));
+        Assert.Equal(2, Pothus.Build(map, 1, null).Commanders.Count);
+        Assert.Contains(Pothus.Build(map, 1, Side.Allied).Teams, t => t.Side == Side.German && t.IsHeadquarters);
     }
 }

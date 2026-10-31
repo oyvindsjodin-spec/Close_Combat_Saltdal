@@ -4,7 +4,7 @@ A personal, non-commercial real-time tactics game in the style of the
 Close Combat series (1996 to 1999), set in Saltdal, Norway, in May 1940.
 The plan is in the project's development plan document.
 
-**Status:** Phase 2c. Three battles from the fighting in Saltdal, each
+**Status:** Phase 2d. Three battles from the fighting in Saltdal, each
 playable from either side:
 
 | Battle | Map | What happens |
@@ -27,13 +27,18 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 2. Pick the `project.godot` file in this folder, then **Import & Edit**.
 3. The first time, click **Build** (the hammer icon, top right) and wait for it to finish.
 4. Press **F5**, or the play button (top right), to run the game.
-5. Pick a side in the menu.
+5. Pick a battle and a side in the menu.
+6. Choose your forces. The historical force is ticked to begin with; your
+   budget is what it cost. Untick a team to free points for a reserve team or
+   more off-map support, then press **Start battle**. The computer always
+   brings the historical force.
 
 ## Controls
 
 | Action | Control |
 | --- | --- |
-| Select a team | Left-click one of its soldiers, click its button at the bottom, or press Tab |
+| Select a team | Left-click one of its soldiers, click its card in the bar at the bottom, or press Tab |
+| Jump to a place | Click or drag on the mini-map, bottom right |
 | Give an order | Right-click on the map, then pick an order |
 | Pan | W A S D, arrow keys, or drag with the middle mouse button |
 | Zoom | Mouse wheel |
@@ -67,10 +72,26 @@ to orders at once and recover their nerve faster. A team whose leader is down
 waits a few seconds before obeying. Messages such as "on the way, 50 seconds" and
 "Aircraft overhead!" appear at the bottom left.
 
-Khaki dots are British, grey dots are German. The ring around each man shows
-his state of mind: black is steady, yellow pinned, orange cowering, red
-panicked and purple routed. A cross is a dead man. You only see German soldiers
+British soldiers wear khaki and flat Brodie helmets, Germans field grey and
+Stahlhelms, Norwegians grey-green. A coloured dot over a man shows he is shaken:
+yellow pinned, orange cowering, red panicked, purple routed. The bar at the
+bottom shows a card for each team (a square per man, coloured the same way),
+the men of the selected team, and a mini-map. You only see German soldiers
 while one of your men can see them; a faint circle marks where one was last seen.
+
+## Changing the numbers
+
+The game's numbers are in plain text files in `data/`, so you can change them
+with any text editor (Notepad, TextEdit) and start a new battle to try them:
+
+| File | What it holds |
+| --- | --- |
+| `data/weapons.json` | Range, rate of fire, accuracy, ammunition and blast of every weapon and shell |
+| `data/units.json` | What each kind of team carries, its experience and its cost in points; the off-map guns and the Stuka |
+| `data/battles/*.json` | Each battle: time limit, flags, where every team starts, soldiers' names, which teams are historical and which are reserves, and the budget |
+
+Keep the commas, quotes and brackets as they are. If a file has a mistake,
+the game says which file and where instead of starting.
 
 ## Layout
 
@@ -79,7 +100,7 @@ while one of your men can see them; a faint circle marks where one was last seen
 | `src/Sim` | The simulation: map, pathfinding, sight, firing, morale, flags, AI, scenarios. Pure C#, no Godot code |
 | `src/Game` | Godot scripts that draw the simulation and handle input |
 | `scenes` | Godot scenes |
-| `data/maps` | Battle maps (height, terrain type, metadata) |
+| `data` | Weapons, units and battles as editable text files (`weapons.json`, `units.json`, `battles/`), and the battle maps (`maps/`) |
 | `tools` | `build_map.py`, which makes a map from real elevation data, and `paint_ground.py`, which paints its ground picture |
 | `tests` | Unit tests for the simulation (`dotnet test tests/Saltdal.Sim.Tests`) |
 

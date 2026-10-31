@@ -114,7 +114,7 @@ public class CombatTests
     {
         BattleResult Run()
         {
-            var sim = Scenarios.PothusDayOne(ScenarioTests.LoadMap("pothus"), seed: 3);
+            var sim = ScenarioTests.Data.Find("pothus").Build(ScenarioTests.LoadMap("pothus"), 3, Side.Allied);
             while (!sim.IsOver) sim.Tick();
             return sim.Result!;
         }

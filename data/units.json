@@ -1,0 +1,98 @@
+{
+  "_help": "The kinds of team a battle can use, what each man carries, and what the team costs when you choose your forces. experience runs from 0 (raw) to 1 (veteran). nation picks the uniform: british, norwegian or german. Off-map support is bought per mission.",
+
+  "teams": {
+    "rifle_section": {
+      "name": "Rifle section", "nation": "british", "side": "allied", "cost": 60, "experience": 0.55,
+      "about": "A corporal, a Bren gunner and five riflemen.",
+      "men": [
+        { "weapon": "lee_enfield", "leader": true },
+        { "weapon": "bren" },
+        { "weapon": "lee_enfield", "count": 5 }
+      ]
+    },
+    "independent_section": {
+      "name": "Independent Company section", "nation": "british", "side": "allied", "cost": 45, "experience": 0.45,
+      "about": "Keen but newly raised and lightly armed, one Bren between them.",
+      "men": [
+        { "weapon": "lee_enfield", "leader": true },
+        { "weapon": "bren" },
+        { "weapon": "lee_enfield", "count": 4 }
+      ]
+    },
+    "platoon_hq": {
+      "name": "Platoon HQ", "nation": "british", "side": "allied", "cost": 40, "experience": 0.55, "headquarters": true,
+      "about": "The officer, his sergeant, a runner and the 2-inch mortar. Calls the guns.",
+      "men": [
+        { "weapon": "lee_enfield", "leader": true, "experience": 0.5 },
+        { "weapon": "lee_enfield", "leader": true, "experience": 0.7 },
+        { "weapon": "lee_enfield" },
+        { "weapon": "mortar_2in" }
+      ]
+    },
+    "mortar_3in": {
+      "name": "3-inch mortar", "nation": "british", "side": "allied", "cost": 55, "experience": 0.55,
+      "about": "A 3-inch mortar and its crew. Range 1500 m.",
+      "men": [
+        { "weapon": "lee_enfield", "leader": true },
+        { "weapon": "mortar_3in" },
+        { "weapon": "lee_enfield" }
+      ]
+    },
+    "norwegian_mortar": {
+      "name": "Norwegian mortar", "nation": "norwegian", "side": "allied", "cost": 50, "experience": 0.4,
+      "about": "An 81 mm bombekaster with a Norwegian crew. Range 2000 m.",
+      "men": [
+        { "weapon": "krag", "leader": true, "experience": 0.5 },
+        { "weapon": "mortar_81_no", "experience": 0.5 },
+        { "weapon": "krag", "count": 2 }
+      ]
+    },
+
+    "gruppe": {
+      "name": "Gruppe", "nation": "german", "side": "german", "cost": 85, "experience": 0.6,
+      "about": "A Gebirgsjäger squad: the leader with an MP 40, an MG 34 and seven riflemen.",
+      "men": [
+        { "weapon": "mp40", "leader": true },
+        { "weapon": "mg34" },
+        { "weapon": "kar98k", "count": 7 }
+      ]
+    },
+    "zugtrupp": {
+      "name": "Zugtrupp", "nation": "german", "side": "german", "cost": 35, "experience": 0.6, "headquarters": true,
+      "about": "The platoon leader, his sergeant and a runner. Calls the guns and the Stuka.",
+      "men": [
+        { "weapon": "mp40", "leader": true, "experience": 0.65 },
+        { "weapon": "mp40", "leader": true, "experience": 0.7 },
+        { "weapon": "kar98k" }
+      ]
+    },
+    "granatwerfer": {
+      "name": "Granatwerfer", "nation": "german", "side": "german", "cost": 55, "experience": 0.6,
+      "about": "An 8 cm mortar and its crew. Range 2000 m.",
+      "men": [
+        { "weapon": "kar98k", "leader": true },
+        { "weapon": "grw34" },
+        { "weapon": "kar98k" }
+      ]
+    }
+  },
+
+  "support": {
+    "25pdr": {
+      "name": "25-pounder troop", "side": "allied", "costPerMission": 30, "explosive": "gun_25pdr",
+      "rounds": 8, "delay": 50, "interval": 2, "spread": 40, "reliability": 0.6,
+      "about": "A troop of 203 Battery. The signal often fails to get through."
+    },
+    "mountain_guns": {
+      "name": "Mountain guns", "side": "german", "costPerMission": 25, "explosive": "mountain_gun",
+      "rounds": 6, "delay": 45, "interval": 2.5, "spread": 35, "reliability": 0.9,
+      "about": "The division's 75 mm mountain battery."
+    },
+    "stuka": {
+      "name": "Ju 87 Stuka", "side": "german", "costPerMission": 50, "explosive": "bomb_250kg",
+      "rounds": 1, "delay": 60, "interval": 0, "spread": 15, "reliability": 0.8, "aircraft": true,
+      "about": "One dive-bomber, one 250 kg bomb."
+    }
+  }
+}
