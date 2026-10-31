@@ -10,7 +10,8 @@ playable from either side on its own or one after another as an operation:
 | Battle | Map | What happens |
 | --- | --- | --- |
 | Viskiskoia, 23 May 1940 | Open birch upland, 1.5 km square | Scots Guards and an Independent Company hold the road bridge |
-| Pothus, 25 May 1940 | Where a side valley joins Saltdalselva, 2 km square | Irish Guards and Norwegian mortars hold the west bank, the ridge and Pothus farm; the road bridge is blown |
+| Pothus, 25 May 1940 | Where a side valley joins Saltdalselva, 2 km square | Irish Guards hold the ridge on the east bank and the blown girder bridge from the west bank, with a Norwegian machine gun, two Norwegian mortars and 25-pounders firing over open sights |
+| Pothus, 26 May 1940 | The same map | The Germans crossed on a pontoon bridge in the night and attack the west bank from upstream; hold until the retreat |
 | Rognan, 26 May 1940 | Village and quay at the head of the fjord, 2 km square | A rearguard holds the quay while the last boats leave |
 
 The computer attacks or defends, whichever side you do not pick. Soldiers see,
@@ -36,12 +37,12 @@ You need the **Godot 4 .NET edition** (4.6 or newer) and the **.NET 8 SDK**.
 ## The operation
 
 Below the battles in the menu, **The operation, 23 to 26 May** fights all
-three battles in order, as the British or as the Germans:
+four battles in order, as the British or as the Germans:
 
 - Men who come through a battle fight again if their team is in the next one,
   each a little more experienced. The dead, the badly wounded and the captured
-  are gone. The same German company fights all three battles; the Irish Guards
-  sections and HQ fight at Pothus and again at Rognan.
+  are gone. The same German company fights all four battles; No. 4 and No. 3 Companies
+  of the Irish Guards fight both days at Pothus and again at Rognan.
 - Before each battle some losses are made good with green replacements: three
   in four for the Germans, who kept feeding in fresh troops, one in four for
   the British. A British team with nobody left is gone for good.
@@ -49,7 +50,7 @@ three battles in order, as the British or as the Germans:
   reserves. The winner of a battle gets 15% more points for the next.
 - After each battle press **N** for the next one. The operation is saved after
   every battle; **Continue the operation** in the menu picks it up again.
-- Whoever wins more of the three battles wins the operation.
+- Whoever wins more of the four battles wins the operation.
 
 ## Controls
 
@@ -102,8 +103,9 @@ while one of your men can see them; a faint circle marks where one was last seen
 
 ## Houses, fire and trenches
 
-Each battle starts with a quiet spell before the attack: 5 minutes at
-Viskiskoia and Rognan, 10 at Pothus. Nobody fires and no guns can be called.
+Each battle starts with a quiet spell before the attack: 3 minutes at
+Viskiskoia, 5 at Rognan, 10 and 8 on the two days at Pothus. Nobody fires and
+no guns can be called.
 The defender uses the time to get into position and dig in; the attacker waits
 where he is (press Enter to start the attack at once). The clock at the top
 left counts down to the attack, then shows the battle time left.

@@ -54,7 +54,7 @@ public class ScenarioTests
     [Fact]
     public void TheBattlesComeInTheOrderTheyWereFought()
     {
-        Assert.Equal(new[] { "viskiskoia", "pothus", "rognan" }, Data.Battles.Select(b => b.Id));
+        Assert.Equal(new[] { "viskiskoia", "pothus", "pothus_west", "rognan" }, Data.Battles.Select(b => b.Id));
     }
 
     [Fact]
@@ -88,13 +88,13 @@ public class ScenarioTests
     {
         var sc = Data.Find("pothus");
         var forces = sc.Forces(Side.Allied);
-        var picks = forces.DefaultPicks.Where(n => n != "3 Section").Append("No. 1 Ind. Coy").ToList();
+        var picks = forces.DefaultPicks.Where(n => n != "No. 1 Coy (3)").Append("No. 2 Ind. Coy (2)").ToList();
         Assert.Null(forces.Problem(picks));
         var sim = sc.Build(LoadMap("pothus"), 1, Side.Allied, picks);
-        Assert.DoesNotContain(sim.Teams, t => t.Name == "3 Section");
-        var ind = Assert.Single(sim.Teams, t => t.Name == "No. 1 Ind. Coy");
+        Assert.DoesNotContain(sim.Teams, t => t.Name == "No. 1 Coy (3)");
+        var ind = Assert.Single(sim.Teams, t => t.Name == "No. 2 Ind. Coy (2)");
         Assert.Equal(6, ind.Soldiers.Count);
-        Assert.Equal(0.45f, ind.Soldiers[2].Experience);
+        Assert.Equal(0.5f, ind.Soldiers[2].Experience);
         // The Germans keep their historical force
         Assert.Equal(sc.German.DefaultPicks.Count(n => sc.German.Options.First(o => o.Name == n).Team != null),
             sim.Teams.Count(t => t.Side == Side.German));
@@ -106,7 +106,7 @@ public class ScenarioTests
         var forces = Data.Find("pothus").Allied;
         var all = forces.Options.Select(o => o.Name).ToList();
         Assert.StartsWith("Over budget", forces.Problem(all));
-        Assert.Equal("Platoon HQ must come.", forces.Problem(forces.DefaultPicks.Where(n => n != "Platoon HQ").ToList()));
+        Assert.Equal("Stockforce HQ must come.", forces.Problem(forces.DefaultPicks.Where(n => n != "Stockforce HQ").ToList()));
     }
 
     [Fact]

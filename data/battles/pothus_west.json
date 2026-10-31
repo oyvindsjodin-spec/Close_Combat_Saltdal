@@ -1,0 +1,211 @@
+{
+  "_help": "One battle. at is a place on the map as fractions of its width and height: [0, 0] is the north-west corner, [1, 1] the south-east. Teams with default true (the default) are the historical force; the rest can be chosen instead before the battle. budget is the points a side may spend; leave it out to use the cost of the historical force. men gives the soldiers' names; fewer names than the team has places makes a smaller team.",
+  "id": "pothus_west",
+  "order": 3,
+  "title": "Pothus, 26 May 1940",
+  "map": "pothus",
+  "minutes": 45,
+  "prepMinutes": 8,
+  "briefing": "The ridge on the east bank was lost yesterday afternoon; the last men off it crossed the flooded side river on a rope of rifle slings. The west bank held: the Germans never got over at the bridge. In the night they built a pontoon bridge upstream and moved their weight to the west flank. The outpost on the hillside has been pushed back, and the last reserve, men of No. 2 Independent Company, is going up the slope to stop the Germans getting round behind. Evacuation from Bodø has been decided: the retreat begins at seven in the evening. Hold the west bank until then.",
+  "alliedRole": "Defend the west bank: two sections of No. 4 Company at the bridge, No. 3 Company, the Norwegian mortars and machine gun, and No. 2 Independent Company on the hillside. Stockforce HQ can call the 25-pounders twice more.",
+  "germanRole": "Attack from the west bank, having crossed on the pontoon bridge upstream in the night, while the squads on the ridge fire across. Take the hillside and get behind the bridge. The Zugtrupp can call the mountain guns and the Heinkels.",
+  "flags": [
+    {
+      "name": "Pothus bridge",
+      "at": [0.41, 0.19],
+      "value": 2
+    },
+    {
+      "name": "Røkland",
+      "at": [0.24, 0.13]
+    },
+    {
+      "name": "The hillside",
+      "at": [0.14, 0.42],
+      "value": 2
+    }
+  ],
+  "allied": {
+    "face": [0, 200],
+    "units": [
+      {
+        "type": "rifle_section",
+        "name": "No. 4 Coy (1)",
+        "at": [0.42, 0.19],
+        "experience": 0.6,
+        "men": ["Cpl Moran", "LCpl Flynn", "Gdsm Hayes", "Gdsm Lynch", "Gdsm Daly", "Gdsm Power", "Gdsm Casey"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "No. 4 Coy (2)",
+        "at": [0.38, 0.24],
+        "experience": 0.6,
+        "men": ["Cpl Whelan", "LCpl Corrigan", "Gdsm Dolan", "Gdsm Farrell", "Gdsm Geraghty", "Gdsm Hanlon", "Gdsm Lacey"]
+      },
+      {
+        "type": "rifle_section",
+        "name": "No. 3 Coy",
+        "at": [0.3, 0.3],
+        "experience": 0.6,
+        "men": ["Cpl Mulligan", "LCpl Fahy", "Gdsm Behan", "Gdsm Carey", "Gdsm Devine", "Gdsm Egan", "Gdsm Garvey"]
+      },
+      {
+        "type": "platoon_hq",
+        "name": "Stockforce HQ",
+        "at": [0.26, 0.08],
+        "required": true,
+        "experience": 0.6,
+        "men": ["Maj Stockwell", "Sgt Gallagher", "Gdsm Tierney", "Gdsm Rooney"]
+      },
+      {
+        "type": "norwegian_mortar",
+        "name": "Norw. mortars (1)",
+        "at": [0.27, 0.24],
+        "men": ["Sersjant Hansen", "Korporal Olsen", "Soldat Johansen", "Soldat Pedersen"]
+      },
+      {
+        "type": "norwegian_mortar",
+        "name": "Norw. mortars (2)",
+        "at": [0.24, 0.2],
+        "men": ["Sersjant Larsen", "Korporal Andersen", "Soldat Kristiansen", "Soldat Karlsen"]
+      },
+      {
+        "type": "norwegian_mg",
+        "name": "Norw. machine gun",
+        "at": [0.36, 0.2],
+        "men": ["Sersjant Eriksen", "Korporal Berntsen", "Soldat Solberg", "Soldat Rød"]
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 2 Ind. Coy (1)",
+        "at": [0.17, 0.36],
+        "experience": 0.5,
+        "men": ["Sgt Evans", "Pte Hughes", "Pte Price", "Pte Rees", "Pte Owen", "Pte Pritchard"]
+      },
+      {
+        "type": "independent_section",
+        "name": "No. 2 Ind. Coy (2)",
+        "at": [0.12, 0.33],
+        "experience": 0.5,
+        "men": ["Cpl Jenkins", "Pte Morgan", "Pte Lloyd", "Pte Griffiths", "Pte Powell", "Pte Vaughan"]
+      },
+      {
+        "type": "norwegian_ski",
+        "name": "Norw. patrol",
+        "at": [0.15, 0.3],
+        "default": false,
+        "men": ["Sersjant Nilsen", "Korporal Strand", "Soldat Dahl", "Soldat Eide", "Soldat Berg"]
+      },
+      {
+        "type": "mortar_3in",
+        "name": "3-inch mortar",
+        "at": [0.3, 0.1],
+        "default": false,
+        "men": ["Sgt Kavanagh", "Gdsm Shea", "Gdsm Dunne"]
+      }
+    ],
+    "support": [
+      {
+        "type": "25pdr_open",
+        "name": "25-pounders, open sights",
+        "missions": 2
+      },
+      {
+        "type": "25pdr_open",
+        "name": "25-pounders, extra mission",
+        "missions": 1,
+        "default": false
+      }
+    ]
+  },
+  "german": {
+    "units": [
+      {
+        "type": "gruppe",
+        "name": "Radfahrer (1)",
+        "at": [0.62, 0.32],
+        "men": ["Uffz. Brandner", "Gefr. Wieser", "Jg. Ainhauser", "Jg. Bacher", "Jg. Duregger", "Jg. Eichberger", "Jg. Feichtner", "Jg. Gamper", "Jg. Hirschbichler"]
+      },
+      {
+        "type": "gruppe",
+        "name": "Radfahrer (2)",
+        "at": [0.14, 0.72],
+        "men": ["Uffz. Lackner", "Gefr. Mösl", "Jg. Nindl", "Jg. Oberlechner", "Jg. Plank", "Jg. Rainer", "Jg. Schnöll", "Jg. Tiefenbacher", "Jg. Unterberger"]
+      },
+      {
+        "type": "gruppe",
+        "name": "1. Gruppe",
+        "at": [0.15, 0.62],
+        "men": ["Uffz. Huber", "Gefr. Mayr", "Jg. Gruber", "Jg. Hofer", "Jg. Wimmer", "Jg. Brandl", "Jg. Lechner", "Jg. Stadler", "Jg. Moser"]
+      },
+      {
+        "type": "gruppe",
+        "name": "2. Gruppe",
+        "at": [0.1, 0.58],
+        "men": ["Uffz. Pichler", "Gefr. Aigner", "Jg. Reiter", "Jg. Fuchs", "Jg. Bauer", "Jg. Egger", "Jg. Haas", "Jg. Kofler", "Jg. Leitner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "3. Gruppe",
+        "at": [0.2, 0.57],
+        "men": ["Uffz. Weber", "Gefr. Steiner", "Jg. Berger", "Jg. Wagner", "Jg. Schwarz", "Jg. Winkler", "Jg. Maier", "Jg. Lang", "Jg. Koller"]
+      },
+      {
+        "type": "gruppe",
+        "name": "4. Gruppe",
+        "at": [0.08, 0.7],
+        "men": ["Uffz. Hofmann", "Gefr. Brunner", "Jg. Pfeifer", "Jg. Rainer", "Jg. Strobl", "Jg. Unger", "Jg. Wolf", "Jg. Zach", "Jg. Ortner"]
+      },
+      {
+        "type": "gruppe",
+        "name": "5. Gruppe",
+        "at": [0.47, 0.36],
+        "men": ["Uffz. Graf", "Gefr. Lindner", "Jg. Hackl", "Jg. Kern", "Jg. Pirker", "Jg. Rauch", "Jg. Sommer", "Jg. Thaler", "Jg. Vogl"]
+      },
+      {
+        "type": "gruppe",
+        "name": "6. Gruppe",
+        "at": [0.52, 0.33],
+        "men": ["Uffz. Kaiser", "Gefr. Moritz", "Jg. Danner", "Jg. Eberl", "Jg. Frank", "Jg. Gasser", "Jg. Holzer", "Jg. Jäger", "Jg. Kirchner"]
+      },
+      {
+        "type": "zugtrupp",
+        "name": "Zugtrupp",
+        "at": [0.1, 0.68],
+        "required": true,
+        "men": ["Lt. Kranz", "Ofw. Riedl", "Gefr. Ebner"]
+      },
+      {
+        "type": "granatwerfer",
+        "name": "Granatwerfer",
+        "at": [0.06, 0.75],
+        "men": ["Uffz. Eder", "Gefr. Fink", "Jg. Huemer"]
+      },
+      {
+        "type": "gruppe",
+        "name": "7. Gruppe",
+        "at": [0.04, 0.63],
+        "men": ["Uffz. Seidl", "Gefr. Riegler", "Jg. Auer", "Jg. Binder", "Jg. Dorfer", "Jg. Ennser", "Jg. Gschwandtner", "Jg. Hager", "Jg. Illmer"],
+        "default": false
+      }
+    ],
+    "support": [
+      {
+        "type": "mountain_guns",
+        "name": "Mountain guns",
+        "missions": 2
+      },
+      {
+        "type": "heinkel",
+        "name": "Heinkel attack",
+        "missions": 1
+      },
+      {
+        "type": "mountain_guns",
+        "name": "Mountain guns, extra mission",
+        "missions": 1,
+        "default": false
+      }
+    ]
+  }
+}

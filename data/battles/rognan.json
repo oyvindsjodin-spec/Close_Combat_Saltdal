@@ -1,7 +1,7 @@
 {
   "_help": "One battle. at is a place on the map as fractions of its width and height: [0, 0] is the north-west corner, [1, 1] the south-east. Teams with default true (the default) are the historical force; the rest can be chosen instead before the battle. budget is the points a side may spend; leave it out to use the cost of the historical force. men gives the soldiers' names; fewer names than the team has places makes a smaller team.",
   "id": "rognan",
-  "order": 3,
+  "order": 4,
   "title": "Rognan, 26 May 1940",
   "map": "rognan",
   "minutes": 30,
@@ -29,15 +29,15 @@
     "units": [
       {
         "type": "rifle_section",
-        "name": "1 Section",
+        "name": "No. 4 Coy (1)",
         "at": [0.3, 0.47],
-        "men": ["Cpl Byrne", "LCpl Walsh", "Gdsm Doyle", "Gdsm Ryan", "Gdsm Kelly", "Gdsm Nolan"]
+        "men": ["Cpl Moran", "LCpl Flynn", "Gdsm Hayes", "Gdsm Lynch", "Gdsm Daly", "Gdsm Power", "Gdsm Casey"]
       },
       {
         "type": "rifle_section",
-        "name": "2 Section",
+        "name": "No. 4 Coy (2)",
         "at": [0.47, 0.42],
-        "men": ["Cpl Moran", "LCpl Flynn", "Gdsm Hayes", "Gdsm Lynch", "Gdsm Daly", "Gdsm Power"]
+        "men": ["Cpl Whelan", "LCpl Corrigan", "Gdsm Dolan", "Gdsm Farrell", "Gdsm Geraghty", "Gdsm Hanlon", "Gdsm Lacey"]
       },
       {
         "type": "independent_section",
@@ -60,10 +60,10 @@
       },
       {
         "type": "rifle_section",
-        "name": "3 Section",
+        "name": "No. 3 Coy",
         "at": [0.4, 0.4],
         "default": false,
-        "men": ["Cpl Duffy", "LCpl Keane", "Gdsm Brady", "Gdsm Murray", "Gdsm Foley", "Gdsm Healy"]
+        "men": ["Cpl Mulligan", "LCpl Fahy", "Gdsm Behan", "Gdsm Carey", "Gdsm Devine", "Gdsm Egan", "Gdsm Garvey"]
       },
       {
         "type": "mortar_3in",
