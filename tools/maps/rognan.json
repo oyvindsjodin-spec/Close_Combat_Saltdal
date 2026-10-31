@@ -1,6 +1,6 @@
 {
   "name": "rognan",
-  "note": "Rognan at the head of Saltdalsfjorden (67.098 N 15.390 E). The road ended here; the British crossed the fjord by ferry on 26 May 1940. Town blocks are laid out from the 1942 map and period photos, not surveyed.",
+  "note": "Rognan at the head of Saltdalsfjorden (67.098 N 15.390 E). The road ended here; the British crossed the fjord by ferry on 26 May 1940. The village lies along the shore by the harbour with lanes running inland and the church to the east, after a 1944 British map; houses are placed along the streets, not surveyed.",
   "lat": 67.097,
   "lon": 15.388,
   "size": 2048,
@@ -34,14 +34,101 @@
   ],
   "town": {
     "rect": [
-      0.3,
-      0.42,
-      0.43,
-      0.58
+      0.155,
+      0.44,
+      0.31,
+      0.67
     ],
-    "street": 16,
-    "density": 0.6,
-    "layout": "village"
+    "layout": "village",
+    "density": 0.65,
+    "streets": [
+      [
+        [
+          0.172,
+          0.44
+        ],
+        [
+          0.168,
+          0.5
+        ],
+        [
+          0.172,
+          0.56
+        ],
+        [
+          0.182,
+          0.61
+        ],
+        [
+          0.195,
+          0.67
+        ]
+      ],
+      [
+        [
+          0.17,
+          0.47
+        ],
+        [
+          0.23,
+          0.465
+        ],
+        [
+          0.3,
+          0.47
+        ]
+      ],
+      [
+        [
+          0.175,
+          0.585
+        ],
+        [
+          0.24,
+          0.59
+        ],
+        [
+          0.29,
+          0.6
+        ]
+      ],
+      [
+        [
+          0.185,
+          0.635
+        ],
+        [
+          0.25,
+          0.64
+        ]
+      ],
+      [
+        [
+          0.24,
+          0.465
+        ],
+        [
+          0.245,
+          0.53
+        ],
+        [
+          0.24,
+          0.59
+        ],
+        [
+          0.25,
+          0.64
+        ]
+      ]
+    ],
+    "buildings": [
+      [
+        0.205,
+        0.66,
+        4,
+        7
+      ]
+    ]
   },
   "farms": [
     [
