@@ -19,6 +19,7 @@ public partial class SoundView : Node2D
     public bool Paused { get; set; }
 
     const int Voices = 24;
+    const float WhistleSeconds = 1.2f;
     /// <summary>At most this many new sounds of one kind start in a frame, so speeded-up fighting does not roar.</summary>
     const int PerKindPerFrame = 3;
 
@@ -34,7 +35,7 @@ public partial class SoundView : Node2D
 
     public override void _Ready()
     {
-        foreach (var name in new[] { "rifle", "smg", "mg", "mortar", "blast_small", "blast_shell", "blast_bomb", "dig" })
+        foreach (var name in new[] { "rifle", "smg", "mg", "mortar", "blast_small", "blast_shell", "blast_bomb", "dig", "incoming" })
             _sounds[name] = GD.Load<AudioStream>($"res://assets/sounds/{name}.wav");
         _sounds["aircraft"] = Looping("aircraft");
         _sounds["fire"] = Looping("fire");
@@ -113,6 +114,10 @@ public partial class SoundView : Node2D
             float r = b.Explosive.KillRadius;
             Play(r <= 4.5f ? "blast_small" : r <= 6f ? "blast_shell" : "blast_bomb", b.At, r <= 4.5f ? -3 : 0, 0.1f);
         }
+        // The whistle of a shell coming in, just over a second before it lands
+        foreach (var (at, landsAt) in Sim.Incoming)
+            if (landsAt - WhistleSeconds > since && landsAt - WhistleSeconds <= Sim.Time)
+                Play("incoming", at, -10, 0.05f);
         DigSounds();
         Loops();
         _seenUntil = Sim.Time;
