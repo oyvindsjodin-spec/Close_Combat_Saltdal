@@ -3,19 +3,21 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://13p6d1xinglx"
-path="res://.godot/imported/ground.jpg-98416f8fc8d339d4480a13bd67492f16.ctex"
+path.s3tc="res://.godot/imported/ground.jpg-98416f8fc8d339d4480a13bd67492f16.s3tc.ctex"
+path.etc2="res://.godot/imported/ground.jpg-98416f8fc8d339d4480a13bd67492f16.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://data/maps/pothus/ground.jpg"
-dest_files=["res://.godot/imported/ground.jpg-98416f8fc8d339d4480a13bd67492f16.ctex"]
+dest_files=["res://.godot/imported/ground.jpg-98416f8fc8d339d4480a13bd67492f16.s3tc.ctex", "res://.godot/imported/ground.jpg-98416f8fc8d339d4480a13bd67492f16.etc2.ctex"]
 
 [params]
 
-compress/mode=1
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.85
 compress/uastc_level=0
