@@ -70,6 +70,9 @@ public sealed partial class Simulation
                 ? Posture.Crouched : Posture.Standing;
         else if (s.Team.Order == TeamOrder.DigIn)
             s.Posture = Posture.Crouched;
+        else if (Map.TerrainAt(s.Position) == TerrainType.Trench)
+            // In a foxhole he crouches to fire over the edge, or ducks right down to hide
+            s.Posture = s.Team.Order == TeamOrder.Hide ? Posture.Prone : Posture.Crouched;
         else if (s.Team.Order is TeamOrder.Defend or TeamOrder.Fire && Map.TerrainAt(s.Position) == TerrainType.Building)
             s.Posture = Posture.Crouched; // at a window
         else

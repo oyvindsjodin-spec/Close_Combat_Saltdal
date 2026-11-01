@@ -225,6 +225,15 @@ public sealed partial class Simulation
     /// </summary>
     public const float CombatAccuracy = 0.25f;
 
+    /// <summary>
+    /// Share of the open-ground hit chance left against a man crouched firing
+    /// from a foxhole (a man lying in the open keeps 0.35 of it).
+    /// </summary>
+    public const float FoxholeHit = 0.1f;
+
+    /// <summary>How much fire frightens a man in a foxhole, against 1 for a man standing in the open.</summary>
+    public const float FoxholeExposure = 0.25f;
+
     /// <summary>Stress a man gets from each round fired at him in particular.</summary>
     public const float TargetedStress = 3f;
 
@@ -235,6 +244,8 @@ public sealed partial class Simulation
     /// </summary>
     public float Exposure(Soldier s)
     {
+        // Down in a foxhole the bullets go over: he hears them, but he knows he is safe
+        if (InFoxhole(s)) return s.Posture == Posture.Standing ? FoxholeExposure * 2 : FoxholeExposure;
         float k = s.Posture switch
         {
             Posture.Prone => 0.6f,
@@ -244,7 +255,7 @@ public sealed partial class Simulation
         if (s.IsOnTheMove && !s.Fleeing) k *= 1.6f;
         k *= Map.TerrainAt(s.Position) switch
         {
-            TerrainType.Trench => 0.6f,
+            TerrainType.Trench => 0.6f, // climbing in or out
             TerrainType.Building => 0.7f,
             TerrainType.Rock => 0.8f,
             _ => 1f,
@@ -256,6 +267,17 @@ public sealed partial class Simulation
     public float HitChance(Soldier shooter, Soldier target, float distance)
     {
         float p = shooter.Weapon.Accuracy * CombatAccuracy * MathF.Pow(100f / MathF.Max(distance, 40f), 1.6f);
+        if (InFoxhole(target))
+            // In a foxhole only his helmet and rifle show over the earth, and
+            // when he ducks, nothing at all; standing up he shows his chest
+            p *= target.Posture switch
+            {
+                Posture.Prone => FoxholeHit * 0.5f,
+                Posture.Crouched => FoxholeHit,
+                _ => FoxholeHit * 3f,
+            };
+        else
+        {
         p *= target.Posture switch
         {
             Posture.Prone => 0.35f,
@@ -268,12 +290,13 @@ public sealed partial class Simulation
             TerrainType.Rock => 0.45f,
             TerrainType.Building => 0.3f,
             TerrainType.Ford => 1.2f,
-            // A man in a trench shows only his head and shoulders, unless he stands up
-            TerrainType.Trench => target.Posture == Posture.Standing ? 0.5f : 0.25f,
+            // Climbing in or out of a trench, half hidden by the earth heaped round it
+            TerrainType.Trench => 0.6f,
             TerrainType.Ruin => 0.5f,
             TerrainType.BurningHouse => 0.8f,
             _ => 1f,
         };
+        }
         if (target.IsOnTheMove) p *= 0.7f;
         if (shooter.IsMoving) p *= shooter.Team.Mode == MoveMode.Sneak ? 0.6f : 0.4f;
         if (shooter.Posture == Posture.Prone) p *= 1.15f;

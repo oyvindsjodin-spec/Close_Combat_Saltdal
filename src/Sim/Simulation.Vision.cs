@@ -44,18 +44,27 @@ public sealed partial class Simulation
     public float SpotRange(Soldier observer, Soldier target)
     {
         float range = 700f;
+        var terrain = Map.TerrainAt(target.Position);
+        if (InFoxhole(target))
+            // A helmet over a heap of earth is hard to pick out
+            range *= target.Posture switch
+            {
+                Posture.Prone => 0.12f,
+                Posture.Crouched => 0.18f,
+                _ => 0.45f,
+            };
+        else
         range *= target.Posture switch
         {
             Posture.Prone => 0.35f,
             Posture.Crouched => 0.7f,
             _ => 1f,
         };
-        var terrain = Map.TerrainAt(target.Position);
         if (terrain == TerrainType.Forest) range *= 0.35f;
         else if (terrain == TerrainType.Rock) range *= 0.6f;
         else if (terrain == TerrainType.Building) range *= 0.3f;
         else if (terrain == TerrainType.Ford) range *= 1.2f;
-        else if (terrain == TerrainType.Trench) range *= 0.45f;
+        else if (terrain == TerrainType.Trench && !InFoxhole(target)) range *= 0.6f;
         else if (terrain == TerrainType.Ruin) range *= 0.5f;
         if (target.IsMoving && target.Team.Mode == MoveMode.MoveFast) range *= 1.4f;
         if (Time - target.LastFired < 2f) range = MathF.Max(range * 2.5f, 750f); // muzzle flash and noise

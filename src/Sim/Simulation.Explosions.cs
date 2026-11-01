@@ -79,12 +79,20 @@ public sealed partial class Simulation
                 float k = 1 - d / e.SuppressionRadius;
                 // Friendly rounds frighten too, if less
                 if (s.Side == firedBy) k *= 0.5f;
-                AddStress(s, e.Suppression * k * (s.Posture == Posture.Prone ? 0.7f : 1f));
+                AddStress(s, e.Suppression * k * (InFoxhole(s) ? 0.5f : s.Posture == Posture.Prone ? 0.7f : 1f));
                 s.LastUnderFire = Time;
             }
             if (d > e.WoundRadius || s.Health >= Health.Incapacitated) continue;
 
             float p = d <= e.KillRadius ? 0.9f : 0.9f * (1 - (d - e.KillRadius) / (e.WoundRadius - e.KillRadius));
+            if (InFoxhole(s))
+            {
+                // Splinters fly over a hole; only a burst right on top of it gets in
+                if (d > 2.5f) p *= s.Posture == Posture.Standing ? 0.3f : 0.1f;
+                else p *= 0.5f;
+                if (Rng.Chance(p)) ApplyHit(s);
+                continue;
+            }
             p *= s.Posture switch
             {
                 Posture.Prone => 0.4f,

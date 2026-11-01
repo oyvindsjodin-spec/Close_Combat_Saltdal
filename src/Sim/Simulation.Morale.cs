@@ -27,7 +27,10 @@ public sealed partial class Simulation
 
             if (s.Morale >= MoraleState.Cowering && TryToSurrender(s))
                 continue;
-            if (s.Morale >= MoraleState.Panicked && !s.Fleeing && !s.EscapingFire)
+            // A panicked man in a foxhole curls up in it rather than running into
+            // the open; only a man who has broken completely climbs out and runs
+            if (s.Morale >= MoraleState.Panicked && !s.Fleeing && !s.EscapingFire
+                && !(s.Morale == MoraleState.Panicked && InFoxhole(s)))
                 StartFleeing(s);
             else if (s.Morale < MoraleState.Panicked && s.Fleeing)
             {
