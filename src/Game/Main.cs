@@ -51,6 +51,7 @@ public partial class Main : Node2D
     CratersView _craters = null!;
     FireView _fire = null!;
     AimView _aim = null!;
+    DeployView _deploy = null!;
     SoundView _sound = null!;
     VoiceView _voices = null!;
     Tutorial _tutorial = null!;
@@ -64,6 +65,21 @@ public partial class Main : Node2D
 
     Team? _selected;
     Vec _orderTarget;
+    /// <summary>
+    /// Holding the right mouse button: where it went down. Dragging from there
+    /// sets the way the team will face, and how wide it spreads; a plain click
+    /// opens the order menu as before.
+    /// </summary>
+    bool _rightDown, _rightDragging;
+    Vec _dragFrom;
+    Vector2 _dragFromScreen;
+    Formation _dragShape = Formation.Line;
+    /// <summary>The shape dragged out for the order now being picked from the menu, if any.</summary>
+    Deployment? _pendingDeploy;
+    /// <summary>Pixels the mouse must move before a right-click becomes a drag.</summary>
+    const float DragThreshold = 12f;
+    /// <summary>Developer check (--deploy): where the drag ends, instead of the mouse.</summary>
+    Vec? _devDragTo;
     double _accumulator;
     bool _paused;
     int _speed = 1;
@@ -108,6 +124,8 @@ public partial class Main : Node2D
         AddChild(_fire);
         _aim = new AimView();
         AddChild(_aim);
+        _deploy = new DeployView();
+        AddChild(_deploy);
         _sound = new SoundView();
         AddChild(_sound);
         _voices = new VoiceView();
@@ -190,6 +208,19 @@ public partial class Main : Node2D
         if (args.Contains("--dig") && _simOrNull != null)
             foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide))
                 _battle.DigIn(t, t.Center + new Vec(0, PlayerSide == Side.Allied ? 200 : -200));
+        if (args.Contains("--deploy") && _simOrNull != null)
+        {
+            // Developer check: the second team turns to face west in a wide line, and the
+            // first shows the drag arrow for a wedge 40 m ahead, as if the player held the button
+            var ours = _sim.Teams.Where(t => t.Side == PlayerSide).ToList();
+            if (ours.Count > 1) _battle.Deploy(ours[1], new Deployment(System.MathF.PI, Formation.Line, 10f), dig: false);
+            _selected = ours[0];
+            _dragShape = Formation.Wedge;
+            _dragFrom = ours[0].Center + new Vec(30, 30);
+            _devDragTo = _dragFrom + new Vec(30, 20);
+            _rightDown = _rightDragging = true;
+            _camera.Position = View.ToScreen(ours[0].Center + new Vec(20, 20));
+        }
         foreach (var a in args)
             if (a.StartsWith("--zoom=") && _simOrNull != null)
             {
@@ -334,6 +365,7 @@ public partial class Main : Node2D
         _baseOrderItems = _orderMenu.ItemCount;
         _orderMenu.IdPressed += OnOrderChosen;
         _orderMenu.AboutToPopup += FillSupportItems;
+        _orderMenu.PopupHide += () => CallDeferred(MethodName.ForgetPendingDeploy);
         ui.AddChild(_orderMenu);
 
         var center = new CenterContainer();
@@ -412,6 +444,7 @@ public partial class Main : Node2D
         _aim.Target = View.ToWorld(GetGlobalMousePosition());
         _aim.Zoom = _camera.Zoom.X;
         _aim.QueueRedraw();
+        UpdateDeployView();
         _sound.Paused = _paused || _sim.IsOver;
         _fire.QueueRedraw();
         var viewSize = GetViewportRect().Size / _camera.Zoom;
@@ -467,8 +500,12 @@ public partial class Main : Node2D
             }
             else if (mb.ButtonIndex == MouseButton.Right && _selected != null)
             {
-                _orderTarget = world;
-                _orderMenu.Popup(new Rect2I((Vector2I)GetViewport().GetMousePosition(), Vector2I.Zero));
+                // Wait for the button to come up: a click opens the menu, a drag sets the facing
+                _rightDown = true;
+                _rightDragging = false;
+                _dragFrom = world;
+                _dragFromScreen = GetViewport().GetMousePosition();
+                GetViewport().SetInputAsHandled();
             }
         }
         else if (e is InputEventKey { Pressed: true, Echo: false } key)
@@ -483,7 +520,8 @@ public partial class Main : Node2D
                     _battle.EndPrep();
                     break;
                 case Key.Escape:
-                    if (_aiming) _aiming = false;
+                    if (_rightDown) _rightDown = _rightDragging = false;
+                    else if (_aiming) _aiming = false;
                     else _selected = null;
                     break;
                 case Key.F when _selected != null && !_sim.IsOver:
@@ -562,13 +600,115 @@ public partial class Main : Node2D
         _aiming = true;
     }
 
+    /// <summary>
+    /// While the right mouse button is held down: moving the mouse drags out the
+    /// facing, the wheel changes the shape, and letting go gives the order. This
+    /// runs before the menus and the camera so they do not take these events.
+    /// </summary>
+    public override void _Input(InputEvent e)
+    {
+        if (!_rightDown) return;
+        if (_simOrNull == null || _selected == null || _sim.IsOver || _menu.Visible || _forceScreen.Visible)
+        {
+            _rightDown = _rightDragging = false;
+            return;
+        }
+        var mouse = GetViewport().GetMousePosition();
+        switch (e)
+        {
+            case InputEventMouseMotion:
+                if (!_rightDragging && mouse.DistanceTo(_dragFromScreen) > DragThreshold) _rightDragging = true;
+                break;
+            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown } wheel:
+                // Line, wedge, column, round and round
+                int next = (int)_dragShape + (wheel.ButtonIndex == MouseButton.WheelDown ? 1 : -1);
+                _dragShape = (Formation)(((next - 1) % 3 + 3) % 3 + 1);
+                GetViewport().SetInputAsHandled();
+                break;
+            case InputEventMouseButton { Pressed: false, ButtonIndex: MouseButton.Right }:
+                _rightDown = false;
+                GetViewport().SetInputAsHandled();
+                _orderTarget = _dragFrom;
+                if (!_rightDragging)
+                {
+                    _pendingDeploy = null;
+                    _orderMenu.Popup(new Rect2I((Vector2I)_dragFromScreen, Vector2I.Zero));
+                    break;
+                }
+                _rightDragging = false;
+                var deploy = DragDeployment();
+                if (DragStartsOnTeam())
+                {
+                    // Dragged from the team itself: it turns where it stands, no menu needed
+                    _battle.Deploy(_selected, deploy, dig: _selected.Order == TeamOrder.DigIn);
+                    break;
+                }
+                _pendingDeploy = deploy;
+                _orderMenu.Popup(new Rect2I((Vector2I)mouse, Vector2I.Zero));
+                break;
+        }
+    }
+
+    /// <summary>The facing, shape and spacing of the drag so far.</summary>
+    Deployment DragDeployment()
+    {
+        var to = DragEnd();
+        return Deployment.FromDrag(_dragFrom, to, _dragShape, System.Math.Max(1, _selected!.Active.Count()));
+    }
+
+    /// <summary>Whether the drag began on the selected team: then it turns where it stands instead of moving.</summary>
+    bool DragStartsOnTeam() =>
+        _selected != null && (TeamAt(_dragFrom) == _selected || Vec.Distance(_selected.Center, _dragFrom) < 10f);
+
+    void UpdateDeployView()
+    {
+        _deploy.Zoom = _camera.Zoom.X;
+        bool dragging = _rightDown && _rightDragging && _selected != null;
+        bool picking = _pendingDeploy != null && _orderMenu.Visible && _selected != null;
+        if (dragging)
+        {
+            bool turn = DragStartsOnTeam();
+            _deploy.Deploy = DragDeployment();
+            _deploy.TurnOnly = turn;
+            _deploy.Center = turn ? _selected!.Center : _dragFrom;
+            _deploy.Length = Vec.Distance(_dragFrom, DragEnd());
+        }
+        else if (picking)
+        {
+            _deploy.Deploy = _pendingDeploy!.Value;
+            _deploy.TurnOnly = false;
+            _deploy.Center = _orderTarget;
+        }
+        _deploy.Team = dragging || picking ? _selected : null;
+        _deploy.QueueRedraw();
+    }
+
+    Vec DragEnd() => _devDragTo ?? View.ToWorld(GetGlobalMousePosition());
+
+    void ForgetPendingDeploy() => _pendingDeploy = null;
+
     void OnOrderChosen(long id)
     {
         if (_selected == null) return;
+        var deploy = _pendingDeploy;
+        _pendingDeploy = null;
         // While the defenders get ready, the attackers wait where they are
         if (_sim.InPrep && PlayerSide == _sim.Attacker && id is OrderMove or OrderMoveFast or OrderSneak or OrderFire)
         {
             _sim.Log(PlayerSide, "Your men wait for the attack to begin. Press Enter to start it now.");
+            return;
+        }
+        if (deploy is { } d)
+        {
+            // An order with a shape dragged out: move there, or stay, facing the way of the drag
+            switch (id)
+            {
+                case OrderMove: _battle.Move(_selected, _orderTarget, MoveMode.Move, d); break;
+                case OrderMoveFast: _battle.Move(_selected, _orderTarget, MoveMode.MoveFast, d); break;
+                case OrderSneak: _battle.Move(_selected, _orderTarget, MoveMode.Sneak, d); break;
+                case OrderDefend: _battle.Deploy(_selected, d, dig: false); break;
+                case OrderDigIn: _battle.Deploy(_selected, d, dig: true); break;
+            }
             return;
         }
         switch (id)
@@ -590,6 +730,10 @@ public partial class Main : Node2D
     {
         while (_orderMenu.ItemCount > _baseOrderItems)
             _orderMenu.RemoveItem(_orderMenu.ItemCount - 1);
+        // After a drag only the orders that use a facing make sense
+        foreach (int id in new[] { OrderFire, OrderHide, OrderStop })
+            _orderMenu.SetItemDisabled(_orderMenu.GetItemIndex(id), _pendingDeploy != null);
+        if (_pendingDeploy != null) return;
         if (_selected == null || !_selected.IsHeadquarters) return;
         for (int i = 0; i < _sim.Support.Count; i++)
         {
@@ -648,7 +792,7 @@ public partial class Main : Node2D
             $"{_sim.Title}    {clock}{status}\n" +
             $"{flags}\n" +
             $"Cursor: {cursor}\n" +
-            "Left-click: select   Right-click: orders   F: aim and fire   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
+            "Left-click: select   Right-click: orders   Right-drag: facing and formation (wheel: shape)   F: aim and fire   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
     }
 
     /// <summary>The last few battle messages meant for the player, fading after 15 seconds.</summary>
