@@ -1,0 +1,585 @@
+{
+ "size": 64,
+ "metres": 3.2,
+ "centreW": -0.35,
+ "tilt": 18.0,
+ "directions": 16,
+ "sprites": {
+  "british/rifle/stand": [
+   0,
+   0
+  ],
+  "british/rifle/crouch": [
+   0,
+   16
+  ],
+  "british/rifle/prone": [
+   0,
+   32
+  ],
+  "british/rifle/dead": [
+   1,
+   0
+  ],
+  "british/rifle/walk0": [
+   1,
+   16
+  ],
+  "british/rifle/walk1": [
+   1,
+   32
+  ],
+  "british/rifle/walk2": [
+   2,
+   0
+  ],
+  "british/rifle/walk3": [
+   2,
+   16
+  ],
+  "british/rifle/walk4": [
+   2,
+   32
+  ],
+  "british/rifle/walk5": [
+   3,
+   0
+  ],
+  "british/rifle/walk6": [
+   3,
+   16
+  ],
+  "british/rifle/walk7": [
+   3,
+   32
+  ],
+  "british/rifle/crawl0": [
+   4,
+   0
+  ],
+  "british/rifle/crawl1": [
+   4,
+   16
+  ],
+  "british/rifle/crawl2": [
+   4,
+   32
+  ],
+  "british/rifle/crawl3": [
+   5,
+   0
+  ],
+  "british/smg/stand": [
+   5,
+   16
+  ],
+  "british/smg/crouch": [
+   5,
+   32
+  ],
+  "british/smg/prone": [
+   6,
+   0
+  ],
+  "british/smg/dead": [
+   6,
+   16
+  ],
+  "british/smg/walk0": [
+   6,
+   32
+  ],
+  "british/smg/walk1": [
+   7,
+   0
+  ],
+  "british/smg/walk2": [
+   7,
+   16
+  ],
+  "british/smg/walk3": [
+   7,
+   32
+  ],
+  "british/smg/walk4": [
+   8,
+   0
+  ],
+  "british/smg/walk5": [
+   8,
+   16
+  ],
+  "british/smg/walk6": [
+   8,
+   32
+  ],
+  "british/smg/walk7": [
+   9,
+   0
+  ],
+  "british/smg/crawl0": [
+   9,
+   16
+  ],
+  "british/smg/crawl1": [
+   9,
+   32
+  ],
+  "british/smg/crawl2": [
+   10,
+   0
+  ],
+  "british/smg/crawl3": [
+   10,
+   16
+  ],
+  "british/mg/stand": [
+   10,
+   32
+  ],
+  "british/mg/crouch": [
+   11,
+   0
+  ],
+  "british/mg/prone": [
+   11,
+   16
+  ],
+  "british/mg/dead": [
+   11,
+   32
+  ],
+  "british/mg/walk0": [
+   12,
+   0
+  ],
+  "british/mg/walk1": [
+   12,
+   16
+  ],
+  "british/mg/walk2": [
+   12,
+   32
+  ],
+  "british/mg/walk3": [
+   13,
+   0
+  ],
+  "british/mg/walk4": [
+   13,
+   16
+  ],
+  "british/mg/walk5": [
+   13,
+   32
+  ],
+  "british/mg/walk6": [
+   14,
+   0
+  ],
+  "british/mg/walk7": [
+   14,
+   16
+  ],
+  "british/mg/crawl0": [
+   14,
+   32
+  ],
+  "british/mg/crawl1": [
+   15,
+   0
+  ],
+  "british/mg/crawl2": [
+   15,
+   16
+  ],
+  "british/mg/crawl3": [
+   15,
+   32
+  ],
+  "german/rifle/stand": [
+   16,
+   0
+  ],
+  "german/rifle/crouch": [
+   16,
+   16
+  ],
+  "german/rifle/prone": [
+   16,
+   32
+  ],
+  "german/rifle/dead": [
+   17,
+   0
+  ],
+  "german/rifle/walk0": [
+   17,
+   16
+  ],
+  "german/rifle/walk1": [
+   17,
+   32
+  ],
+  "german/rifle/walk2": [
+   18,
+   0
+  ],
+  "german/rifle/walk3": [
+   18,
+   16
+  ],
+  "german/rifle/walk4": [
+   18,
+   32
+  ],
+  "german/rifle/walk5": [
+   19,
+   0
+  ],
+  "german/rifle/walk6": [
+   19,
+   16
+  ],
+  "german/rifle/walk7": [
+   19,
+   32
+  ],
+  "german/rifle/crawl0": [
+   20,
+   0
+  ],
+  "german/rifle/crawl1": [
+   20,
+   16
+  ],
+  "german/rifle/crawl2": [
+   20,
+   32
+  ],
+  "german/rifle/crawl3": [
+   21,
+   0
+  ],
+  "german/smg/stand": [
+   21,
+   16
+  ],
+  "german/smg/crouch": [
+   21,
+   32
+  ],
+  "german/smg/prone": [
+   22,
+   0
+  ],
+  "german/smg/dead": [
+   22,
+   16
+  ],
+  "german/smg/walk0": [
+   22,
+   32
+  ],
+  "german/smg/walk1": [
+   23,
+   0
+  ],
+  "german/smg/walk2": [
+   23,
+   16
+  ],
+  "german/smg/walk3": [
+   23,
+   32
+  ],
+  "german/smg/walk4": [
+   24,
+   0
+  ],
+  "german/smg/walk5": [
+   24,
+   16
+  ],
+  "german/smg/walk6": [
+   24,
+   32
+  ],
+  "german/smg/walk7": [
+   25,
+   0
+  ],
+  "german/smg/crawl0": [
+   25,
+   16
+  ],
+  "german/smg/crawl1": [
+   25,
+   32
+  ],
+  "german/smg/crawl2": [
+   26,
+   0
+  ],
+  "german/smg/crawl3": [
+   26,
+   16
+  ],
+  "german/mg/stand": [
+   26,
+   32
+  ],
+  "german/mg/crouch": [
+   27,
+   0
+  ],
+  "german/mg/prone": [
+   27,
+   16
+  ],
+  "german/mg/dead": [
+   27,
+   32
+  ],
+  "german/mg/walk0": [
+   28,
+   0
+  ],
+  "german/mg/walk1": [
+   28,
+   16
+  ],
+  "german/mg/walk2": [
+   28,
+   32
+  ],
+  "german/mg/walk3": [
+   29,
+   0
+  ],
+  "german/mg/walk4": [
+   29,
+   16
+  ],
+  "german/mg/walk5": [
+   29,
+   32
+  ],
+  "german/mg/walk6": [
+   30,
+   0
+  ],
+  "german/mg/walk7": [
+   30,
+   16
+  ],
+  "german/mg/crawl0": [
+   30,
+   32
+  ],
+  "german/mg/crawl1": [
+   31,
+   0
+  ],
+  "german/mg/crawl2": [
+   31,
+   16
+  ],
+  "german/mg/crawl3": [
+   31,
+   32
+  ],
+  "norwegian/rifle/stand": [
+   32,
+   0
+  ],
+  "norwegian/rifle/crouch": [
+   32,
+   16
+  ],
+  "norwegian/rifle/prone": [
+   32,
+   32
+  ],
+  "norwegian/rifle/dead": [
+   33,
+   0
+  ],
+  "norwegian/rifle/walk0": [
+   33,
+   16
+  ],
+  "norwegian/rifle/walk1": [
+   33,
+   32
+  ],
+  "norwegian/rifle/walk2": [
+   34,
+   0
+  ],
+  "norwegian/rifle/walk3": [
+   34,
+   16
+  ],
+  "norwegian/rifle/walk4": [
+   34,
+   32
+  ],
+  "norwegian/rifle/walk5": [
+   35,
+   0
+  ],
+  "norwegian/rifle/walk6": [
+   35,
+   16
+  ],
+  "norwegian/rifle/walk7": [
+   35,
+   32
+  ],
+  "norwegian/rifle/crawl0": [
+   36,
+   0
+  ],
+  "norwegian/rifle/crawl1": [
+   36,
+   16
+  ],
+  "norwegian/rifle/crawl2": [
+   36,
+   32
+  ],
+  "norwegian/rifle/crawl3": [
+   37,
+   0
+  ],
+  "norwegian/smg/stand": [
+   37,
+   16
+  ],
+  "norwegian/smg/crouch": [
+   37,
+   32
+  ],
+  "norwegian/smg/prone": [
+   38,
+   0
+  ],
+  "norwegian/smg/dead": [
+   38,
+   16
+  ],
+  "norwegian/smg/walk0": [
+   38,
+   32
+  ],
+  "norwegian/smg/walk1": [
+   39,
+   0
+  ],
+  "norwegian/smg/walk2": [
+   39,
+   16
+  ],
+  "norwegian/smg/walk3": [
+   39,
+   32
+  ],
+  "norwegian/smg/walk4": [
+   40,
+   0
+  ],
+  "norwegian/smg/walk5": [
+   40,
+   16
+  ],
+  "norwegian/smg/walk6": [
+   40,
+   32
+  ],
+  "norwegian/smg/walk7": [
+   41,
+   0
+  ],
+  "norwegian/smg/crawl0": [
+   41,
+   16
+  ],
+  "norwegian/smg/crawl1": [
+   41,
+   32
+  ],
+  "norwegian/smg/crawl2": [
+   42,
+   0
+  ],
+  "norwegian/smg/crawl3": [
+   42,
+   16
+  ],
+  "norwegian/mg/stand": [
+   42,
+   32
+  ],
+  "norwegian/mg/crouch": [
+   43,
+   0
+  ],
+  "norwegian/mg/prone": [
+   43,
+   16
+  ],
+  "norwegian/mg/dead": [
+   43,
+   32
+  ],
+  "norwegian/mg/walk0": [
+   44,
+   0
+  ],
+  "norwegian/mg/walk1": [
+   44,
+   16
+  ],
+  "norwegian/mg/walk2": [
+   44,
+   32
+  ],
+  "norwegian/mg/walk3": [
+   45,
+   0
+  ],
+  "norwegian/mg/walk4": [
+   45,
+   16
+  ],
+  "norwegian/mg/walk5": [
+   45,
+   32
+  ],
+  "norwegian/mg/walk6": [
+   46,
+   0
+  ],
+  "norwegian/mg/walk7": [
+   46,
+   16
+  ],
+  "norwegian/mg/crawl0": [
+   46,
+   32
+  ],
+  "norwegian/mg/crawl1": [
+   47,
+   0
+  ],
+  "norwegian/mg/crawl2": [
+   47,
+   16
+  ],
+  "norwegian/mg/crawl3": [
+   47,
+   32
+  ]
+ }
+}

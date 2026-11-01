@@ -3,19 +3,21 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://daq458qag36pn"
-path="res://.godot/imported/ground.jpg-af70940b0726393e329cbcb1bb87480a.ctex"
+path.s3tc="res://.godot/imported/ground.jpg-af70940b0726393e329cbcb1bb87480a.s3tc.ctex"
+path.etc2="res://.godot/imported/ground.jpg-af70940b0726393e329cbcb1bb87480a.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://data/maps/rognan/ground.jpg"
-dest_files=["res://.godot/imported/ground.jpg-af70940b0726393e329cbcb1bb87480a.ctex"]
+dest_files=["res://.godot/imported/ground.jpg-af70940b0726393e329cbcb1bb87480a.s3tc.ctex", "res://.godot/imported/ground.jpg-af70940b0726393e329cbcb1bb87480a.etc2.ctex"]
 
 [params]
 
-compress/mode=1
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.85
 compress/uastc_level=0

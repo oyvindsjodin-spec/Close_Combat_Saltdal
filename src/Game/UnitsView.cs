@@ -142,6 +142,13 @@ public partial class UnitsView : Node2D
         // Body sway with each step: the shoulders turn a little from side to side
         float sway = pose.Walking * Mathf.Sin(pose.Stride) * (prone ? 0.10f : 0.13f);
 
+        _sprites ??= SoldierSprites.Load() ?? SoldierSprites.Missing;
+        if (_sprites != SoldierSprites.Missing)
+        {
+            DrawSoldierSprite(s, p, pose, prone, down, facing, f, selected);
+            return;
+        }
+
         // Shadow falls to the south-east, away from the light
         DrawSetTransform(p + new Vector2(1.6f, 1.6f) * f, facing, Vector2.One * f);
         if (prone) DrawEllipse(new Vector2(-2, 0), 7.5f, 3.2f, new Color(0, 0, 0, 0.28f));
@@ -203,6 +210,71 @@ public partial class UnitsView : Node2D
         var mood = s.Morale == MoraleState.Surrendered ? Colors.White : View.MoraleColor(s.Morale);
         if (s.Morale != MoraleState.Ready)
             DrawCircle(p + new Vector2(0, -8f) * f, 1.8f * f, mood);
+    }
+
+    SoldierSprites? _sprites;
+    /// <summary>How much larger than life the figures are drawn, so a man can be picked out at a glance.</summary>
+    const float FigureScale = 5.5f;
+
+    /// <summary>
+    /// A man drawn from the pre-rendered figures: the pose follows what he is
+    /// doing, the frame follows the ground his feet have covered, and the
+    /// figure faces the nearest of 16 directions.
+    /// </summary>
+    void DrawSoldierSprite(Soldier s, Vector2 p, Pose pose, bool prone, bool down, float facing, float f, bool selected)
+    {
+        var sp = _sprites!;
+        string uniform = s.Side == Side.German ? "german" : s.Team.Nation == "norwegian" ? "norwegian" : "british";
+        var w = s.Weapon;
+        string weapon = w.IsIndirect ? "rifle" : w.Burst >= 5 && w.Range >= 800 ? "mg" : w.Range <= 200 ? "smg" : "rifle";
+        string frame;
+        bool moving = pose.Walking > 0.15f;
+        if (down) frame = "dead";
+        else if (prone) frame = moving ? $"crawl{Mathf.PosMod((int)(pose.Stride * 1.5f / Mathf.Tau * 4), 4)}" : "prone";
+        else if (moving) frame = $"walk{Mathf.PosMod((int)(pose.Stride / Mathf.Tau * 8), 8)}";
+        else frame = pose.Low > 0.2f ? "crouch" : "stand";
+        var region = sp.Region(uniform, weapon, frame, facing);
+        if (region == null) return;
+
+        // Screen units per sprite pixel: true size times how much larger than life
+        float px = View.Scale / sp.PixelsPerMetre * FigureScale * f;
+        var tint = Colors.White;
+        float sinceDown = s.DownAt < 0 ? 99f : Now - s.DownAt;
+        if (s.Health == Health.Dead) tint = new Color(0.62f, 0.60f, 0.58f);
+        else if (s.Health == Health.Incapacitated) tint = new Color(0.8f, 0.78f, 0.76f);
+        if (down && sinceDown < FallSeconds)
+        {
+            // Falling: he pitches over, the body lengthening onto the ground
+            float t = sinceDown / FallSeconds;
+            tint.A = 0.4f + 0.6f * t;
+        }
+        if (selected && !down)
+            DrawArc(p, (prone ? 0.75f : 0.45f) * FigureScale * View.Scale * f, 0, Mathf.Tau, 28, new Color(1, 1, 0.85f, 0.35f), 0.6f * f);
+        var size = new Vector2(sp.Size, sp.Size) * px;
+        DrawTextureRectRegion(sp.Texture, new Rect2(p - sp.Anchor * px, size), region.Value, tint);
+
+        var dir = new Vector2(Mathf.Cos(facing), Mathf.Sin(facing));
+        float m = View.Scale * FigureScale * f;      // screen units per metre of figure
+        if (w.IsIndirect && !down)
+        {
+            // The mortar set up beside him
+            var at = p + dir * 0.7f * m + dir.Orthogonal() * 0.35f * m;
+            DrawCircle(at, 0.16f * m, new Color(0.12f, 0.12f, 0.11f));
+            DrawCircle(at, 0.09f * m, new Color(0.3f, 0.3f, 0.28f));
+        }
+        // Muzzle flash for a moment after each shot
+        if (Sim!.Time - s.LastShotTime < 0.12f && !w.IsIndirect && !down)
+        {
+            var tip = p + dir * (prone ? 1.75f : 1.15f) * m + new Vector2(0, prone ? -0.1f : -0.45f) * m;
+            DrawCircle(tip, 0.14f * m, new Color(1f, 0.85f, 0.4f, 0.95f));
+            DrawCircle(tip, 0.07f * m, new Color(1f, 1f, 0.8f, 1f));
+        }
+        if (s.Health is Health.Wounded or Health.Incapacitated)
+            DrawCircle(p + new Vector2(0, prone || down ? -0.1f : -0.6f) * m, 0.08f * m, new Color(0.7f, 0.05f, 0.05f));
+        // A small coloured pip over a man who is shaken, so trouble is easy to spot
+        var mood = s.Morale == MoraleState.Surrendered ? Colors.White : View.MoraleColor(s.Morale);
+        if (s.Morale != MoraleState.Ready && !down)
+            DrawCircle(p + new Vector2(0, -1.0f) * m, 0.13f * m, mood);
     }
 
     /// <summary>Standing or crouching: shoulders across, pack behind, helmet on top.</summary>

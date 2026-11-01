@@ -34,13 +34,15 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-PX_PER_M = 2
+PX_PER_M = 4
+# Sizes below were tuned at 2 pixels per metre; K scales them to the real resolution
+K = PX_PER_M / 2
 # Must match the TerrainType enum in src/Sim/TerrainType.cs
 GRASS, FOREST, ROCK, SNOW, WATER, ROAD, BRIDGE, FIELD, BUILDING, FORD, WRECK = range(11)
 
 # Sun from the north-west, fairly low (late evening light reads best)
 SUN = np.array([-1.0, -1.0]) / math.sqrt(2)   # direction towards the sun, (row, col)
-SHADOW_PX = 7                                   # shadow of a two-storey house
+SHADOW_PX = int(7 * K)                                   # shadow of a two-storey house
 
 
 def noise(shape, scale_px, rng, octaves=3):
@@ -95,8 +97,8 @@ def paint(name, root, crop=None, out=None):
     # grid; roads, fields, houses and water get smooth, rounded outlines.
     yy, xx = np.mgrid[0:ph, 0:pw].astype(np.float32)
     wob = 1.1 * up
-    wx = noise(shape, 16, rng, 2) * wob
-    wy = noise(shape, 16, rng, 2) * wob
+    wx = noise(shape, 16 * K, rng, 2) * wob
+    wy = noise(shape, 16 * K, rng, 2) * wob
     ci = np.clip(((yy + wy) / up).astype(int), 0, H - 1)
     cj = np.clip(((xx + wx) / up).astype(int), 0, W - 1)
     t = ter[ci, cj]
@@ -109,7 +111,7 @@ def paint(name, root, crop=None, out=None):
         ragged > 0 lets the edge wander a little, as a river bank does."""
         m = ndimage.zoom(cells.astype(np.float32), up, order=1)[:ph, :pw]
         if ragged:
-            level = np.clip(level + ragged * noise(shape, 10, rng, 2), 0.2, 0.8)
+            level = np.clip(level + ragged * noise(shape, 10 * K, rng, 2), 0.2, 0.8)
         return ndimage.gaussian_filter(m, sigma) > level
 
     field_px = smooth(ter == FIELD, up * 0.9, 0.5)
@@ -129,8 +131,8 @@ def paint(name, root, crop=None, out=None):
 
     # ---- Shared textures --------------------------------------------------
     grain = rng.standard_normal(shape).astype(np.float32)
-    mid = noise(shape, 40, rng)
-    big = noise(shape, 180, rng, 2)
+    mid = noise(shape, 40 * K, rng)
+    big = noise(shape, 180 * K, rng, 2)
     img = np.zeros((ph, pw, 3), np.float32)
     bump = np.zeros(shape, np.float32)      # micro-relief, turned into light and shade at the end
     fine = ndimage.gaussian_filter(grain, 0.7)
@@ -141,12 +143,12 @@ def paint(name, root, crop=None, out=None):
 
     # Grass: straw left from the winter, greening in patches and in the hollows
     g = t == GRASS
-    mottle = noise(shape, 7, rng, 2)
+    mottle = noise(shape, 7 * K, rng, 2)
     greenness = np.clip(0.55 + 0.6 * big + 0.6 * mid, 0, 1)
     img[g] = mix((128, 120, 76), (86, 100, 52), greenness[g])
     img[g] *= (1 + 0.10 * mottle[g])[:, None]
     img[g] += grain[g][:, None] * np.array((6, 6, 4), np.float32)
-    tufts = speckle(shape, 0.10, 0.8, rng)
+    tufts = speckle(shape, 0.10 / K ** 2, 0.8 * K, rng) + 0.5 * speckle(shape, 0.10, 0.7, rng)
     bump += 1.0 * fine + 2.4 * tufts * g
     img[g] *= (1 - 0.30 * tufts[g])[:, None]
 
@@ -159,12 +161,12 @@ def paint(name, root, crop=None, out=None):
     r = t == ROCK
     lichen = np.clip(0.5 + 1.2 * mid, 0, 1)
     img[r] = mix((100, 98, 92), (84, 88, 72), lichen[r]) * (1 + 0.12 * mottle[r])[:, None]
-    stones = speckle(shape, 0.02, 1.6, rng) + 0.6 * speckle(shape, 0.08, 0.8, rng)
+    stones = speckle(shape, 0.02 / K ** 2, 1.6 * K, rng) + 0.6 * speckle(shape, 0.08 / K ** 2, 0.8 * K, rng) + 0.3 * speckle(shape, 0.08, 0.7, rng)
     bump += 3.0 * stones * r + 1.5 * fine * r
 
     # Spring snow: patchy, grey where it is thin, with rock showing through
     s = t == SNOW
-    thin = noise(shape, 30, rng, 3)
+    thin = noise(shape, 30 * K, rng, 3)
     snow_cover = s & (thin > -0.35)
     img[s] = mix((112, 108, 100), (100, 98, 88), lichen[s])
     img[snow_cover] = mix((236, 238, 240), (196, 198, 200), np.clip(-thin[snow_cover] + 0.2, 0, 1))
@@ -184,7 +186,7 @@ def paint(name, root, crop=None, out=None):
         img[rd] *= (1 - 0.18 * rut[rd])[:, None]
         img[rd] = img[rd] * (1 - 0.5 * crown[rd, None]) + np.array((122, 120, 78)) * 0.5 * crown[rd, None]
         img[rd] = img[rd] * (1 - 0.5 * verge[rd, None]) + np.array((130, 124, 82)) * 0.5 * verge[rd, None]
-        bump += 0.8 * speckle(shape, 0.15, 0.5, rng) * rd
+        bump += 0.8 * speckle(shape, 0.15 / K ** 2, 0.5 * K, rng) * rd + 0.4 * speckle(shape, 0.15, 0.5, rng) * rd
         del d, half, rel, rut, crown, verge
 
     # Under the houses (only the eaves show): trodden earth
@@ -199,8 +201,8 @@ def paint(name, root, crop=None, out=None):
     # Garden fences along the roads near houses
     if (t_exact == BUILDING).any() and rd.any():
         near_house = ndimage.distance_transform_edt(t_exact != BUILDING) < 26
-        by_road = ndimage.binary_dilation(rd, iterations=3) & ~ndimage.binary_dilation(rd, iterations=2)
-        fences |= by_road & near_house & np.isin(t, [GRASS, FIELD]) & (noise(shape, 30, rng, 1) > -0.5)
+        by_road = ndimage.binary_dilation(rd, iterations=int(3 * K)) & ~ndimage.binary_dilation(rd, iterations=int(3 * K) - 1)
+        fences |= by_road & near_house & np.isin(t, [GRASS, FIELD]) & (noise(shape, 30 * K, rng, 1) > -0.5)
 
     # Water: gravel shore, shallows over stones, dark deep water, ripples
     water = np.isin(t, [WATER, BRIDGE, WRECK, FORD])
@@ -212,24 +214,24 @@ def paint(name, root, crop=None, out=None):
         rip = np.sin(Y * 0.55 + X * 0.18 + mid[water] * 9) * np.sin(X * 0.21 - Y * 0.07 + big[water] * 5)
         img[water] += (rip * 5 + grain[water] * 2)[:, None]
         # Shore: a band of pale gravel and wet stones
-        shore = ndimage.binary_dilation(water, iterations=4) & ~water & (t != BUILDING)
+        shore = ndimage.binary_dilation(water, iterations=int(4 * K)) & ~water & (t != BUILDING)
         img[shore] = mix((150, 142, 120), (110, 104, 88), np.clip(0.5 + grain[shore] * 0.4, 0, 1))
-        bump += 1.6 * speckle(shape, 0.12, 0.7, rng) * shore
+        bump += 1.6 * speckle(shape, 0.12 / K ** 2, 0.7 * K, rng) * shore
         wetline = ndimage.binary_dilation(water, iterations=1) & ~water
         img[wetline] *= 0.75
         del depth, Y, X
     ford = t == FORD
     if ford.any():
         img[ford] = mix((124, 128, 112), (100, 110, 100), np.clip(0.5 + grain[ford] * 0.5, 0, 1))
-        foam = ford & (speckle(shape, 0.05, 0.8, rng) > 0.35)
+        foam = ford & (speckle(shape, 0.05 / K ** 2, 0.8 * K, rng) > 0.35)
         img[foam] = (200, 206, 204)
-        bump += 2.0 * speckle(shape, 0.06, 1.0, rng) * ford
+        bump += 2.0 * speckle(shape, 0.06 / K ** 2, 1.0 * K, rng) * ford
 
     # Bushes on open grass: juniper and willow, as small dark clumps
-    bushes = speckle(shape, 0.0006, 2.2, rng)
+    bushes = speckle(shape, 0.0006 / K ** 2, 2.2 * K, rng)
     bushes = (bushes > 0.35) & g
     img[bushes] = mix((60, 72, 40), (78, 84, 48), np.clip(0.5 + grain[bushes] * 0.3, 0, 1))
-    bump += 4.0 * ndimage.gaussian_filter(bushes.astype(np.float32), 1.2)
+    bump += 4.0 * ndimage.gaussian_filter(bushes.astype(np.float32), 1.2 * K)
 
     # ---- Light and shade --------------------------------------------------
     img *= (1 + 0.14 * emboss(bump))[..., None]
@@ -244,7 +246,7 @@ def paint(name, root, crop=None, out=None):
     if fences.any():
         sh = np.zeros_like(fences); sh[1:, 1:] = fences[:-1, :-1]
         img[sh & ~fences] *= 0.7
-        posts = fences & (((xx + yy).astype(int) % 7) == 0)
+        posts = fences & (((xx + yy).astype(int) % int(7 * K)) == 0)
         img[fences] = (122, 112, 92)
         img[posts] = (84, 74, 60)
     del xx, yy
@@ -269,21 +271,22 @@ def paint(name, root, crop=None, out=None):
     houses = []
     lab, n = ndimage.label(t_exact == BUILDING)
     for k, sl in enumerate(ndimage.find_objects(lab)):
-        r0, r1 = sl[0].start + 1, sl[0].stop - 1
-        c0, c1 = sl[1].start + 1, sl[1].stop - 1
-        if r1 - r0 < 3 or c1 - c0 < 3:
+        r0, r1 = sl[0].start + int(K), sl[0].stop - int(K)
+        c0, c1 = sl[1].start + int(K), sl[1].stop - int(K)
+        if r1 - r0 < 3 * K or c1 - c0 < 3 * K:
             continue
         houses.append((r0, c0, r1, c1))
-        tall = SHADOW_PX if max(r1 - r0, c1 - c0) < 40 else SHADOW_PX + 3
+        tall = SHADOW_PX if max(r1 - r0, c1 - c0) < 40 * K else SHADOW_PX + int(3 * K)
         for i in range(1, tall + 1):
             shadow[r0 + i:r1 + i, c0 + i:c1 + i] = np.maximum(shadow[r0 + i:r1 + i, c0 + i:c1 + i], 1.0)
     # Trodden yards round the houses
     yard = np.zeros(shape, bool)
     for (r0, c0, r1, c1) in houses:
-        yard[max(r0 - 5, 0):r1 + 5, max(c0 - 5, 0):c1 + 5] = True
-    yard &= np.isin(t, [GRASS, FIELD]) & (noise(shape, 5, rng, 1) > -0.4)
+        m5 = int(5 * K)
+        yard[max(r0 - m5, 0):r1 + m5, max(c0 - m5, 0):c1 + m5] = True
+    yard &= np.isin(t, [GRASS, FIELD]) & (noise(shape, 5 * K, rng, 1) > -0.4)
     img[yard] = img[yard] * 0.45 + np.array((128, 114, 86), np.float32) * 0.55
-    shadow = ndimage.gaussian_filter(shadow, 1.3)
+    shadow = ndimage.gaussian_filter(shadow, 1.3 * K)
     img *= (1 - 0.42 * np.clip(shadow, 0, 1))[..., None]
     del shadow
 
@@ -299,12 +302,12 @@ def paint(name, root, crop=None, out=None):
     if br.any():
         Y, X = np.nonzero(br)
         img[Y, X] = np.array((116, 98, 74), np.float32) * (0.88 + 0.12 * np.sin(X * 1.6 + Y * 1.6))[:, None]
-        edge = ndimage.binary_dilation(br, iterations=1) & ~br & water
+        edge = ndimage.binary_dilation(br, iterations=int(K)) & ~br & water
         img[edge] = (64, 58, 52)
     wr = t == WRECK
     if wr.any():
         Y, X = np.nonzero(wr)
-        broken = (noise(shape, 6, rng, 1)[Y, X] > -0.1)
+        broken = (noise(shape, 6 * K, rng, 1)[Y, X] > -0.1)
         img[Y, X] = np.where(broken[:, None], np.array((58, 54, 50), np.float32), img[Y, X])
 
     # ---- Colour grade: a touch muted and warm, like a printed photograph ---
@@ -341,7 +344,7 @@ def paint_fields(img, bump, fences, field_px, hts, up, rng, grain, mid):
         u = Xg * math.cos(a) + Yg * math.sin(a)      # along the strip
         v = -Xg * math.sin(a) + Yg * math.cos(a)     # across the strips
         v0 = v.min()
-        edges = np.cumsum(rng.uniform(22, 64, 200))
+        edges = np.cumsum(rng.uniform(22 * K, 64 * K, 200))
         idx = np.searchsorted(edges, v - v0)
         kind = rng.integers(0, len(kinds), idx.max() + 1)
         base = np.array([kinds[k][0] for k in kind], np.float32)[idx]
@@ -360,7 +363,7 @@ def paint_fields(img, bump, fences, field_px, hts, up, rng, grain, mid):
         e |= m & ~ndimage.binary_erosion(m, iterations=1)
         fences[sl] |= e
         # A strip of rough grass along each fence that the plough cannot reach
-        rough = ndimage.binary_dilation(e, iterations=2) & m & ~e
+        rough = ndimage.binary_dilation(e, iterations=int(2 * K)) & m & ~e
         ry, rx = np.nonzero(rough)
         img[ry + sl[0].start, rx + sl[1].start] = img[ry + sl[0].start, rx + sl[1].start] * 0.4 + np.array((126, 118, 76)) * 0.6
 
@@ -379,11 +382,11 @@ def paint_house(img, r0, c0, r1, c1, rng):
     col, kind = ROOFS[rng.integers(0, len(ROOFS))]
     col = np.array(col, np.float32) * rng.uniform(0.92, 1.08)
     h, w = r1 - r0, c1 - c0
-    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32) / K   # in 2-px-per-metre units
     ew = w >= h                                    # ridge runs east-west
     across = ys if ew else xs                      # distance across the ridge
     along = xs if ew else ys
-    span = h if ew else w
+    span = (h if ew else w) / K
     ridge = span / 2
     lit = across < ridge                            # north or west slope faces the sun
     light = np.where(lit, 1.18, 0.72)
@@ -405,19 +408,20 @@ def paint_house(img, r0, c0, r1, c1, rng):
     # Ridge cap and eaves
     cap = np.abs(across - ridge) < 0.8
     roof[cap] = col * 1.25
-    roof[(across < 0.9) | (across > span - 1.1) | (along < 0.9) | (along > (w if ew else h) - 1.1)] *= 0.86
+    roof[(across < 0.9) | (across > span - 1.1) | (along < 0.9) | (along > (w if ew else h) / K - 1.1)] *= 0.86
     img[r0:r1, c0:c1] = roof
     # Chimney on the ridge, with its own little shadow
     if kind != "turf" or rng.random() < 0.5:
         L = w if ew else h
         p = int(L * rng.uniform(0.25, 0.75))
-        q = int(ridge)
-        cy, cx = (r0 + q - 1, c0 + p) if ew else (r0 + p, c0 + q - 1)
-        img[cy + 2:cy + 5, cx + 2:cx + 5] *= 0.6
-        img[cy:cy + 3, cx:cx + 3] = (104, 62, 50)
-        img[cy, cx:cx + 3] = (150, 100, 80)
-        img[cy:cy + 3, cx] = (150, 100, 80)
-        img[cy + 1, cx + 1] = (30, 26, 24)
+        q = int(ridge * K)
+        c3 = int(3 * K)
+        cy, cx = (r0 + q - c3 // 3, c0 + p) if ew else (r0 + p, c0 + q - c3 // 3)
+        img[cy + c3 * 2 // 3:cy + c3 * 5 // 3, cx + c3 * 2 // 3:cx + c3 * 5 // 3] *= 0.6
+        img[cy:cy + c3, cx:cx + c3] = (104, 62, 50)
+        img[cy:cy + int(K), cx:cx + c3] = (150, 100, 80)
+        img[cy:cy + c3, cx:cx + int(K)] = (150, 100, 80)
+        img[cy + c3 // 3:cy + c3 * 2 // 3 + 1, cx + c3 // 3:cx + c3 * 2 // 3 + 1] = (30, 26, 24)
 
 
 def make_tree_stamps(rng):
@@ -432,21 +436,27 @@ def make_tree_stamps(rng):
     ]
     for kind, r, col, count in specs:
         for _ in range(count):
-            rad_v = r * rng.uniform(0.85, 1.15)
+            rad_v = r * K * rng.uniform(0.85, 1.15)
             size = int(rad_v * 2 + 6)
             yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) - size / 2
             ang = np.arctan2(yy, xx); rad = np.hypot(yy, xx)
+            # A ragged outline: a few waves of random size, so no two crowns
+            # share a regular star or flower shape
+            wob = sum(rng.uniform(0.3, 1.0) / k * np.cos(ang * k + rng.uniform(0, 6.3)) for k in range(3, 9))
             if kind == "spruce":
-                edge = rad_v * (0.85 + 0.15 * np.abs(np.cos(ang * 4 + rng.uniform(0, 3))))
+                edge = rad_v * (0.84 + 0.11 * wob)
             else:
-                edge = rad_v * (0.82 + 0.18 * np.cos(ang * 5 + rng.uniform(0, 6)))
-            alpha = np.clip((edge - rad) * 1.3, 0, 1)
+                edge = rad_v * (0.82 + 0.15 * wob)
+            alpha = np.clip((edge - rad) * 1.3 / K, 0, 1)
             # Height of the crown: a dome, lumpy for leafy trees, a cone for spruce
             hgt = np.clip(1 - rad / np.maximum(edge, 1e-3), 0, 1)
             if kind == "spruce":
-                hgt = hgt + 0.25 * np.cos(ang * 9) * hgt
+                # Branch tufts: fine lumps on a cone, not regular ridges
+                tufts = ndimage.gaussian_filter(rng.random((size, size)).astype(np.float32), 0.6 * K)
+                tufts = (tufts - tufts.mean()) / (tufts.std() + 1e-6)
+                hgt = hgt * (1 + 0.18 * tufts)
             else:
-                lumps = ndimage.gaussian_filter(rng.random((size, size)).astype(np.float32), 1.0)
+                lumps = ndimage.gaussian_filter(rng.random((size, size)).astype(np.float32), 1.0 * K)
                 hgt = np.sqrt(hgt) * (0.7 + 0.6 * lumps)
             gy, gx = np.gradient(hgt)
             light = 1.0 - 1.1 * (gy * SUN[0] + gx * SUN[1]) + 0.2 * hgt - 0.1
