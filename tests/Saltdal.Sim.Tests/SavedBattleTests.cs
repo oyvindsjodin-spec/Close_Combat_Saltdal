@@ -23,6 +23,8 @@ public class SavedBattleTests
                 case 80: saved.EndPrep(); break;
                 case 120: saved.Fire(ours[2], ours[2].Center + new Vector2(0, 300)); break;
                 case 300: saved.Hide(ours[1]); break;
+                case 320: saved.Move(ours[3], ours[3].Center + new Vector2(-20, 40), MoveMode.Move, new Deployment(0.5f, Formation.Wedge, 6f)); break;
+                case 360: saved.Deploy(ours[4], new Deployment(2f, Formation.Line, 9f), dig: false); break;
             }
             sim.Tick();
         }
@@ -39,7 +41,8 @@ public class SavedBattleTests
         var json = played.Save();
         var loaded = SavedBattle.Load(json, out long tick);
         Assert.Equal(1200, tick);
-        Assert.Equal(5, loaded.Commands.Count);
+        Assert.Equal(7, loaded.Commands.Count);
+        Assert.Equal(new Deployment(0.5f, Formation.Wedge, 6f), loaded.Commands[5].Deployment);
         var sc = ScenarioTests.Data.Find(loaded.BattleId);
         var sim = loaded.Replay(sc, ScenarioTests.LoadMap(sc.Map), tick);
         Assert.Equal(played.Sim.TickCount, sim.TickCount);

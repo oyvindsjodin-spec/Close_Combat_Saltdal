@@ -10,7 +10,8 @@ public sealed partial class Simulation
     /// Order a team to move. Returns false if no route exists. The AI can ask for
     /// a covered route, and stop after maxDistance metres along it.
     /// </summary>
-    public bool OrderMove(Team team, Vector2 target, MoveMode mode, bool preferCover = false, float maxDistance = float.PositiveInfinity)
+    public bool OrderMove(Team team, Vector2 target, MoveMode mode, bool preferCover = false, float maxDistance = float.PositiveInfinity,
+                          Deployment? deploy = null)
     {
         var route = Pathfinder.FindPath(team.Center, target, preferCover);
         if (route == null)
@@ -24,6 +25,7 @@ public sealed partial class Simulation
             _ => TeamOrder.Move,
         };
         team.OrderPoint = target;
+        team.Deployment = deploy;
         DelayOrder(team);
         int n = team.Soldiers.Count;
         // The men end up in a line across the way they were going, facing on
@@ -32,6 +34,14 @@ public sealed partial class Simulation
         // Into a house: the men spread through its rooms instead of fanning out around the door
         var house = Map.TerrainAt(target) == TerrainType.Building ? HouseAt(target) : null;
         var places = house != null ? PlacesInHouse(house, n) : null;
+        // The player chose how the men should stand when they get there
+        System.Collections.Generic.Dictionary<Soldier, Vector2>? deployed = null;
+        if (places == null && deploy is { } dep)
+        {
+            heading = dep.Facing;
+            var going = team.Soldiers.Where(s => !s.Fleeing && !s.EscapingFire).ToList();
+            deployed = Assign(going, team.Center, route[^1], dep, mustDig: false).ToDictionary(a => a.Man, a => a.Place);
+        }
         // Onto empty foxholes of our own: each man drops into the nearest one
         // to where he would have stood, facing the way it was dug.
         var holeOf = new int[n];
@@ -41,7 +51,8 @@ public sealed partial class Simulation
         if (holes.Count > 0)
         {
             var movers = Enumerable.Range(0, n).Where(i => !team.Soldiers[i].Fleeing && !team.Soldiers[i].EscapingFire).ToList();
-            var match = MatchNearest(movers.Select(i => target + FormationOffset(i, n, heading)).ToList(), holes.Select(h => h.At).ToList());
+            var match = MatchNearest(movers.Select(i => deployed != null && deployed.TryGetValue(team.Soldiers[i], out var d) ? d
+                : target + FormationOffset(i, n, heading)).ToList(), holes.Select(h => h.At).ToList());
             for (int k = 0; k < movers.Count; k++) holeOf[movers[k]] = match[k];
         }
         for (int i = 0; i < n; i++)
@@ -63,7 +74,8 @@ public sealed partial class Simulation
                 for (int w = 0; w < route.Count - 1; w++)
                     s.Path.Enqueue(route[w] + FormationOffset(i, n, heading) * 0.3f);
                 s.Path.Enqueue(hole.At);
-                s.FacingOnArrival = hole.Facing;
+                // Facing the way the hole was dug, unless the player dragged out a facing
+                s.FacingOnArrival = deploy != null ? heading : hole.Facing;
                 continue;
             }
             // Each man follows the team's route, spread a little to the side,
@@ -72,6 +84,11 @@ public sealed partial class Simulation
             for (int w = 0; w < route.Count; w++)
             {
                 bool last = w == route.Count - 1;
+                if (last && deployed != null && deployed.TryGetValue(s, out var place))
+                {
+                    s.Path.Enqueue(place);
+                    continue;
+                }
                 var p = route[w] + (last ? offset : offset * 0.3f);
                 var (cx, cy) = Map.WorldToCell(p);
                 s.Path.Enqueue(Map.IsPassable(cx, cy) ? p : route[w]);
@@ -108,6 +125,17 @@ public sealed partial class Simulation
         TakeUpLine(team, facing);
     }
 
+    /// <summary>Stay here and defend, standing the way the player dragged out.</summary>
+    public void OrderDefend(Team team, Deployment deploy)
+    {
+        SetStationaryOrder(team, TeamOrder.Defend, FacingPoint(team, deploy));
+        team.Deployment = deploy;
+        TakeUpLine(team, team.OrderPoint);
+    }
+
+    /// <summary>A point well out in front of the team, the way a deployment faces.</summary>
+    static Vector2 FacingPoint(Team team, Deployment deploy) => team.Center + deploy.Forward * 100f;
+
     /// <summary>
     /// The men spread out into a line across the way they face, each going to
     /// the nearest place in it, then turn to face the enemy. Men already in a
@@ -125,6 +153,18 @@ public sealed partial class Simulation
         var d = facingPoint - center;
         if (d.LengthSquared() < 1) return;
         float facing = MathF.Atan2(d.Y, d.X);
+        if (team.Deployment is { } dep)
+        {
+            // The shape and spacing the player chose, facing the way they dragged
+            foreach (var (man, place) in Assign(men, center, center, dep, mustDig))
+            {
+                man.Path.Clear();
+                if (Vector2.Distance(man.Position, place) > 0.5f) man.Path.Enqueue(place);
+                man.FacingOnArrival = dep.Facing;
+                if (!man.IsMoving) man.Facing = dep.Facing;
+            }
+            return;
+        }
         var across = new Vector2(-MathF.Sin(facing), MathF.Cos(facing));
         bool leaderBehind = men[0].IsLeader && men.Count > 2;
         // Places in the line, left to right; men taken left to right too so nobody crosses another's path
@@ -230,6 +270,7 @@ public sealed partial class Simulation
     {
         team.Order = order;
         team.OrderPoint = point;
+        team.Deployment = null;
         foreach (var s in team.Soldiers)
         {
             if (s.Fleeing || s.EscapingFire) continue;

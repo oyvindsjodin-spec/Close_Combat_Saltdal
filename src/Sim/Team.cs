@@ -28,6 +28,8 @@ public sealed class Team
     public TeamOrder Order { get; internal set; } = TeamOrder.None;
     /// <summary>Where to shoot for Fire, or which way to face for Defend.</summary>
     public Vector2 OrderPoint { get; internal set; }
+    /// <summary>The shape and facing the player dragged out with the last order, if any.</summary>
+    public Deployment? Deployment { get; internal set; }
 
     /// <summary>A headquarters team: its leaders steady nearby men of other teams too, and it can call off-map support.</summary>
     public bool IsHeadquarters { get; set; }

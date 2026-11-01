@@ -39,14 +39,20 @@ public partial class AimView : Node2D
         string text;
         Color textColor = Clear;
 
-        if (rifles.Count == 0 && mortars.Count > 0)
+        // A mortar team's riflemen only carry bombs and guard the tube, so the
+        // team aims like a mortar. A headquarters aims like riflemen, with its
+        // small mortar joining in when the spot is within its range.
+        bool mortarTeam = mortars.Count > 0 && (rifles.Count == 0 || !Team.IsHeadquarters);
+        if (mortarTeam)
         {
             // Mortars lob their bombs: no need to see, but the range must be right
             var m = mortars.OrderBy(s => Vec.DistanceSquared(s.Position, Target)).First();
             float d = Vec.Distance(m.Position, Target);
             DrawDashed(View.ToScreen(m.Position), end, Lobbed, k);
             bool ok = d >= m.Weapon.MinRange && d <= m.Weapon.Range;
-            text = $"{d:0} m   " + (d < m.Weapon.MinRange ? $"too close (at least {m.Weapon.MinRange:0} m)"
+            if (mortars.All(s => s.Ammo == 0)) ok = false;
+            text = $"{d:0} m   " + (mortars.All(s => s.Ammo == 0) ? "no bombs left"
+                : d < m.Weapon.MinRange ? $"too close (at least {m.Weapon.MinRange:0} m)"
                 : d > m.Weapon.Range ? $"out of range (at most {m.Weapon.Range:0} m)" : "barrage");
             textColor = ok ? Lobbed : Blocked;
         }
@@ -96,7 +102,8 @@ public partial class AimView : Node2D
                 textColor = Blocked;
             }
             else text += $"{see} of {rifles.Count} can see it";
-            if (mortars.Count > 0) text += ", mortar barrage";
+            if (mortars.Any(m => m.Ammo > 0 && Vec.Distance(m.Position, Target) is var md && md >= m.Weapon.MinRange && md <= m.Weapon.Range))
+                text += ", mortar barrage";
         }
 
         // A ring at the aim point, and the words beside it
