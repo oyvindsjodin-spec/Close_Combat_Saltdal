@@ -148,8 +148,10 @@ public partial class UnitsView : Node2D
         else DrawEllipse(Vector2.Zero, 3.6f, 5.2f, new Color(0, 0, 0, 0.28f));
 
         DrawSetTransform(p, facing + sway, Vector2.One * f);
+        // Light comes from the north-west, as on the painted ground; turn it into the man's own frame
+        _light = new Vector2(-1, -1).Normalized().Rotated(-(facing + sway));
         if (selected && !down)
-            DrawArc(prone ? new Vector2(-2, 0) : Vector2.Zero, prone ? 8.5f : 6.5f, 0, Mathf.Tau, 20, new Color(1, 1, 1, 0.85f), 1.0f);
+            DrawArc(prone ? new Vector2(-2.5f, 0) : Vector2.Zero, prone ? 7.5f : 5.6f, 0, Mathf.Tau, 24, new Color(1, 1, 0.85f, 0.55f), 0.7f);
 
         // Falling: for half a second after being hit the body pitches over and stretches out
         float sinceDown = s.DownAt < 0 ? 99f : Now - s.DownAt;
@@ -218,6 +220,9 @@ public partial class UnitsView : Node2D
             var boot = new Color(0.13f, 0.11f, 0.09f);
             var l = new Vector2(-0.5f + swing, -1.6f);
             var r = new Vector2(-0.5f - swing, 1.6f);
+            var rim = new Color(0.08f, 0.07f, 0.05f, 0.85f);
+            DrawLine(new Vector2(-0.5f, -1.4f), l, rim, 2.6f);
+            DrawLine(new Vector2(-0.5f, 1.4f), r, rim, 2.6f);
             DrawLine(new Vector2(-0.5f, -1.4f), l, legs, 1.7f);
             DrawLine(new Vector2(-0.5f, 1.4f), r, legs, 1.7f);
             DrawCircle(l, 0.9f, boot);
@@ -229,9 +234,17 @@ public partial class UnitsView : Node2D
         float w = crouched ? 4.2f : 4.8f;    // half the shoulder width
         // Crouching: hunched forward, the pack rides higher
         float lean = crouched ? 0.6f : 0f;
-        DrawEllipse(new Vector2(-0.3f + lean, 0), 2.6f, w, u.Cloth.Darkened(0.35f));
-        DrawEllipse(new Vector2(-0.1f + lean, 0), 2.2f, w - 0.6f, u.Cloth);
-        DrawRect(new Rect2(-3.4f + lean, -2.2f, 1.8f, 4.4f), u.Kit);
+        DrawShaded(new Vector2(-0.2f + lean, 0), 2.5f, w, u.Cloth);
+        DrawShaded(new Vector2(-2.6f + lean, 0), 1.1f, 2.2f, u.Kit);
+        if (!s.Weapon.IsIndirect && pose.Walking < 0.5f)
+        {
+            // Arms forward to the weapon: right hand at the grip, left hand under the fore-end
+            var rim = new Color(0.08f, 0.07f, 0.05f, 0.85f);
+            var sleeve = u.Cloth.Darkened(0.12f);
+            (Vector2 a, Vector2 b)[] arms = { (new(lean, 3.4f), new(2.0f + lean, 2.7f)), (new(lean, -3.4f), new(4.4f + lean, 1.9f)) };
+            foreach (var (a, b) in arms) DrawLine(a, b, rim, 2.3f);
+            foreach (var (a, b) in arms) DrawLine(a, b, sleeve, 1.4f);
+        }
         DrawWeapon(s, upright: true);
         DrawHelmet(u, new Vector2(0.3f + lean * 1.4f, 0));
     }
@@ -242,11 +255,17 @@ public partial class UnitsView : Node2D
         var legs = u.Cloth.Darkened(0.2f);
         // Crawling: the legs work in turn, in time with the ground covered
         float crawl = withWeapon ? Mathf.Sin(pose.Stride * 1.5f) * 1.6f * pose.Walking : 0f;
-        DrawLine(new Vector2(-5, -1.2f), new Vector2(-10.5f + crawl, -2.6f - crawl * 0.4f), legs, 1.8f);
-        DrawLine(new Vector2(-5, 1.2f), new Vector2(-10.5f - crawl, 2.4f - crawl * 0.4f), legs, 1.8f);
-        DrawEllipse(new Vector2(-2, 0), 4.8f, 2.9f, u.Cloth.Darkened(0.3f));
-        DrawEllipse(new Vector2(-1.8f, 0), 4.3f, 2.4f, u.Cloth);
-        DrawRect(new Rect2(-4.4f, -1.5f, 2.6f, 3f), u.Kit);
+        var rim = new Color(0.08f, 0.07f, 0.05f, 0.85f);
+        var footL = new Vector2(-10.5f + crawl, -2.6f - crawl * 0.4f);
+        var footR = new Vector2(-10.5f - crawl, 2.4f - crawl * 0.4f);
+        DrawLine(new Vector2(-5, -1.2f), footL, rim, 2.7f);
+        DrawLine(new Vector2(-5, 1.2f), footR, rim, 2.7f);
+        DrawLine(new Vector2(-5, -1.2f), footL, legs.Darkened(0.15f), 1.8f);
+        DrawLine(new Vector2(-5, 1.2f), footR, legs.Darkened(0.15f), 1.8f);
+        DrawCircle(footL, 0.8f, new Color(0.13f, 0.11f, 0.09f));
+        DrawCircle(footR, 0.8f, new Color(0.13f, 0.11f, 0.09f));
+        DrawShaded(new Vector2(-1.9f, 0), 4.6f, 2.7f, u.Cloth);
+        DrawShaded(new Vector2(-3.1f, 0), 1.4f, 1.6f, u.Kit);
         if (withWeapon) DrawWeapon(s, upright: false);
         DrawHelmet(u, new Vector2(3.2f, 0));
     }
@@ -290,17 +309,34 @@ public partial class UnitsView : Node2D
         if (u.WideBrim)
         {
             // The British Brodie: a flat, wide brim around a shallow bowl
-            DrawCircle(at, 2.9f, u.Helmet.Darkened(0.25f));
-            DrawCircle(at, 2.5f, u.Helmet);
-            DrawCircle(at + new Vector2(0.3f, -0.4f), 1.5f, u.Helmet.Lightened(0.15f));
+            DrawShaded(at, 2.8f, 2.8f, u.Helmet.Darkened(0.12f));
+            DrawCircle(at + _light * 0.5f, 1.5f, u.Helmet.Lightened(0.08f));
+            DrawCircle(at + _light * 0.9f, 0.7f, u.Helmet.Lightened(0.25f));
         }
         else
         {
             // The German Stahlhelm (or Norwegian helmet): a deep bowl flared at the back
-            DrawEllipse(at + new Vector2(-0.4f, 0), 2.7f, 2.5f, u.Helmet.Darkened(0.3f));
-            DrawCircle(at, 2.2f, u.Helmet);
-            DrawCircle(at + new Vector2(0.4f, -0.5f), 1.2f, u.Helmet.Lightened(0.18f));
+            DrawShaded(at + new Vector2(-0.35f, 0), 2.2f, 2.0f, u.Helmet.Darkened(0.15f));
+            DrawShaded(at, 1.6f, 1.6f, u.Helmet);
+            DrawCircle(at + _light * 0.8f, 0.7f, u.Helmet.Lightened(0.25f));
         }
+    }
+
+    /// <summary>The light direction in the frame of the man being drawn.</summary>
+    Vector2 _light = new(-0.7f, -0.7f);
+
+    /// <summary>
+    /// A rounded body part in the painted style: a dark rim so it stands out
+    /// from the ground, the shaded side away from the light, and a highlight
+    /// on the side facing the north-west sun.
+    /// </summary>
+    void DrawShaded(Vector2 c, float rx, float ry, Color color)
+    {
+        DrawEllipse(c, rx + 0.45f, ry + 0.45f, new Color(0.08f, 0.07f, 0.05f, 0.85f));
+        DrawEllipse(c, rx, ry, color.Darkened(0.32f));
+        var lit = new Vector2(_light.X * rx, _light.Y * ry) * 0.22f;
+        DrawEllipse(c + lit, rx * 0.8f, ry * 0.8f, color);
+        DrawEllipse(c + lit * 2.2f, rx * 0.38f, ry * 0.38f, color.Lightened(0.18f));
     }
 
     void DrawEllipse(Vector2 c, float rx, float ry, Color color)
