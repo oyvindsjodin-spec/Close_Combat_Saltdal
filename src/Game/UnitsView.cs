@@ -104,8 +104,6 @@ public partial class UnitsView : Node2D
             foreach (var s in team.Soldiers)
                 DrawSoldier(s, team == Selected, k);
         }
-        DrawShots(k);
-        DrawBlasts(k);
         DrawAircraft(k);
         foreach (var team in Sim.Teams)
             if (team.Side == PlayerSide || RevealAll)
@@ -213,8 +211,12 @@ public partial class UnitsView : Node2D
     }
 
     SoldierSprites? _sprites;
+    EffectSprites? _fx;
     /// <summary>How much larger than life the figures are drawn, so a man can be picked out at a glance.</summary>
     const float FigureScale = 5.5f;
+
+    /// <summary>How many times larger than life a figure is drawn at this zoom.</summary>
+    public static float FigureSize(float zoom) => FigureScale / zoom * Mathf.Clamp(Mathf.Sqrt(zoom), 1.0f, 2.2f);
 
     /// <summary>
     /// A man drawn from the pre-rendered figures: the pose follows what he is
@@ -262,12 +264,19 @@ public partial class UnitsView : Node2D
             DrawCircle(at, 0.16f * m, new Color(0.12f, 0.12f, 0.11f));
             DrawCircle(at, 0.09f * m, new Color(0.3f, 0.3f, 0.28f));
         }
-        // Muzzle flash for a moment after each shot
-        if (Sim!.Time - s.LastShotTime < 0.12f && !w.IsIndirect && !down)
+        // Muzzle flash for a moment after each round: a star of fire out of the barrel
+        float sinceShot = Now - s.LastShotTime;
+        if (sinceShot >= 0 && sinceShot < 0.12f && !w.IsIndirect && !down)
         {
+            _fx ??= EffectSprites.Get();
             var tip = p + dir * (prone ? 1.75f : 1.15f) * m + new Vector2(0, prone ? -0.1f : -0.45f) * m;
-            DrawCircle(tip, 0.14f * m, new Color(1f, 0.85f, 0.4f, 0.95f));
-            DrawCircle(tip, 0.07f * m, new Color(1f, 1f, 0.8f, 1f));
+            float big = weapon == "mg" ? 1.5f : weapon == "smg" ? 0.9f : 1.1f;
+            float fade = 1 - sinceShot / 0.12f;
+            if (_fx != null)
+                _fx.Draw(this, "muzzle" + Mathf.PosMod((int)(s.LastShotTime * 997), 3), tip + dir * 0.25f * big * m,
+                    1.4f * big * m * (0.8f + 0.2f * fade), facing, new Color(1, 1, 1, fade));
+            else
+                DrawCircle(tip, 0.14f * m, new Color(1f, 0.85f, 0.4f, 0.95f));
         }
         if (s.Health is Health.Wounded or Health.Incapacitated)
             DrawCircle(p + new Vector2(0, prone || down ? -0.1f : -0.6f) * m, 0.08f * m, new Color(0.7f, 0.05f, 0.05f));
@@ -438,61 +447,6 @@ public partial class UnitsView : Node2D
         public Uniform Dimmed(float amount) => new(Cloth.Darkened(amount), Kit.Darkened(amount), Helmet.Darkened(amount), WideBrim);
     }
 
-    void DrawShots(float k)
-    {
-        foreach (var shot in Sim!.RecentShots)
-        {
-            // Hide the shooter's end of an unseen enemy's tracer; the impact still shows
-            var from = View.ToScreen(shot.From);
-            var to = View.ToScreen(shot.To);
-            if (shot.Side != PlayerSide && !RevealAll)
-            {
-                var shooter = FindSoldier(shot.ShooterId);
-                if (shooter != null && !shooter.IsVisibleToEnemy(Sim.Time))
-                    from = to + (from - to).Normalized() * 40f * k;
-            }
-            float age = Sim.Time - shot.Time;
-            float fade = Mathf.Clamp(1f - age / 0.6f, 0f, 1f);
-            var color = shot.Side == Side.Allied ? new Color(1f, 0.9f, 0.5f, fade) : new Color(1f, 0.6f, 0.4f, fade);
-            DrawLine(from, to, color, 1f * k);
-        }
-    }
-
-    void DrawBlasts(float k)
-    {
-        foreach (var b in Sim!.RecentBlasts)
-        {
-            float age = Sim.Time - b.Time;
-            var p = View.ToScreen(b.At);
-            float size = b.Explosive.KillRadius * View.Scale;
-            if (age < 0.4f)
-            {
-                // The flash, growing fast
-                float t = age / 0.4f;
-                DrawCircle(p, size * (0.6f + 1.2f * t), new Color(1f, 0.75f, 0.3f, 0.9f * (1 - t)));
-                DrawCircle(p, size * 0.5f, new Color(1f, 1f, 0.8f, 1 - t));
-            }
-            // Earth and stones thrown up and falling back
-            if (age < 1.0f)
-            {
-                int seed = (int)(b.At.X * 13 + b.At.Y * 7);
-                for (int i = 0; i < 10; i++)
-                {
-                    float angle = Shapes.Hash(seed, i) * Mathf.Tau;
-                    float speed = size * (0.8f + 1.4f * Shapes.Hash(seed, i + 20));
-                    float lift = size * (1.5f + 2f * Shapes.Hash(seed, i + 40));
-                    var dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                    // Seen from above, a clod flies out and its rise shows as a drift up the screen
-                    var at = p + dir * speed * age + new Vector2(0, -(lift * age - lift * age * age));
-                    DrawCircle(at, (1.2f + Shapes.Hash(seed, i + 60)) * Mathf.Max(1, size / 10), new Color(0.27f, 0.22f, 0.16f, 1 - age));
-                }
-            }
-            // Smoke that drifts and fades over a few seconds
-            float fade = Mathf.Clamp(1f - age / 3f, 0f, 1f);
-            DrawCircle(p + new Vector2(age * 4f, -age * 2f), size * (1f + age * 0.6f), new Color(0.35f, 0.33f, 0.3f, 0.45f * fade));
-        }
-    }
-
     void DrawAircraft(float k)
     {
         foreach (var a in Sim!.AircraftOverhead)
@@ -509,14 +463,6 @@ public partial class UnitsView : Node2D
             DrawLine(p - dir * s + side * s * 0.4f, p - dir * s - side * s * 0.4f, dark, 2f * k);
             DrawCircle(p + new Vector2(10, 12) * k, s * 0.6f, new Color(0, 0, 0, 0.15f));
         }
-    }
-
-    Soldier? FindSoldier(int id)
-    {
-        foreach (var team in Sim!.Teams)
-            foreach (var s in team.Soldiers)
-                if (s.Id == id) return s;
-        return null;
     }
 
     void DrawFlag(VictoryFlag flag, float k)

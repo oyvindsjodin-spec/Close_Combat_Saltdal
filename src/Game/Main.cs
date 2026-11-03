@@ -49,7 +49,7 @@ public partial class Main : Node2D
     int _baseOrderItems;
     GroundworksView _groundworks = null!;
     CratersView _craters = null!;
-    FireView _fire = null!;
+    EffectsView _fire = null!;
     AimView _aim = null!;
     DeployView _deploy = null!;
     SoundView _sound = null!;
@@ -120,7 +120,7 @@ public partial class Main : Node2D
         AddChild(_groundworks);
         _units = new UnitsView { PlayerSide = PlayerSide };
         AddChild(_units);
-        _fire = new FireView();
+        _fire = new EffectsView();
         AddChild(_fire);
         _aim = new AimView();
         AddChild(_aim);
@@ -204,6 +204,22 @@ public partial class Main : Node2D
             for (int i = 0; i < kinds.Length; i++)
                 _sim.Explode(at + new Vec(-40 + 20 * i, (i % 2) * 12), kinds[i], Simulation.Other(PlayerSide));
             _camera.Position = View.ToScreen(at);
+        }
+        if (args.Contains("--effects") && _simOrNull != null)
+        {
+            // Developer check: a house burns, shells land one after another 50 m in front
+            // of the player's men, and their first team shoots at the spot
+            _battle.EndPrep();
+            var team = _sim.Teams.First(t => t.Side == PlayerSide);
+            var at = team.Center + new Vec(0, PlayerSide == Side.Allied ? 50 : -50);
+            var house = _sim.Houses.Where(h => h.Cells.Count >= 4).OrderBy(h => Vec.Distance(h.Center, at)).FirstOrDefault();
+            if (house != null) _sim.SetOnFire(house);
+            Explosive[] kinds = { Explosive.Mortar81, Explosive.MountainGun75, Explosive.Mortar2Inch, Explosive.Gun25Pounder, Explosive.Mortar81, Explosive.Bomb250Kg };
+            for (int i = 0; i < 12; i++)
+                _devShells.Add((0.5f + 1.6f * i, at + new Vec(-30 + 11 * (i % 6), -8 + 9 * (i % 3)), kinds[i % kinds.Length]));
+            foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide).Take(3))
+                _battle.Fire(t, at + new Vec(0, 10));
+            _camera.Position = View.ToScreen(at - new Vec(0, 12));
         }
         if (args.Contains("--dig") && _simOrNull != null)
             foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide))
@@ -412,8 +428,18 @@ public partial class Main : Node2D
         center.AddChild(_forceScreen);
     }
 
+    /// <summary>Developer check (--effects): shells still to land, by battle time.</summary>
+    readonly List<(float Time, Vec At, Explosive Kind)> _devShells = new();
+
     public override void _Process(double delta)
     {
+        if (_simOrNull != null)
+            for (int i = _devShells.Count - 1; i >= 0; i--)
+                if (_devShells[i].Time <= _sim.Time)
+                {
+                    _sim.Explode(_devShells[i].At, _devShells[i].Kind, Simulation.Other(PlayerSide));
+                    _devShells.RemoveAt(i);
+                }
         // Between battles (menu or choosing forces) the last battle stays drawn but nothing happens
         if (_simOrNull == null || _menu.Visible || _forceScreen.Visible) return;
         if (!_paused && !_sim.IsOver)
@@ -439,6 +465,9 @@ public partial class Main : Node2D
         _groundworks.RevealAll = _units.RevealAll;
         _groundworks.QueueRedraw();
         _fire.Zoom = _camera.Zoom.X;
+        _fire.Alpha = _units.Alpha;
+        _fire.PlayerSide = PlayerSide;
+        _fire.RevealAll = _units.RevealAll;
         if (_aiming && (_selected == null || _selected.IsDestroyed || _sim.IsOver)) _aiming = false;
         _aim.Team = _aiming ? _selected : null;
         _aim.Target = View.ToWorld(GetGlobalMousePosition());
