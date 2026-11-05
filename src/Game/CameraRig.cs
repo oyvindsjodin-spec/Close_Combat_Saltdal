@@ -9,6 +9,8 @@ public partial class CameraRig : Camera2D
     const float MinZoom = 0.25f, MaxZoom = 4f;
 
     public Rect2 Bounds { get; set; }
+    /// <summary>Screen pixels along the bottom covered by the command panel: the view may go that much further south.</summary>
+    public float BottomInset { get; set; }
 
     bool _dragging;
 
@@ -29,7 +31,7 @@ public partial class CameraRig : Camera2D
     {
         var half = GetViewportRect().Size / 2 / Zoom;
         var lo = Bounds.Position + half;
-        var hi = Bounds.End - half;
+        var hi = Bounds.End - half + new Vector2(0, BottomInset / Zoom.Y);
         return new Vector2(
             lo.X > hi.X ? Bounds.GetCenter().X : Mathf.Clamp(p.X, lo.X, hi.X),
             lo.Y > hi.Y ? Bounds.GetCenter().Y : Mathf.Clamp(p.Y, lo.Y, hi.Y));
@@ -50,6 +52,13 @@ public partial class CameraRig : Camera2D
         {
             Position -= mm.Relative / Zoom.X;
         }
+    }
+
+    /// <summary>Zoom in (above 1) or out (below 1) about the middle of the screen, as the panel's buttons do.</summary>
+    public void ZoomBy(float k)
+    {
+        Zoom = Vector2.One * Mathf.Clamp(Zoom.X * k, MinZoom, MaxZoom);
+        Position = ClampToBounds(Position);
     }
 
     void SetZoomAround(float z)
