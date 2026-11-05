@@ -5,11 +5,30 @@ namespace Saltdal.Sim;
 
 public sealed partial class Simulation
 {
+    /// <summary>Fatigue gained per second running, walking and creeping, and lost per second standing still.</summary>
+    const float TireRunning = 1f / 100f, TireWalking = 1f / 900f, TireSneaking = 1f / 500f, RestPerSecond = 1f / 150f;
+    /// <summary>Above this a man is exhausted and cannot run at his best.</summary>
+    public const float Exhausted = 0.7f;
+
     void MoveSoldier(Soldier s)
     {
         s.PreviousPosition = s.Position;
         if (!s.CanAct)
             return;
+        Step(s);
+        // Running wears men out; standing still they get their breath back
+        float tire = !s.IsOnTheMove ? -RestPerSecond
+            : (s.Fleeing || s.EscapingFire ? MoveMode.MoveFast : s.Team.Mode) switch
+            {
+                MoveMode.MoveFast => TireRunning,
+                MoveMode.Sneak => TireSneaking,
+                _ => TireWalking,
+            };
+        s.Fatigue = Math.Clamp(s.Fatigue + tire * TickSeconds, 0f, 1f);
+    }
+
+    void Step(Soldier s)
+    {
 
         UpdatePosture(s);
         if (!s.Fleeing && !s.EscapingFire && Time < s.Team.OrderDelayUntil)
@@ -36,6 +55,7 @@ public sealed partial class Simulation
             s.Facing = MathF.Atan2(dir.Y, dir.X);
             float speed = Speed(s.Position, dir, mode);
             if (s.Health == Health.Wounded) speed *= 0.6f;
+            if (mode == MoveMode.MoveFast && s.Fatigue > Exhausted) speed *= 0.7f;
             float step = speed * budget;
             if (step >= dist)
             {

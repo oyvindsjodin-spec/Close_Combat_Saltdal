@@ -42,9 +42,12 @@ public partial class Main : Node2D
     BattleMenu _menu = null!;
     UnitsView _units = null!;
     CameraRig _camera = null!;
-    Label _hud = null!;
+    /// <summary>The keys and mouse, shown by the panel's help button.</summary>
     PanelContainer _hudBox = null!;
-    Label _log = null!;
+    /// <summary>An order button pressed on the panel, waiting for a click on the map; -1 for none.</summary>
+    int _pendingOrder = -1;
+    /// <summary>Where the close-up looked last, in world screen units.</summary>
+    Vector2 _closeUpAt;
     PopupMenu _orderMenu = null!;
     int _baseOrderItems;
     GroundworksView _groundworks = null!;
@@ -134,6 +137,7 @@ public partial class Main : Node2D
         _camera = new CameraRig();
         AddChild(_camera);
         _camera.MakeCurrent();
+        _camera.BottomInset = CommandBar.BarHeight;
 
         BuildUi();
         LoadMap(_scenario.Map);
@@ -322,7 +326,8 @@ public partial class Main : Node2D
         _forceScreen.Visible = false;
         _panel.Visible = true;
         _recorded = false;
-        _hudBox.Visible = true;
+        _hudBox.Visible = false;
+        _pendingOrder = -1;
         _units.Sim = _sim;
         _units.PlayerSide = side;
         _groundworks.Sim = _fire.Sim = _aim.Sim = _sim;
@@ -334,12 +339,13 @@ public partial class Main : Node2D
         _aiming = false;
         _selected = null;
         _accumulator = 0;
-        _panel.Build(_sim, PlayerSide, _map, _mapView.Ground);
+        _panel.Build(_sim, _battle, PlayerSide, _map, _mapView.Ground);
         _endScreen.Visible = false;
         var ours = _sim.Teams.Where(t => t.Side == PlayerSide).ToList();
         var center = ours.Aggregate(Vec.Zero, (a, t) => a + t.Center) / ours.Count;
         // Look a little towards the enemy
         _camera.Position = View.ToScreen(center + new Vec(0, side == Side.Allied ? 150 : -150));
+        _closeUpAt = View.ToScreen(center);
         _camera.Zoom = Vector2.One;
     }
 
@@ -348,23 +354,27 @@ public partial class Main : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var hudBox = new PanelContainer { Position = new Vector2(8, 8), MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        var hudBox = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        hudBox.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft);
+        hudBox.GrowVertical = Control.GrowDirection.Begin;
+        hudBox.OffsetLeft = 8;
+        hudBox.OffsetBottom = -CommandBar.BarHeight - 8;
         _hudBox = hudBox;
-        hudBox.AddThemeStyleboxOverride("panel", CommandBar.Look.PanelStyle(0.88f));
-        _hud = new Label();
-        _hud.AddThemeFontSizeOverride("font_size", 14);
-        _hud.AddThemeColorOverride("font_color", CommandBar.Look.Text);
-        hudBox.AddChild(_hud);
+        hudBox.AddThemeStyleboxOverride("panel", CommandBar.Look.PanelStyle(0.92f));
+        var help = new Label
+        {
+            Text = "Left-click a man: select his team.   Tab: next team.   Esc: let go.\n" +
+                   "Right-click the ground: the order menu.   Or press an order button, then click the ground.\n" +
+                   "Right-drag: move there facing the way you drag (the wheel changes line, wedge, column).\n" +
+                   "F: aim and fire.   Enter: begin the attack early.   C C: call a ceasefire.\n" +
+                   "WASD or arrows: pan.   Middle-drag: pan.   Wheel: zoom.   Click the small map or the close-up to look there.\n" +
+                   "Space: pause.   1, 2, 3: speed.   F3: sound.   F5: save the battle.\n" +
+                   "Signals pad: the coloured tabs hide or show each kind of report; the wheel reads back.",
+        };
+        help.AddThemeFontSizeOverride("font_size", 14);
+        help.AddThemeColorOverride("font_color", CommandBar.Look.Text);
+        hudBox.AddChild(help);
         ui.AddChild(hudBox);
-
-        _log = new Label { MouseFilter = Control.MouseFilterEnum.Ignore };
-        _log.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft);
-        _log.Position = new Vector2(12, -CommandBar.BarHeight - 100);
-        _log.AddThemeFontSizeOverride("font_size", 14);
-        _log.AddThemeColorOverride("font_shadow_color", Colors.Black);
-        _log.AddThemeConstantOverride("shadow_offset_x", 1);
-        _log.AddThemeConstantOverride("shadow_offset_y", 1);
-        ui.AddChild(_log);
 
         _panel = new CommandBar();
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomWide);
@@ -374,7 +384,24 @@ public partial class Main : Node2D
         _panel.TeamClicked += team =>
         {
             _selected = team;
+            _pendingOrder = -1;
             _camera.Position = View.ToScreen(team.Center);
+        };
+        _panel.OrderClicked += OnOrderButton;
+        _panel.ZoomIn += () => _camera.ZoomBy(1.25f);
+        _panel.ZoomOut += () => _camera.ZoomBy(1 / 1.25f);
+        _panel.PauseClicked += () =>
+        {
+            _paused = !_paused;
+            if (_paused) _wasPaused = true;
+        };
+        _panel.SpeedClicked += () => _speed = _speed >= 4 ? 1 : _speed * 2;
+        _panel.CeasefireClicked += AskCeasefire;
+        _panel.SoundClicked += ToggleSound;
+        _panel.HelpClicked += () => _hudBox.Visible = !_hudBox.Visible;
+        _panel.BeginClicked += () =>
+        {
+            if (_simOrNull != null && _sim.InPrep) _battle.EndPrep();
         };
         ui.AddChild(_panel);
 
@@ -494,10 +521,7 @@ public partial class Main : Node2D
         UpdateDeployView();
         _sound.Paused = _paused || _sim.IsOver;
         _fire.QueueRedraw();
-        var viewSize = GetViewportRect().Size / _camera.Zoom;
-        _panel.Refresh(_selected, new Rect2(_camera.GetScreenCenterPosition() - viewSize / 2, viewSize), _units.RevealAll);
-        UpdateHud();
-        UpdateLog();
+        UpdatePanel();
         if (_sim.IsOver && _campaign != null && !_recorded)
         {
             _campaign.Record(_sim);
@@ -533,6 +557,18 @@ public partial class Main : Node2D
         if (e is InputEventMouseButton { Pressed: true } mb && !_sim.IsOver)
         {
             var world = View.ToWorld(GetGlobalMousePosition());
+            if (_pendingOrder >= 0 && mb.ButtonIndex is MouseButton.Left or MouseButton.Right)
+            {
+                // An order button was pressed: a left-click gives the order there, a right-click forgets it
+                if (mb.ButtonIndex == MouseButton.Left && _selected != null)
+                {
+                    _orderTarget = world;
+                    OnOrderChosen(_pendingOrder);
+                }
+                _pendingOrder = -1;
+                GetViewport().SetInputAsHandled();
+                return;
+            }
             if (_aiming && mb.ButtonIndex is MouseButton.Left or MouseButton.Right)
             {
                 // Left-click fires at the spot; right-click puts the aim away
@@ -567,7 +603,8 @@ public partial class Main : Node2D
                     _battle.EndPrep();
                     break;
                 case Key.Escape:
-                    if (_rightDown) _rightDown = _rightDragging = false;
+                    if (_pendingOrder >= 0) _pendingOrder = -1;
+                    else if (_rightDown) _rightDown = _rightDragging = false;
                     else if (_aiming) _aiming = false;
                     else _selected = null;
                     break;
@@ -578,13 +615,7 @@ public partial class Main : Node2D
                     CycleSelection();
                     break;
                 case Key.C:
-                    // Press C twice to call a ceasefire, so it cannot happen by accident
-                    if (CeasefireAsked)
-                    {
-                        _ceasefireAskedAt = 0;
-                        _battle.AskCeasefire();
-                    }
-                    else _ceasefireAskedAt = Time.GetTicksMsec();
+                    AskCeasefire();
                     break;
                 case Key.N when _sim.IsOver && _campaign is { IsOver: false }:
                     NextOperationBattle();
@@ -599,9 +630,7 @@ public partial class Main : Node2D
                     SaveBattle();
                     break;
                 case Key.F3:
-                    // Sound on or off
-                    AudioServer.SetBusMute(0, !AudioServer.IsBusMute(0));
-                    _sim.Log(PlayerSide, AudioServer.IsBusMute(0) ? "Sound off (F3 to turn it on)." : "Sound on.");
+                    ToggleSound();
                     break;
                 case Key.F2:
                     _units.RevealAll = !_units.RevealAll;
@@ -616,6 +645,48 @@ public partial class Main : Node2D
                     _speed = 4;
                     break;
             }
+        }
+    }
+
+    /// <summary>Press C (or the flag) twice to call a ceasefire, so it cannot happen by accident.</summary>
+    void AskCeasefire()
+    {
+        if (_simOrNull == null || _sim.IsOver) return;
+        if (CeasefireAsked)
+        {
+            _ceasefireAskedAt = 0;
+            _battle.AskCeasefire();
+        }
+        else _ceasefireAskedAt = Time.GetTicksMsec();
+    }
+
+    void ToggleSound()
+    {
+        AudioServer.SetBusMute(0, !AudioServer.IsBusMute(0));
+        _sim.Log(PlayerSide, AudioServer.IsBusMute(0) ? "Sound off (F3 to turn it on)." : "Sound on.");
+    }
+
+    /// <summary>
+    /// An order button on the panel: hide and stop are given at once, fire
+    /// takes aim, and the others wait for a click on the ground.
+    /// </summary>
+    void OnOrderButton(int id)
+    {
+        if (_selected == null || _sim.IsOver) return;
+        _aiming = false;
+        switch (id)
+        {
+            case OrderHide or OrderStop:
+                _pendingOrder = -1;
+                OnOrderChosen(id);
+                break;
+            case OrderFire:
+                _pendingOrder = -1;
+                StartAiming();
+                break;
+            default:
+                _pendingOrder = _pendingOrder == id ? -1 : id;
+                break;
         }
     }
 
@@ -814,42 +885,57 @@ public partial class Main : Node2D
         return best;
     }
 
-    void UpdateHud()
+    /// <summary>Tell the command panel what it needs to show this frame.</summary>
+    void UpdatePanel()
     {
+        if (_selected == null) _pendingOrder = -1;
+        var mouse = GetViewport().GetMousePosition();
+        var screen = GetViewportRect().Size;
+        bool overMap = mouse.Y < screen.Y - CommandBar.BarHeight && mouse.X >= 0 && mouse.X < screen.X && mouse.Y >= 0;
         var world = View.ToWorld(GetGlobalMousePosition());
-        var map = _sim.Map;
-        var (cx, cy) = map.WorldToCell(world);
-        string cursor = map.InBounds(cx, cy)
-            ? $"{TerrainInfo.Name(map.TerrainAt(cx, cy))}, {map.HeightAt(world):0} m"
-            : "off map";
-        if (_selected != null && map.InBounds(cx, cy))
-        {
-            float range = Vec.Distance(_selected.Center, world);
-            cursor += $", {range:0} m from {_selected.Name}";
-        }
-        int left = (int)(_sim.TimeLimit - System.MathF.Max(_sim.Time, _sim.PrepUntil));
-        int prep = (int)System.MathF.Ceiling(_sim.PrepUntil - _sim.Time);
-        string clock = _sim.InPrep
-            ? $"The attack begins in {prep / 60:00}:{prep % 60:00} (Enter: begin now), then {left / 60:00}:{left % 60:00} of battle"
-            : $"{left / 60:00}:{left % 60:00} left";
-        string status = _paused ? "   PAUSED" : _speed > 1 ? $"   speed x{_speed}" : "";
-        if (CeasefireAsked) status += "   Press C again to call a ceasefire";
-        string flags = string.Join("   ", _sim.Flags.Select(f => $"{f.Name}: {(f.Owner == null ? "nobody" : View.SideName(f.Owner.Value))}"));
-        _hud.Text =
-            $"{_sim.Title}    {clock}{status}\n" +
-            $"{flags}\n" +
-            $"Cursor: {cursor}\n" +
-            "Left-click: select   Right-click: orders   Right-drag: facing and formation (wheel: shape)   F: aim and fire   Tab: next team   WASD: pan   Wheel: zoom   Space: pause   1/2/3: speed   C C: ceasefire";
-    }
+        // The close-up follows the mouse over the battlefield, and the selected team otherwise
+        if (overMap) _closeUpAt = GetGlobalMousePosition();
+        else if (_selected != null) _closeUpAt = View.ToScreen(_selected.Center);
 
-    /// <summary>The last few battle messages meant for the player, fading after 15 seconds.</summary>
-    void UpdateLog()
-    {
-        var lines = _sim.Messages
-            .Where(m => (m.ForSide == null || m.ForSide == PlayerSide) && _sim.Time - m.Time < 15f)
-            .TakeLast(5)
-            .Select(m => $"{(int)m.Time / 60:00}:{(int)m.Time % 60:00}  {m.Text}");
-        _log.Text = string.Join("\n", lines);
+        string info;
+        if (_pendingOrder >= 0)
+            info = _pendingOrder switch
+            {
+                OrderMove => "Move: click where to go",
+                OrderMoveFast => "Move fast: click where to run to",
+                OrderSneak => "Sneak: click where to creep to",
+                OrderDefend => "Defend: click the way to face",
+                OrderDigIn => "Dig in: click the way to face",
+                _ => "Click the ground",
+            } + "  (right-click: cancel)";
+        else if (_aiming) info = "Fire: click the target  (right-click: cancel)";
+        else if (!overMap) info = "";
+        else
+        {
+            var map = _sim.Map;
+            var (cx, cy) = map.WorldToCell(world);
+            info = map.InBounds(cx, cy) ? $"{TerrainInfo.Name(map.TerrainAt(cx, cy))}, {map.HeightAt(world):0} m above the sea" : "Off the map";
+            if (_selected != null && map.InBounds(cx, cy))
+                info += $"\n{Vec.Distance(_selected.Center, world):0} m from {_selected.Name}";
+        }
+
+        // The camera's view, without the part hidden behind the panel
+        var viewSize = new Vector2(screen.X, screen.Y - CommandBar.BarHeight) / _camera.Zoom;
+        var topLeft = _camera.GetScreenCenterPosition() - screen / _camera.Zoom / 2;
+        _panel.Refresh(new CommandBar.State
+        {
+            Selected = _selected,
+            CameraView = new Rect2(topLeft, viewSize),
+            RevealAll = _units.RevealAll,
+            Paused = _paused,
+            Speed = _speed,
+            SoundOn = !AudioServer.IsBusMute(0),
+            CeasefireArmed = CeasefireAsked,
+            HelpOpen = _hudBox.Visible,
+            PendingOrder = _pendingOrder,
+            Info = info,
+            CloseUpAt = _closeUpAt,
+        });
     }
 
     // ---------------------------------------------------------------- the operation

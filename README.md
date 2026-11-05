@@ -75,9 +75,9 @@ four historical battles in order, as the British or as the Germans:
 
 | Action | Control |
 | --- | --- |
-| Select a team | Left-click one of its soldiers, click its card in the bar at the bottom, or press Tab |
+| Select a team | Left-click one of its soldiers, click it in the team list at the bottom left, or press Tab |
 | Jump to a place | Click or drag on the mini-map, bottom right |
-| Give an order | Right-click on the map, then pick an order |
+| Give an order | Right-click on the map, then pick an order. Or press an order button on the panel (top right of the selected team), then click the ground |
 | Turn a team, or choose its formation | Hold the right mouse button and drag: the arrow shows which way the men will face, and the longer the drag, the wider they spread. Turn the mouse wheel while holding the button to switch between line, wedge and column. Start the drag on the team itself and it turns where it stands; start it elsewhere and a menu asks whether to move there (Move, Move Fast, Sneak) or to defend or dig in where it is, facing that way |
 | Pan | W A S D, arrow keys, or drag with the middle mouse button |
 | Zoom | Mouse wheel |
@@ -107,21 +107,44 @@ Mortar teams fire on their own, now and then, at groups of three or more
 enemies they can see, but always keep the last 6 bombs back. Give a mortar team
 a Fire order and it drops a barrage of 6 bombs on that point, even where it
 cannot see. The point must be at least 150 m away (the Norwegian 81 mm reaches
-2 km). The team's button shows how many bombs are left, and the messages at the
-bottom left say when a barrage is on the way or why it cannot fire. Mortars
+2 km). The panel shows how many bombs are left, and the signal pad on the
+panel says when a barrage is on the way or why it cannot fire. Mortars
 cannot fire while moving.
 
 Teams with a leader (Lt O'Neill, Sgt Gallagher, the section corporals) react
 to orders at once and recover their nerve faster. A team whose leader is down
 waits a few seconds before obeying. Messages such as "on the way, 50 seconds" and
-"Aircraft overhead!" appear at the bottom left.
+"Aircraft overhead!" appear on the signal pad in the panel.
 
 British soldiers wear khaki and flat Brodie helmets, Germans field grey and
 Stahlhelms, Norwegians grey-green. A coloured dot over a man shows he is shaken:
-yellow pinned, orange cowering, red panicked, purple routed. The bar at the
-bottom shows a card for each team (a square per man, coloured the same way),
-the men of the selected team, and a mini-map. You only see German soldiers
+yellow pinned, orange cowering, red panicked, purple routed. You only see German soldiers
 while one of your men can see them; a faint circle marks where one was last seen.
+
+## The command panel
+
+The panel along the bottom of the screen works like the classic wargames:
+
+- **The strip across the top**: the battle's name, zoom out and in, pause,
+  game speed, the white flag (click twice for a ceasefire), sound, and the
+  help button for keys and mouse. Then the clock (and the countdown to the
+  attack, with a **Begin attack** button), how much of your force is still
+  fighting, who holds each flag, and what is under the mouse.
+- **Team list**, bottom left: a figure for each team (rifle section, machine
+  gun, mortar, headquarters, ski troops), what it is doing, and a cross that
+  turns from green through yellow to red as men are hit. Click a team to pick it.
+- **The selected team**: its morale and ammunition, the order buttons (move,
+  move fast, sneak, fire, defend, hide, dig in, stop), and a line for each man
+  with his job, health, morale, fatigue, what he is doing, his weapon and his
+  rounds. Click a man to look at him. Running tires men; an exhausted man runs
+  slower until he has rested.
+- **Signals**: the reports coming in from your teams, newest at the top: men
+  hit, pinned down, short of ammunition, in position, enemy in sight. The
+  coloured tabs hide or show each kind; the wheel reads back.
+- **The map** of the whole battlefield, and a **close-up** of the ground under
+  the mouse (or around the selected team). Click either to look there.
+
+The panel's pictures are painted by `tools/paint_hud.py` into `data/sprites/hud.png`.
 
 ## Houses, fire and trenches
 

@@ -61,6 +61,8 @@ public sealed class Soldier
     public Health Health { get; internal set; } = Health.Healthy;
     /// <summary>0 is calm; 25 pinned, 50 cowering, 75 panicked, 100 routed.</summary>
     public float Stress { get; internal set; }
+    /// <summary>How worn out he is from running, 0 (rested) to 1; see Simulation.Exhausted.</summary>
+    public float Fatigue { get; internal set; }
     public MoraleState Morale { get; internal set; } = MoraleState.Ready;
     public Posture Posture { get; internal set; } = Posture.Crouched;
 
