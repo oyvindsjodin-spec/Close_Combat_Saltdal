@@ -12,6 +12,20 @@ public enum HouseState
     Ruined,
 }
 
+/// <summary>How badly shells have knocked a house about, as it shows on the roof.</summary>
+public enum HouseDamage
+{
+    /// <summary>Whole, or a few tiles off.</summary>
+    Intact,
+    /// <summary>Holes through the roof, windows blown in.</summary>
+    Holed,
+    /// <summary>Roof half gone and walls broken: it gives much less cover and burns easily.</summary>
+    Wrecked,
+}
+
+/// <summary>Where a shell struck a house, for drawing the hole it left.</summary>
+public readonly record struct HouseHit(Vector2 At, float Size, float Time);
+
 /// <summary>One house, barn or shed: a group of touching Building cells.</summary>
 public sealed class House
 {
@@ -22,12 +36,73 @@ public sealed class House
     public HouseState State { get; internal set; } = HouseState.Standing;
     public float BurningSince { get; internal set; }
     public float BurnsOutAt { get; internal set; }
+    /// <summary>
+    /// How much blast the house takes before it falls in. Timber houses on stone
+    /// footings stand a fair pounding; big barns more than small sheds.
+    /// </summary>
+    public float Strength { get; }
+    /// <summary>Blast damage taken so far, from 0 up to Strength.</summary>
+    public float Damage { get; internal set; }
+    /// <summary>True if fire, not shells alone, brought it down.</summary>
+    public bool Burnt { get; internal set; }
+    /// <summary>Where the fire started, from where it spreads through the house.</summary>
+    public Vector2 FireOrigin { get; internal set; }
+    /// <summary>How far the fire has to spread from where it started to the far end.</summary>
+    public float FireReach { get; internal set; } = 1;
+    readonly List<HouseHit> _hits = new();
+    /// <summary>The shells that struck it, oldest first.</summary>
+    public IReadOnlyList<HouseHit> Hits => _hits;
+
+    /// <summary>Damage as a share of what it can take, 0 to 1.</summary>
+    public float Wear => MathF.Min(1, Damage / Strength);
+
+    public HouseDamage DamageStage => Wear switch
+    {
+        < 0.25f => HouseDamage.Intact,
+        < 0.6f => HouseDamage.Holed,
+        _ => HouseDamage.Wrecked,
+    };
 
     internal House(int id, List<int> cells, Vector2 center)
     {
         Id = id;
         Cells = cells;
         Center = center;
+        Strength = 60f + 10f * cells.Count;
+    }
+
+    internal void AddHit(HouseHit hit)
+    {
+        _hits.Add(hit);
+        if (_hits.Count > 40) _hits.RemoveAt(0);
+    }
+
+    /// <summary>
+    /// How fiercely it burns, from 0 to 1. A fire starts in one room and takes
+    /// a minute or more to spread through the whole house; a house already
+    /// broken open by shells catches faster.
+    /// </summary>
+    public float Heat(float now)
+    {
+        if (State != HouseState.Burning) return 0;
+        float grow = Math.Clamp((now - BurningSince) / TakeHold, 0.15f, 1f);
+        float fade = Math.Clamp((BurnsOutAt - now) / 40f, 0f, 1f);
+        return grow * fade;
+    }
+
+    float TakeHold => Simulation.FireTakesHoldSeconds * (1 - 0.5f * Wear);
+
+    /// <summary>
+    /// How hard one part of the house burns, 0 to 1: the fire reaches the
+    /// rooms furthest from where it started last.
+    /// </summary>
+    public float FireAt(Vector2 p, float now)
+    {
+        if (State != HouseState.Burning) return 0;
+        float delay = Math.Clamp(Vector2.Distance(p, FireOrigin) / FireReach, 0, 1) * TakeHold * 0.85f;
+        float local = Math.Clamp((now - BurningSince - delay) / 20f, 0.05f, 1f);
+        float fade = Math.Clamp((BurnsOutAt - now) / 40f, 0f, 1f);
+        return local * fade;
     }
 }
 
@@ -52,6 +127,8 @@ public sealed partial class Simulation
     public const float DigSeconds = 90f;
     /// <summary>How long a house burns before it falls in.</summary>
     public const float BurnSeconds = 300f;
+    /// <summary>How long a fire takes to spread from one room through the whole of an undamaged house.</summary>
+    public const float FireTakesHoldSeconds = 90f;
     public const float SmokeLife = 45f;
 
     List<House>? _houses;
@@ -157,28 +234,104 @@ public sealed partial class Simulation
 
     // ---------------------------------------------------------------- fire and smoke
 
-    /// <summary>Shells and bombs can set houses near where they land on fire.</summary>
-    void TryIgnite(Vector2 at, Explosive e)
+    /// <summary>
+    /// A shell or bomb landing on or beside a house knocks it about. A house
+    /// takes several hits before it is badly broken, and a whole house seldom
+    /// catches fire from one shell; once shells have opened it up, the next
+    /// one is far more likely to set it alight. Enough hits bring it down.
+    /// </summary>
+    void HitHouses(Vector2 at, Explosive e)
     {
         BuildHouses();
-        float reach = e.KillRadius + 3f;
-        float chance = MathF.Min(0.6f, e.KillRadius * 0.035f);
+        float reach = e.KillRadius + 4f;
         foreach (var house in _houses!)
         {
-            if (house.State != HouseState.Standing) continue;
-            if (Vector2.Distance(house.Center, at) > reach + 30f) continue;
+            if (house.State == HouseState.Ruined) continue;
+            if (Vector2.Distance(house.Center, at) > reach + 40f) continue;
             bool direct = HouseAt(at) == house;
-            bool close = direct || house.Cells.Any(c => Vector2.Distance(Map.CellCenter(c % Map.Width, c / Map.Width), at) < reach);
-            if (close && Rng.Chance(direct ? chance * 2 : chance))
-                SetOnFire(house);
+            // Distance from the blast to the nearest wall
+            float d = direct ? 0 : house.Cells.Min(c => Vector2.Distance(Map.CellCenter(c % Map.Width, c / Map.Width), at)) - Map.CellSize * 0.5f;
+            if (d > reach) continue;
+            float blast = e.KillRadius * 6f * (direct ? 1f : 0.6f * Math.Clamp(1 - MathF.Max(d, 0) / reach, 0, 1));
+            house.Damage = MathF.Min(house.Strength, house.Damage + blast);
+            if (direct) house.AddHit(new HouseHit(at, e.KillRadius, Time));
+
+            if (house.State == HouseState.Standing)
+            {
+                float chance = MathF.Min(0.5f, e.KillRadius * 0.025f) * (direct ? 1f : 0.35f) * (0.2f + 1.2f * house.Wear);
+                if (house.Wear >= 1f) Collapse(house);
+                else if (Rng.Chance(chance)) SetOnFire(house);
+            }
+            else if (house.State == HouseState.Burning && house.Wear >= 1f)
+                // Shelled while it burns: what is left falls in sooner
+                house.BurnsOutAt = MathF.Min(house.BurnsOutAt, Time + 20f);
         }
+    }
+
+    /// <summary>
+    /// Developer check: knock a house about to one stage of damage, without
+    /// leaving it to chance: 0 one hit, 1 holed, 2 wrecked, 3 well alight,
+    /// 4 fallen in.
+    /// </summary>
+    internal void DamageForCheck(House house, int stage)
+    {
+        int hits = stage switch { 0 => 1, 1 => 3, 2 => 5, 3 => 2, _ => 4 };
+        float wear = stage switch { 0 => 0.15f, 1 => 0.45f, 2 => 0.85f, 3 => 0.4f, _ => 1f };
+        for (int i = 0; i < hits; i++)
+        {
+            int c = house.Cells[(int)(Rng.NextFloat() * house.Cells.Count) % house.Cells.Count];
+            var at = Map.CellCenter(c % Map.Width, c / Map.Width) + new Vector2(Rng.Range(-1.5f, 1.5f), Rng.Range(-1.5f, 1.5f));
+            house.AddHit(new HouseHit(at, i % 2 == 0 ? 4f : 5f, Time));
+        }
+        house.Damage = house.Strength * wear;
+        if (stage == 3)
+        {
+            SetOnFire(house);
+            house.BurningSince = Time - 70f;
+            house.BurnsOutAt = Time + 200f;
+        }
+        else if (stage >= 4) Collapse(house);
+    }
+
+    /// <summary>A house shot to pieces falls in; anyone still inside may be caught.</summary>
+    void Collapse(House house)
+    {
+        house.State = HouseState.Ruined;
+        foreach (var c in house.Cells) Map.Terrain[c] = TerrainType.Ruin;
+        float size = 6f + MathF.Sqrt(house.Cells.Count) * Map.CellSize * 0.6f;
+        _smoke.Add(new SmokePuff(house.Center, Time, SmokeLife * 0.5f, size * 0.6f, size * 1.6f));
+        foreach (var s in Soldiers)
+        {
+            if (!s.IsAlive || HouseAt(s.Position) != house) continue;
+            if (s.CanAct) AddStress(s, 40f);
+            if (s.Health < Health.Incapacitated && Rng.Chance(0.35f)) ApplyHit(s);
+        }
+        Log(null, "A house has collapsed!");
+    }
+
+    /// <summary>
+    /// How well the walls of a house still stop bullets at a point, as a
+    /// multiplier on the chance to be hit: a sound house hides a man well, a
+    /// shot-up one much less.
+    /// </summary>
+    float HouseHitFactor(Vector2 p, float sound, float wrecked)
+    {
+        var house = HouseAt(p);
+        if (house == null) return sound;
+        return sound + (wrecked - sound) * Math.Clamp((house.Wear - 0.25f) / 0.6f, 0, 1);
     }
 
     public void SetOnFire(House house)
     {
         if (house.State != HouseState.Standing) return;
         house.State = HouseState.Burning;
+        house.Burnt = true;
         house.BurningSince = Time;
+        // It starts where the last shell struck, or in one of the rooms
+        var recent = house.Hits.Count > 0 && Time - house.Hits[^1].Time < 5f ? house.Hits[^1].At : (Vector2?)null;
+        int start = house.Cells[Math.Min(house.Cells.Count - 1, (int)(Rng.NextFloat() * house.Cells.Count))];
+        house.FireOrigin = recent ?? Map.CellCenter(start % Map.Width, start / Map.Width);
+        house.FireReach = MathF.Max(Map.CellSize, house.Cells.Max(c => Vector2.Distance(Map.CellCenter(c % Map.Width, c / Map.Width), house.FireOrigin)));
         house.BurnsOutAt = Time + BurnSeconds * Rng.Range(0.8f, 1.2f);
         foreach (var c in house.Cells) Map.Terrain[c] = TerrainType.BurningHouse;
         Log(null, "A house is on fire!");
@@ -199,16 +352,16 @@ public sealed partial class Simulation
             // Smoke rises from the fire; more of it as the fire takes hold
             if (TickCount % 25 == house.Id % 25)
             {
-                float heat = MathF.Min(1, (Time - house.BurningSince) / 30f);
+                float heat = house.Heat(Time);
                 float size = 6f + MathF.Sqrt(house.Cells.Count) * Map.CellSize * 0.6f;
                 _smoke.Add(new SmokePuff(house.Center + new Vector2(Rng.Range(-3, 3), Rng.Range(-3, 3)), Time, SmokeLife,
                     size * (0.5f + 0.5f * heat), size * 2.2f));
             }
-            // Sparks set the houses next door alight now and then
-            if (TickCount % 100 == house.Id % 100)
+            // Sparks set the houses next door alight now and then, once this one is well ablaze
+            if (TickCount % 100 == house.Id % 100 && house.Heat(Time) > 0.8f)
                 foreach (var other in _houses)
                     if (other.State == HouseState.Standing && Vector2.Distance(other.Center, house.Center) < 14f + MathF.Sqrt(other.Cells.Count) * 3f
-                        && Rng.Chance(0.05f))
+                        && Rng.Chance(0.03f * (1 + other.Wear)))
                         SetOnFire(other);
         }
         _smoke.RemoveAll(p => p.Age(Time) > p.Life);

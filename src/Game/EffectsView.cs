@@ -288,13 +288,8 @@ public partial class EffectsView : Node2D
 
     // ---------------------------------------------------------------- burning houses
 
-    float Heat(House house)
-    {
-        // The fire takes hold over half a minute and dies down at the end
-        float grow = Mathf.Clamp((Sim!.Time - house.BurningSince) / 30f, 0.25f, 1f);
-        float fade = Mathf.Clamp((house.BurnsOutAt - Sim.Time) / 40f, 0f, 1f);
-        return Mathf.Max(grow, 0.55f) * fade;
-    }
+    /// <summary>How fiercely the whole house burns: it spreads through the rooms over a minute or so.</summary>
+    float Heat(House house) => Mathf.Max(house.Heat(Sim!.Time), 0.2f * Mathf.Clamp((house.BurnsOutAt - Sim.Time) / 40f, 0f, 1f));
 
     /// <summary>Flames lean with the wind and up the screen, since we look a little from the south.</summary>
     Vector2 Lean => (Wind.Normalized() * 0.6f + new Vector2(0, -1f)).Normalized();
@@ -315,13 +310,15 @@ public partial class EffectsView : Node2D
     {
         var map = Sim!.Map;
         float cs = map.CellSize * M;
-        float heat = Heat(house);
         var lean = Lean;
         float angle = Mathf.Atan2(lean.X, -lean.Y);
         float now = Clock;
         foreach (var c in house.Cells)
         {
             var o = new Vector2(c % map.Width, c / map.Width) * cs;
+            // The fire reaches the rooms furthest from where it started last
+            float heat = house.FireAt(View.ToWorld(o + Vector2.One * cs * 0.5f), Sim.Time);
+            if (heat < 0.1f) continue;
             // Not every part of the house burns as hard: flames bunch and gap
             int count = Shapes.Hash(c, 3) < 0.3f ? 0 : Shapes.Hash(c, 4) < 0.5f ? 1 : 2;
             for (int i = 0; i < count; i++)

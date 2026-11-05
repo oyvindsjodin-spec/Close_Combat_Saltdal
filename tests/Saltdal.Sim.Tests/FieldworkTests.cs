@@ -68,13 +68,78 @@ public class FieldworkTests
     public void BigShellsCanSetAHouseOnFire()
     {
         int fires = 0;
-        for (ulong seed = 1; seed <= 20; seed++)
+        for (ulong seed = 1; seed <= 40; seed++)
         {
             var sim = new Simulation(Village(), seed);
             sim.Explode(HouseMiddle, Explosive.Bomb250Kg, Side.German);
             if (sim.Houses[0].State == HouseState.Burning) fires++;
         }
-        Assert.InRange(fires, 8, 20);
+        Assert.InRange(fires, 4, 24);
+    }
+
+    [Fact]
+    public void AHouseStandsSeveralMortarBombsBeforeItBurnsOrFallsIn()
+    {
+        int firstBomb = 0, lasted = 0, fell = 0;
+        for (ulong seed = 1; seed <= 40; seed++)
+        {
+            var sim = new Simulation(Village(), seed);
+            var house = sim.Houses[0];
+            int bombs = 0;
+            while (house.State == HouseState.Standing && bombs < 40)
+            {
+                sim.Explode(HouseMiddle + new Vector2((bombs % 3 - 1) * 4, (bombs % 2) * 4 - 2), Explosive.Mortar81, Side.German);
+                bombs++;
+            }
+            if (bombs == 1) firstBomb++;
+            if (bombs >= 4) lasted++;
+            if (house.State == HouseState.Ruined) fell++;
+            Assert.NotEqual(HouseState.Standing, house.State);
+            Assert.NotEmpty(house.Hits);
+        }
+        Assert.True(firstBomb <= 3, $"{firstBomb} houses caught fire from the first bomb");
+        Assert.True(lasted >= 30, $"only {lasted} houses took four bombs");
+        Assert.True(fell >= 2, "some houses should be shot to pieces without burning");
+    }
+
+    [Fact]
+    public void ShellsWearAHouseDownInStagesAndItsWallsStopLess()
+    {
+        int wrecked = 0;
+        for (ulong seed = 1; seed <= 20; seed++)
+        {
+            var sim = new Simulation(Village(), seed);
+            var house = sim.Houses[0];
+            Assert.Equal(HouseDamage.Intact, house.DamageStage);
+            var shooter = sim.SpawnTeam("Rifles", Side.German, new Vector2(120, 20), new[] { "a" }).Soldiers[0];
+            var target = sim.SpawnTeam("Section", Side.Allied, HouseMiddle, new[] { "b" }).Soldiers[0];
+            float before = sim.HitChance(shooter, target, 100);
+            // Near misses in the yard, 3 m from the north wall, knock it about
+            var stages = new System.Collections.Generic.List<HouseDamage>();
+            for (int i = 0; i < 60 && house.State == HouseState.Standing && house.DamageStage != HouseDamage.Wrecked; i++)
+            {
+                sim.Explode(new Vector2(108 + (i % 7) * 4, 109), Explosive.Mortar81, Side.German);
+                stages.Add(house.DamageStage);
+            }
+            if (house.State != HouseState.Standing) continue;
+            wrecked++;
+            Assert.Contains(HouseDamage.Holed, stages);
+            Assert.True(sim.HitChance(shooter, target, 100) > before * 1.4f, "a wrecked house should hide a man less well");
+        }
+        Assert.True(wrecked >= 5, $"only {wrecked} houses were still standing when wrecked");
+    }
+
+    [Fact]
+    public void AFireTakesAWhileToTakeHold()
+    {
+        var sim = new Simulation(Village());
+        var house = sim.Houses[0];
+        sim.SetOnFire(house);
+        Assert.True(house.Heat(sim.Time) < 0.3f);
+        for (int i = 0; i < 300; i++) sim.Tick();   // half a minute
+        Assert.InRange(house.Heat(sim.Time), 0.25f, 0.5f);
+        for (int i = 0; i < 700; i++) sim.Tick();
+        Assert.True(house.Heat(sim.Time) > 0.95f);
     }
 
     [Fact]

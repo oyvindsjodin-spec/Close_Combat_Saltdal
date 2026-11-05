@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Paint the battle effects: smoke puffs, fireballs, flames, the spray of
-earth thrown up by a shell, muzzle flashes and a soft glow. Each picture is
+earth thrown up by a shell, muzzle flashes and a soft glow, and the damage
+shells and fire do to houses: holes through roofs, strewn tiles, charred
+roofing and the heap of rubble a house leaves when it falls in. Each picture is
 made from layered noise and shaded with light from the north-west, like the
 painted ground and the soldiers, so the effects look painted rather than
 drawn with flat circles.
@@ -232,6 +234,136 @@ def glow():
     return to_cell(grey(np.ones_like(R)), a)
 
 
+def ragged(rng, reach=0.75, wobble=0.35, lobes=(3, 11)):
+    """An irregular blob outline: 1 inside, 0 outside, with a soft edge."""
+    edge = np.full(N, reach, np.float32)
+    ang = np.linspace(-math.pi, math.pi, N, endpoint=False)
+    for k in range(*lobes):
+        edge += wobble / k * rng.uniform(0.3, 1.0) * np.cos(ang * k + rng.uniform(0, math.tau))
+    e = np.interp(A.ravel(), ang, edge, period=math.tau).reshape(N, N)
+    return e
+
+
+def roof_hole(seed):
+    """A shell hole through a roof, from above: a ragged opening into the dark
+    loft, broken rafters across it, splintered laths and lifted tiles round
+    the rim. The far (south-east) inside edge catches the sun."""
+    rng = np.random.default_rng(seed)
+    e = ragged(rng, 0.5, 0.2, (2, 26))
+    n = noise(rng, octaves=6, base=6)
+    jag = noise(rng, octaves=3, base=18)
+    r = R / np.maximum(e, 1e-3) + 0.35 * (n - 0.5) + 0.25 * (jag - 0.5)
+    hole = smoothstep(1.0, 0.92, r)
+    rim = smoothstep(1.45, 1.0, r) * (1 - hole)
+    # Inside: the dark loft, lighter where the sun comes in at the south-east
+    inner = 0.10 + 0.10 * smoothstep(-0.2, 0.6, (U + V) / 1.4) + 0.06 * n
+    rgb = np.dstack([inner * 1.05, inner * 0.92, inner * 0.80])
+    # Rafters running across the hole, some snapped
+    a0 = rng.uniform(0, math.pi)
+    along = U * math.cos(a0) + V * math.sin(a0)
+    across = -U * math.sin(a0) + V * math.cos(a0)
+    period = rng.uniform(0.32, 0.42)
+    k = np.round(across / period)
+    d = np.abs(across - k * period)
+    snapped = np.zeros_like(R, bool)
+    for kk in range(-4, 5):
+        if rng.random() < 0.45:
+            cut = rng.uniform(-0.3, 0.3)
+            side = rng.random() < 0.5
+            snapped |= (k == kk) & ((along > cut) if side else (along < cut))
+    beam = (d < 0.045) & ~snapped & (hole > 0.3)
+    wood = np.dstack([np.full_like(R, 0.42), np.full_like(R, 0.33), np.full_like(R, 0.23)])
+    wood *= (0.75 + 0.5 * smoothstep(0.045, 0.0, across - k * period + 0.02))[..., None]
+    rgb = np.where(beam[..., None], wood, rgb)
+    # Splinters and lifted tiles round the rim, lit from the north-west
+    chips = noise(rng, octaves=4, base=14)
+    rimh = rim * (0.6 + 0.8 * chips)
+    lit = shade(rimh + hole * -0.6, 2.2)
+    rv = 0.35 + 0.6 * lit
+    rimcol = np.dstack([rv * 0.95, rv * 0.82, rv * 0.70])
+    rgb = rgb * (1 - rim[..., None]) + rimcol * rim[..., None]
+    alpha = np.clip(hole + rim * smoothstep(0.35, 0.6, chips) * 0.9, 0, 1)
+    return to_cell(rgb, alpha)
+
+
+def roof_debris(seed):
+    """Broken tiles, slates and splinters strewn round a hit, thicker near the middle."""
+    rng = np.random.default_rng(seed)
+    alpha = np.zeros((N, N), np.float32)
+    rgb = np.zeros((N, N, 3), np.float32)
+    for _ in range(260):
+        a = rng.random() * math.tau
+        r = abs(rng.normal(0, 0.38))
+        if r > 0.95:
+            continue
+        cx, cy = math.cos(a) * r, math.sin(a) * r
+        s = rng.uniform(0.02, 0.055) * (1.2 - r * 0.7)
+        rot = rng.random() * math.pi
+        u = (U - cx) * math.cos(rot) + (V - cy) * math.sin(rot)
+        v = -(U - cx) * math.sin(rot) + (V - cy) * math.cos(rot)
+        long_ = rng.random() < 0.25
+        m = (np.abs(u) < s * (3 if long_ else 1.3)) & (np.abs(v) < s * (0.5 if long_ else 1))
+        tone = rng.uniform(0.55, 1.0)
+        col = np.array((0.50, 0.40, 0.28) if long_ else (0.62, 0.40, 0.32) if rng.random() < 0.5 else (0.52, 0.50, 0.47)) * tone
+        rgb[m] = col
+        alpha[m] = 1
+        # A sliver of shadow to the south-east
+        sh = (np.abs(u - s * 0.4) < s * (3 if long_ else 1.3)) & (np.abs(v - s * 0.4) < s * (0.5 if long_ else 1)) & ~m & (alpha < 0.5)
+        alpha[sh] = np.maximum(alpha[sh], 0.45)
+    dust = smoothstep(0.9, 0.0, R) * noise(rng, octaves=4, base=5) * 0.55
+    alpha = np.maximum(alpha, dust)
+    rgb = np.where(alpha[..., None] > 0.5, rgb, np.dstack([np.full_like(R, 0.35)] * 3))
+    return to_cell(rgb, alpha * smoothstep(1.0, 0.85, R))
+
+
+def rubble(seed):
+    """The heap a house leaves when it falls in: broken beams, stones, tiles and
+    the stump of a chimney, in a mound lit from the north-west."""
+    rng = np.random.default_rng(seed)
+    e = ragged(rng, 0.78, 0.3)
+    n = noise(rng, octaves=6, base=5)
+    lumps = noise(rng, octaves=3, base=14)
+    body = smoothstep(1.0, 0.7, R / np.maximum(e, 1e-3) + 0.15 * (n - 0.5))
+    h = body * (0.5 + 0.5 * n) + 0.35 * lumps * body
+    lit = shade(h, 2.4)
+    v = 0.2 + 0.6 * lit
+    base = np.dstack([v * 0.80, v * 0.74, v * 0.68])
+    # Patches of broken roof tile and grey stone
+    patch = noise(rng, octaves=3, base=8)
+    base = np.where((patch > 0.62)[..., None], base * np.array((1.08, 0.84, 0.74)), base)
+    base = np.where((patch < 0.3)[..., None], base * np.array((0.95, 0.95, 1.0)), base)
+    # Beams lying every which way
+    for _ in range(rng.integers(5, 9)):
+        a0 = rng.uniform(0, math.pi)
+        cx, cy = rng.uniform(-0.45, 0.45, 2)
+        L = rng.uniform(0.12, 0.35)
+        along = (U - cx) * math.cos(a0) + (V - cy) * math.sin(a0)
+        across = -(U - cx) * math.sin(a0) + (V - cy) * math.cos(a0)
+        m = (np.abs(along) < L) & (np.abs(across) < 0.024) & (body > 0.3)
+        burnt = rng.random() < 0.5
+        col = np.array((0.14, 0.12, 0.10) if burnt else (0.40, 0.32, 0.23))
+        tone = (0.8 + 0.4 * smoothstep(0.024, -0.024, across))[..., None]
+        base = np.where(m[..., None], col * tone, base)
+        body = np.maximum(body, m * 1.0)
+    # Chimney stump
+    cx, cy = rng.uniform(-0.25, 0.25, 2)
+    m = (np.abs(U - cx) < 0.09) & (np.abs(V - cy) < 0.09)
+    base = np.where(m[..., None], np.array((0.55, 0.32, 0.25)) * np.where((U - cx) + (V - cy) < 0, 1.25, 0.8)[..., None], base)
+    alpha = np.clip(body * 1.2, 0, 1)
+    return to_cell(base, alpha)
+
+
+def char(seed):
+    """Charred, burnt-through roofing: black with grey ash and a ragged edge (tinted in the game)."""
+    rng = np.random.default_rng(seed)
+    e = ragged(rng, 0.72, 0.45)
+    n = noise(rng, octaves=6, base=5)
+    body = smoothstep(1.0, 0.75, R / np.maximum(e, 1e-3) + 0.25 * (n - 0.5))
+    ash = noise(rng, octaves=4, base=12)
+    v = 0.12 + 0.25 * smoothstep(0.55, 0.9, ash) + 0.05 * n
+    return to_cell(grey(v), body * (0.75 + 0.25 * n))
+
+
 def build():
     cells = []                                  # (name, image)
     for i in range(6): cells.append((f"smoke{i}", smoke(10 + i)))
@@ -241,6 +373,10 @@ def build():
     for i in range(3): cells.append((f"burst{i}", burst(70 + i)))
     for i in range(3): cells.append((f"muzzle{i}", muzzle(90 + i)))
     cells.append(("glow", glow()))
+    for i in range(4): cells.append((f"roofhole{i}", roof_hole(110 + i)))
+    for i in range(3): cells.append((f"debris{i}", roof_debris(120 + i)))
+    for i in range(3): cells.append((f"rubble{i}", rubble(130 + i)))
+    for i in range(2): cells.append((f"char{i}", char(140 + i)))
     rows = (len(cells) + COLS - 1) // COLS
     sheet = Image.new("RGBA", (COLS * CELL, rows * CELL), (0, 0, 0, 0))
     index = {}
