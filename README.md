@@ -151,13 +151,14 @@ it is shot to pieces. A fire starts in one room and takes a minute or so to
 spread through the whole house; you see the roof char and then burn through.
 A house well ablaze can set the one next to it alight. Men inside get out as
 fast as they can, however frightened. The fire burns about five minutes and
-leaves a burnt-out ruin.
+leaves a burnt-out ruin. Smoke drifts off downwind and hides whatever is
+behind it.
 
 The ruins of a house, burnt or shot down, can be held. Order a team to Move
 into them and the men spread out among the rubble and broken walls, as in a
 house; told to Defend there, they stay put. Rubble stops about half the
-bullets and splinters, less than a sound house but much more than open ground. Smoke drifts off
-downwind and hides whatever is behind it.
+bullets and a third of the shell splinters: less than a sound house, much more
+than open ground.
 
 A man in a trench is about four times harder to hit lying down, and shell
 splinters mostly fly over him. The British computer side digs in by itself
