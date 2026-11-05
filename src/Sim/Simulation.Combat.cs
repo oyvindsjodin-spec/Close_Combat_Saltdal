@@ -258,6 +258,7 @@ public sealed partial class Simulation
             TerrainType.Trench => 0.6f, // climbing in or out
             TerrainType.Building => 0.7f,
             TerrainType.Rock => 0.8f,
+            TerrainType.Ruin => 0.8f, // down among the rubble
             _ => 1f,
         };
         return k;

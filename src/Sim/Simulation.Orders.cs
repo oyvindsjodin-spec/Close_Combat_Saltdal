@@ -31,8 +31,9 @@ public sealed partial class Simulation
         // The men end up in a line across the way they were going, facing on
         var travel = target - (route.Count > 1 ? route[^2] : team.Center);
         float heading = travel.LengthSquared() > 1 ? MathF.Atan2(travel.Y, travel.X) : MathF.PI / 2;
-        // Into a house: the men spread through its rooms instead of fanning out around the door
-        var house = Map.TerrainAt(target) == TerrainType.Building ? HouseAt(target) : null;
+        // Into a house, or the ruins of one: the men spread through its rooms instead of
+        // fanning out around the door, each behind a window or a stretch of broken wall
+        var house = Map.TerrainAt(target) is TerrainType.Building or TerrainType.Ruin ? HouseAt(target) : null;
         var places = house != null ? PlacesInHouse(house, n) : null;
         // The player chose how the men should stand when they get there
         System.Collections.Generic.Dictionary<Soldier, Vector2>? deployed = null;
@@ -139,7 +140,7 @@ public sealed partial class Simulation
     /// <summary>
     /// The men spread out into a line across the way they face, each going to
     /// the nearest place in it, then turn to face the enemy. Men already in a
-    /// house or in trenches stay where they are: they have their places. If
+    /// house, its ruins or in trenches stay where they are: they have their places. If
     /// there are empty foxholes of their own side close by, the men get into
     /// those instead.
     /// </summary>
@@ -147,7 +148,7 @@ public sealed partial class Simulation
     {
         var men = team.Soldiers.Where(s => s.CanAct && !s.Fleeing && !s.EscapingFire).ToList();
         if (men.Count == 0) return;
-        if (men.Any(s => Map.TerrainAt(s.Position) == TerrainType.Building)) return;
+        if (men.Any(s => Map.TerrainAt(s.Position) is TerrainType.Building or TerrainType.Ruin)) return;
         var center = men.Aggregate(Vector2.Zero, (a, s) => a + s.Position) / men.Count;
         if (FillFoxholes(men, center, facingPoint)) return;
         var d = facingPoint - center;

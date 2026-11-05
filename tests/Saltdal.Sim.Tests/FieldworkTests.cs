@@ -65,6 +65,29 @@ public class FieldworkTests
     }
 
     [Fact]
+    public void MenCanHoldTheRuinsOfABurntHouse()
+    {
+        var sim = new Simulation(Village());
+        var house = sim.Houses[0];
+        sim.SetOnFire(house);
+        while (house.State == HouseState.Burning) sim.Tick();
+        var team = sim.SpawnTeam("Section", Side.Allied, new Vector2(120, 40), new[] { "a", "b", "c", "d", "e", "f" });
+        Assert.True(sim.OrderMove(team, HouseMiddle, MoveMode.Move));
+        for (int i = 0; i < 1200; i++) sim.Tick();
+        Assert.All(team.Soldiers, s => Assert.Equal(TerrainType.Ruin, sim.Map.TerrainAt(s.Position)));
+        Assert.True(team.Soldiers.Select(s => s.Position).Distinct().Count() == 6, "every man behind his own bit of wall");
+        // Told to defend, they stay among the rubble rather than forming a line in the open
+        sim.OrderDefend(team, new Vector2(120, 0));
+        for (int i = 0; i < 300; i++) sim.Tick();
+        Assert.All(team.Soldiers, s => Assert.Equal(TerrainType.Ruin, sim.Map.TerrainAt(s.Position)));
+        // And the rubble stops a good share of the bullets
+        var shooter = sim.SpawnTeam("Rifles", Side.German, new Vector2(120, -60), new[] { "x" }).Soldiers[0];
+        var inRuin = sim.SpawnTeam("In", Side.Allied, HouseMiddle, new[] { "z" }).Soldiers[0];
+        var open = sim.SpawnTeam("Out", Side.Allied, new Vector2(60, 120), new[] { "y" }).Soldiers[0];
+        Assert.True(sim.HitChance(shooter, inRuin, 150) < sim.HitChance(shooter, open, 150) * 0.6f);
+    }
+
+    [Fact]
     public void BigShellsCanSetAHouseOnFire()
     {
         int fires = 0;
