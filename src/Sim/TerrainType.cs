@@ -58,7 +58,7 @@ public static class TerrainInfo
     {
         TerrainType.Building => "House",
         TerrainType.Wreck => "Blown bridge",
-        TerrainType.Ruin => "Burnt-out house",
+        TerrainType.Ruin => "Ruined house",
         TerrainType.BurningHouse => "Burning house",
         _ => t.ToString(),
     };

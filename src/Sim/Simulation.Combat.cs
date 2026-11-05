@@ -258,6 +258,7 @@ public sealed partial class Simulation
             TerrainType.Trench => 0.6f, // climbing in or out
             TerrainType.Building => 0.7f,
             TerrainType.Rock => 0.8f,
+            TerrainType.Ruin => 0.8f, // down among the rubble
             _ => 1f,
         };
         return k;
@@ -288,7 +289,7 @@ public sealed partial class Simulation
         {
             TerrainType.Forest => 0.5f,
             TerrainType.Rock => 0.45f,
-            TerrainType.Building => 0.3f,
+            TerrainType.Building => HouseHitFactor(target.Position, 0.3f, 0.5f),
             TerrainType.Ford => 1.2f,
             // Climbing in or out of a trench, half hidden by the earth heaped round it
             TerrainType.Trench => 0.6f,

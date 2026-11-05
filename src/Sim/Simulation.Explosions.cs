@@ -67,7 +67,7 @@ public sealed partial class Simulation
     public void Explode(Vector2 at, Explosive e, Side firedBy)
     {
         _blasts.Add(new Blast(at, e, Time));
-        TryIgnite(at, e);
+        HitHouses(at, e);
         foreach (var s in Soldiers)
         {
             if (!s.IsAlive) continue;
@@ -103,7 +103,7 @@ public sealed partial class Simulation
             {
                 TerrainType.Rock => 0.5f,
                 TerrainType.Forest => 0.85f,
-                TerrainType.Building => 0.6f,
+                TerrainType.Building => HouseHitFactor(s.Position, 0.6f, 0.85f),
                 TerrainType.Trench => 0.35f,
                 TerrainType.Ruin => 0.7f,
                 _ => 1f,

@@ -205,7 +205,8 @@ public partial class CommandBar : Control
                     TeamOrder.DigIn => $"Digging in {_sim.DigProgress(Team) * 100:0}%",
                     _ => Team.Order.ToString(),
                 };
-            if (!gone && !Team.IsMoving && _sim.HouseAt(Team.Center) is { State: HouseState.Standing }) order += ", in a house";
+            if (!gone && !Team.IsMoving && _sim.HouseAt(Team.Center) is { } home)
+                order += home.State == HouseState.Ruined ? ", in the ruins" : home.State == HouseState.Standing ? ", in a house" : "";
             Look.Write(this, new Vector2(8, 36), order, 12, Look.DimText);
             var mood = Team.Morale;
             Look.Write(this, new Vector2(8, 52), gone ? "" : mood.ToString(), 12,

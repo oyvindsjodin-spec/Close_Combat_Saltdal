@@ -179,6 +179,14 @@ public partial class Main : Node2D
             CallDeferred(nameof(AimMouseForCheck));
         }
         _follow = args.Contains("--follow");
+        foreach (var a in args)
+            if (a.StartsWith("--look=") && _simOrNull != null)
+            {
+                // Developer check: put the camera over a point on the map, in metres: --look=1200,450
+                var xy = a["--look=".Length..].Split(',');
+                _camera.Position = View.ToScreen(new Vec(float.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture),
+                    float.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture)));
+            }
         // Developer checks: `--save-at=60` saves the battle a minute in; `--load` picks the save up again
         foreach (var a in args)
             if (a.StartsWith("--save-at="))
@@ -220,6 +228,16 @@ public partial class Main : Node2D
             foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide).Take(3))
                 _battle.Fire(t, at + new Vec(0, 10));
             _camera.Position = View.ToScreen(at - new Vec(0, 12));
+        }
+        if (args.Contains("--damage") && _simOrNull != null)
+        {
+            // Developer check: the five houses nearest the middle of the screen (see --look), one
+            // in each stage of damage: a single hit, holed, wrecked, burning and fallen in
+            var near = View.ToWorld(_camera.Position);
+            var houses = _sim.Houses.Where(h => h.Cells.Count >= 4).OrderBy(h => Vec.Distance(h.Center, near)).Take(5).ToList();
+            for (int i = 0; i < houses.Count; i++) _sim.DamageForCheck(houses[i], i);
+            if (houses.Count > 0)
+                _camera.Position = View.ToScreen(houses.Aggregate(Vec.Zero, (a, h) => a + h.Center) / houses.Count);
         }
         if (args.Contains("--dig") && _simOrNull != null)
             foreach (var t in _sim.Teams.Where(t => t.Side == PlayerSide))

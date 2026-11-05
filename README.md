@@ -137,11 +137,28 @@ each window. You see the house with its roof off while your men are in it.
 Men inside are hard to hit and can shoot out of the windows, but nobody can see
 through a house from one side to the other.
 
-Shells, mortar bombs and bombs can set a house on fire, and a burning house can
-set the one next to it alight. Men inside get out as fast as they can, however
-frightened. The fire burns about five minutes and leaves a burnt-out ruin,
-which still gives some cover. Smoke drifts off downwind and hides whatever is
+Houses stand a fair pounding. Each shell or bomb that lands on or beside a
+house knocks it about, and you can see it: broken tiles strewn round the hits,
+then holes through the roof with the rafters showing, then a roof half gone.
+A badly battered house hides the men inside less well. A small house takes
+about five direct hits from a mortar before it falls in, a barn more; a 250 kg
+bomb does it in two or three. When it falls in, anyone still inside may be
+caught under it.
+
+A sound house seldom catches fire from one shell. The more broken it is, the
+likelier the next hit sets it alight, so about one house in four burns before
+it is shot to pieces. A fire starts in one room and takes a minute or so to
+spread through the whole house; you see the roof char and then burn through.
+A house well ablaze can set the one next to it alight. Men inside get out as
+fast as they can, however frightened. The fire burns about five minutes and
+leaves a burnt-out ruin. Smoke drifts off downwind and hides whatever is
 behind it.
+
+The ruins of a house, burnt or shot down, can be held. Order a team to Move
+into them and the men spread out among the rubble and broken walls, as in a
+house; told to Defend there, they stay put. Rubble stops about half the
+bullets and a third of the shell splinters: less than a sound house, much more
+than open ground.
 
 A man in a trench is about four times harder to hit lying down, and shell
 splinters mostly fly over him. The British computer side digs in by itself
@@ -213,9 +230,12 @@ and writes the map to `data/maps/<name>/`:
     python3 tools/build_map.py tools/maps/pothus.json tools/maps/viskiskoia.json tools/maps/rognan.json
 
 `tools/paint_ground.py` then paints the overhead picture the game shows,
-`data/maps/<name>/ground.jpg`, at 2 pixels per metre: fields with furrows,
+`data/maps/<name>/ground.jpg`, at 4 pixels per metre: fields with furrows,
 single trees with shadows, roofs, roads, the river with its depth, and hill
-shading lit from the north-west. Run it again after changing a map:
+shading lit from the north-west. The roofs come from `tools/paint_houses.py`:
+pantiles, slate, tarred felt, corrugated iron or turf laid course by course,
+gabled or hipped, with ridge tiles, moss, barge boards, chimneys, roof lights,
+dormers, porches and barn bridges. Run it again after changing a map:
 
     python3 tools/paint_ground.py pothus viskiskoia rognan
 

@@ -17,7 +17,9 @@ What it paints:
   - fjord and river with a gravel shore, darker deep water and ripples
   - rock and scree with lichen, and patchy spring snow
   - spruce, pine and birch as single crowns with soft shadows
-  - houses and barns with tiled, slate, tarred or turf roofs, chimneys and shadows
+  - houses and barns with tiled, slate, tarred, iron or turf roofs, hipped or
+    gabled, with ridge tiles, moss, chimneys, dormers, porches and barn bridges
+    (see paint_houses.py)
 
 Writes data/maps/<name>/ground.jpg, which the game draws under the soldiers.
 
@@ -33,6 +35,8 @@ import argparse, json, math, os, zlib
 import numpy as np
 from PIL import Image
 from scipy import ndimage
+
+from paint_houses import paint_house
 
 PX_PER_M = 4
 # Sizes below were tuned at 2 pixels per metre; K scales them to the real resolution
@@ -279,13 +283,21 @@ def paint(name, root, crop=None, out=None):
         tall = SHADOW_PX if max(r1 - r0, c1 - c0) < 40 * K else SHADOW_PX + int(3 * K)
         for i in range(1, tall + 1):
             shadow[r0 + i:r1 + i, c0 + i:c1 + i] = np.maximum(shadow[r0 + i:r1 + i, c0 + i:c1 + i], 1.0)
-    # Trodden yards round the houses
+    # Trodden yards round the houses, worn into rounded, uneven patches
     yard = np.zeros(shape, bool)
+    yard_noise = noise(shape, 5 * K, rng, 1)
     for (r0, c0, r1, c1) in houses:
-        m5 = int(5 * K)
-        yard[max(r0 - m5, 0):r1 + m5, max(c0 - m5, 0):c1 + m5] = True
-    yard &= np.isin(t, [GRASS, FIELD]) & (noise(shape, 5 * K, rng, 1) > -0.4)
+        m = int(6 * K)
+        y0, x0 = max(r0 - m, 0), max(c0 - m, 0)
+        y1, x1 = min(r1 + m, ph), min(c1 + m, pw)
+        yy_, xx_ = np.mgrid[y0:y1, x0:x1]
+        dy = np.maximum(np.maximum(r0 - yy_, yy_ - r1), 0)
+        dx = np.maximum(np.maximum(c0 - xx_, xx_ - c1), 0)
+        d = np.hypot(dy, dx)
+        yard[y0:y1, x0:x1] |= d < m * (0.55 + 0.45 * yard_noise[y0:y1, x0:x1])
+    yard &= np.isin(t, [GRASS, FIELD])
     img[yard] = img[yard] * 0.45 + np.array((128, 114, 86), np.float32) * 0.55
+    del yard_noise
     shadow = ndimage.gaussian_filter(shadow, 1.3 * K)
     img *= (1 - 0.42 * np.clip(shadow, 0, 1))[..., None]
     del shadow
@@ -295,7 +307,7 @@ def paint(name, root, crop=None, out=None):
         stamp_over(img, crown, int(y), int(x))
 
     for (r0, c0, r1, c1) in houses:
-        paint_house(img, r0, c0, r1, c1, rng)
+        paint_house(img, r0, c0, r1, c1, zlib.crc32(f"{name}{r0},{c0}".encode()))
 
     # Bridges: planking with rails; wrecks: broken dark spans over the water
     br = t == BRIDGE
@@ -366,62 +378,6 @@ def paint_fields(img, bump, fences, field_px, hts, up, rng, grain, mid):
         rough = ndimage.binary_dilation(e, iterations=int(2 * K)) & m & ~e
         ry, rx = np.nonzero(rough)
         img[ry + sl[0].start, rx + sl[1].start] = img[ry + sl[0].start, rx + sl[1].start] * 0.4 + np.array((126, 118, 76)) * 0.6
-
-
-ROOFS = [  # colour, kind
-    ((150, 66, 48), "tile"), ((132, 58, 44), "tile"), ((78, 64, 58), "tile"),
-    ((100, 102, 104), "slate"), ((88, 90, 94), "slate"),
-    ((56, 54, 52), "tar"), ((128, 128, 122), "iron"),
-    ((96, 98, 58), "turf"),
-]
-
-
-def paint_house(img, r0, c0, r1, c1, rng):
-    """A roof seen from above: two slopes, one lit and one shaded, with tile
-    courses, a ridge, eaves and a chimney."""
-    col, kind = ROOFS[rng.integers(0, len(ROOFS))]
-    col = np.array(col, np.float32) * rng.uniform(0.92, 1.08)
-    h, w = r1 - r0, c1 - c0
-    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32) / K   # in 2-px-per-metre units
-    ew = w >= h                                    # ridge runs east-west
-    across = ys if ew else xs                      # distance across the ridge
-    along = xs if ew else ys
-    span = (h if ew else w) / K
-    ridge = span / 2
-    lit = across < ridge                            # north or west slope faces the sun
-    light = np.where(lit, 1.18, 0.72)
-    # Slopes darken a little towards the eaves
-    light *= 1 - 0.10 * np.abs(across - ridge) / max(ridge, 1)
-    pat = np.zeros_like(ys)
-    if kind == "tile":
-        pat = -0.10 * (np.mod(across, 2.5) < 0.9) - 0.05 * (np.mod(along + 1.2 * (np.floor(across / 2.5) % 2), 2.4) < 0.8)
-    elif kind == "slate":
-        pat = -0.08 * (np.mod(across, 2.0) < 0.7) + rng.normal(0, 0.03, ys.shape)
-    elif kind == "iron":
-        pat = 0.07 * np.sin(along * math.pi)
-    elif kind == "tar":
-        pat = rng.normal(0, 0.02, ys.shape) - 0.05 * (np.mod(along, 6) < 1)
-    elif kind == "turf":
-        pat = ndimage.gaussian_filter(rng.normal(0, 0.25, ys.shape), 0.8)
-    roof = col[None, None, :] * (light * (1 + pat))[..., None]
-    roof += rng.normal(0, 3, roof.shape)
-    # Ridge cap and eaves
-    cap = np.abs(across - ridge) < 0.8
-    roof[cap] = col * 1.25
-    roof[(across < 0.9) | (across > span - 1.1) | (along < 0.9) | (along > (w if ew else h) / K - 1.1)] *= 0.86
-    img[r0:r1, c0:c1] = roof
-    # Chimney on the ridge, with its own little shadow
-    if kind != "turf" or rng.random() < 0.5:
-        L = w if ew else h
-        p = int(L * rng.uniform(0.25, 0.75))
-        q = int(ridge * K)
-        c3 = int(3 * K)
-        cy, cx = (r0 + q - c3 // 3, c0 + p) if ew else (r0 + p, c0 + q - c3 // 3)
-        img[cy + c3 * 2 // 3:cy + c3 * 5 // 3, cx + c3 * 2 // 3:cx + c3 * 5 // 3] *= 0.6
-        img[cy:cy + c3, cx:cx + c3] = (104, 62, 50)
-        img[cy:cy + int(K), cx:cx + c3] = (150, 100, 80)
-        img[cy:cy + c3, cx:cx + int(K)] = (150, 100, 80)
-        img[cy + c3 // 3:cy + c3 * 2 // 3 + 1, cx + c3 // 3:cx + c3 * 2 // 3 + 1] = (30, 26, 24)
 
 
 def make_tree_stamps(rng):
